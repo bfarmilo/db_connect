@@ -1,0 +1,11 @@
+{
+  "name": "nodedbconnect",
+  "version": "1.0.0",
+  "description": "Connect to LocalDB through node.js",
+  "main": "TestDBConnect.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "B Farmilo",
+  "license": "ISC"
+}

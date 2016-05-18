@@ -1,0 +1,51 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta name="generator"
+    content="HTML Tidy for HTML5 (experimental) for Windows https://github.com/w3c/tidy-html5/tree/c63cc39" />
+
+    <title>Script Addition Tester</title>
+  </head>
+  <body>
+  
+      <script type="text/javascript">
+           // set the path to the main library of scripts and CSS
+       var library = {
+                "dir" : "../../../Dropbox%20(PMC)/PMC%20Public/Licensing/Technical/lib/",
+                "scriptlist" : [
+					"js/jquery-2.2.3.js", 
+					"js/bootstrap.min.js",
+					"js/comments.js"
+					],
+                "cssList" : [
+					"css/bootstrap.min.css", 
+					"css/comments.css"
+					]
+                };
+
+
+           function addScript (source) {
+                        var JSElement = document.createElement("script");          
+                        JSElement.src = library.dir + source; 
+						console.log(JSElement);
+						//JSElement.onload = OnceLoaded;
+                        document.getElementsByTagName("body")[0].appendChild(JSElement);
+           };
+           
+           function addCss (source) {
+                        var CSSElement = document.createElement("link");
+                        CSSElement.href = library.dir + source;
+                        CSSElement.rel = "stylesheet";
+                        document.getElementsByTagName("head")[0].appendChild(CSSElement);
+           };
+
+           console.log(library.cssList);
+           console.log(library.scriptlist);
+           
+           library.cssList.forEach(addCss);
+           library.scriptlist.forEach(addScript);
+		   
+	</script>
+	<div id="pageTemplate"> </div>
+  </body>
+</html>
