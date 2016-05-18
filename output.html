@@ -44,6 +44,9 @@
 		</div><!-- /btn-group -->
       </div><!-- /input-group -->
 	</div><!-- /column -->
+	<div class="col-md-4">
+		<button id="rowsReturned" class="btn disabled"> </button>
+	</div>
 	</div><!-- /row -->
 	</div><!-- /container -->
 	<div class="container-responsive">
@@ -57,6 +60,6 @@
 	</div>
 	</div>
 	<!--<script src="testOutput.js"></script>-->
-	<iframe id="includeFile" src="resultTable.html"></div>
+	<iframe id="includeFile" src="resultTable.html" onload=updateRows()></div>
   </body>
 </html>
