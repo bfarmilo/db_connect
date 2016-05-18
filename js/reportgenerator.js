@@ -3,6 +3,7 @@ var whatVal = ""
 var filterDoc = false;
 var filterMethod = false;
 var qrystring = "";
+
 const targetFile = "output.html";
 const dataFile = "resultTable.html";
 const defaultField = "First 100 Claims";
@@ -35,7 +36,19 @@ $(document).bind("keydown", function(event) {
 		 return true;
 	  }
 }); // end of function	
-  
+
+function updateRows() {
+	var countResults = $("#includeFile").contents().find("#numResults").data("num");
+	if (countResults == "0") {
+		$('#rowsReturned').removeClass("btn-info");
+		$('#rowsReturned').addClass("btn-danger");
+	} else {
+		$('#rowsReturned').removeClass("btn-danger");
+		$('#rowsReturned').addClass("btn-info");
+	}
+	$('#rowsReturned').html(countResults+" matching claims found");
+}
+
 $(document).ready(function () {
 	// Set iframe height
     document.getElementById('includeFile').style.height=content_height+"px";
@@ -82,7 +95,16 @@ $(document).ready(function () {
 
 
 	$('#Update').on('click', function () {
-		whatVal = $('#SearchValue').val();
+		//first need to clean up whatVal, get rid of spaces and punctuation
+		whatVal = $('#SearchValue').val().replace(/ /g, "");
+		// , means OR, replace with "%20OR%20", + means AND, replace with %20AND%20
+		console.log(whatVal);
+		if (whatVal.indexOf(",")>0) {
+			whatVal = whatVal.replace(/,/g, "%20OR%20");
+		}
+		if (whatVal.indexOf("+")>0) {
+			whatVal=whatVal.replace(/\+/g, "%20AND%20");
+		}
 		qrystring = "?srch=" + whatField + "&srvl=" + whatVal + "&doc=" + filterDoc + "&meth=" + filterMethod;
 		console.log(qrystring);
 		$('#Update').html("<span class=\"glyphicon glyphicon-refresh glyphicon-refresh-animate\"></span> Working...");
