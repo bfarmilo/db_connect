@@ -38,8 +38,6 @@ function gotPath(err1, pathdata) {
 		return;
 	};
 
-	// strip off c:
-	
 	// first, get the path to the local Dropbox folder and change the \ to /
 	dropboxPath = relPath + JSON.parse(pathdata).business.path.match(/:\\(.+)/)[1].replace(/\\/g, "/") + "/";
 	console.log ("Good DropBox Path:", dropboxPath);
@@ -63,14 +61,10 @@ function QueryResults(err, results) {
 		return;
 	}
 	console.log ("Query Successful");
-	// console.log (results);
+
 	// iterate through the rows that the query returns
 	outputString = "<div id=\"numResults\" data-num=\""+results.rows.length.toString()+"\"> </div>"
-	/*if (results.rows.length == 0) {
-		outputString = "<tr class=\"warning\"><td class=\"col-md-10\">No Claims match the current query</td></tr>"
-	} else {
-		outputString = "<tr><td class=\"col-md-1 col-lg-1\"> "+results.rows.length.toString()+" Rows Returned";
-	}*/
+
 	for (var i = 0; i < results.rows.length; i++) {
 		//start with a new row tag
 		outputString += "<tr>"; 
@@ -103,14 +97,6 @@ function QueryResults(err, results) {
 		outputString += "</tr>";
 	}; // for loop, ie, time for a new row
 
-	//now to clean up outputString (not needed in current implemenation) 
-	// remove all newlines
-	// outputString = outputString.replace(/\n/g, " ");
-	// replace ' with \', ie escape any single quotes in the claim text
-	// outputString = outputString.replace(/'/g, "\\'");
-	// now write it to our testOutput.js file inclosed in a document.write command
-	//fs.writeFile(outputFileName, "document.write ('" + outputString + "')", FileWritten);
-	
 	fs.writeFile(outputFileName, headerString + outputString + endString, FileWritten);
 }; // the QueryResults callback
 
@@ -143,16 +129,13 @@ var server = http.createServer(function (request, response) {
 	queryJSON = require('url').parse(request.url, true).query;
 	var propertyCheck = Object.keys(queryJSON);
 	console.log(request.url, queryJSON, queryJSON.srch, queryJSON.srvl);
-	console.log(propertyCheck.indexOf("meth"));
 
 	if (propertyCheck.indexOf("meth") > -1) {
 		whereString = ""; //default - pull claim 1
 		if (queryJSON.srch !=='' && queryJSON.srvl !== '') {
 			// need to parse the " OR " as "% ' OR [cell] LIKE '%"
-			console.log(queryJSON.srvl);
 			queryJSON.srvl = queryJSON.srvl.replace(/ OR /g, "%' OR "+whereObj[queryJSON.srch]+" LIKE '%");
 			queryJSON.srvl = queryJSON.srvl.replace(/ AND /g, "%' AND "+whereObj[queryJSON.srch]+" LIKE '%");
-			console.log(queryJSON.srvl);
 			whereString = "WHERE "+ whereObj[queryJSON.srch] + " LIKE '%" + queryJSON.srvl + "%'"
 			if (queryJSON.doc !== 'false') whereString += " AND claims.IsDocumented = 1";
 		    if (queryJSON.meth !== 'false') whereString += " AND claims.IsMethodClaim = 0";
@@ -162,8 +145,6 @@ var server = http.createServer(function (request, response) {
 			if (queryJSON.doc !== 'false') whereString += "claims.IsDocumented = 1";
 		    if (queryJSON.meth !== 'false') whereString += " AND claims.IsMethodClaim = 0";
 		}; // first if
-		console.log(queryJSON.srch, queryJSON.srvl, queryJSON.doc, queryJSON.meth);
-		console.log(whereString);
 		RunNewQuery();
 	}; //if the pathname is output.html
 	
