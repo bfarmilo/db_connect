@@ -17,7 +17,7 @@ const orderString = " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC";
 
 //html output variables
 const outputFileName = "resultTable.html"; //the file we are writing to
-const headerString = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"/><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags --><title>Query Results</title><link rel=\"stylesheet\" href=\"css/querystyle.css\" /><!-- Bootstrap --><link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" />	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) --><script src=\"js/jquery-2.2.3.js\"></script>	<!-- Include all compiled plugins (below), or include individual files as needed --><script src=\"js/bootstrap.min.js\"></script><!--<script> $(function(){ $(\"#includeFile\").load(\"testOutput.html\")})</script>--></head><body><table class=\"table-striped table-fixed table-bordered\"><tbody>"; // the same header for the file each time
+const headerString = "<!DOCTYPE html><html lang=\"en\"><head><meta charset=\"utf-8\"/><meta http-equiv=\"X-UA-Compatible\" content=\"IE=edge\" /><meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags --><title>Query Results</title><link rel=\"stylesheet\" href=\"css/querystyle.css\" /><!-- Bootstrap --><link href=\"css/bootstrap.min.css\" rel=\"stylesheet\" />	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) --><script src=\"js/jquery-2.2.3.js\"></script>	<!-- Include all compiled plugins (below), or include individual files as needed --><script src=\"js/bootstrap.min.js\"></script></head><body><table class=\"table-striped table-fixed table-bordered\"><tbody>"; // the same header for the file each time
 const endString = "</tbody></table></body></html>"; //closes out the header
 var outputString = ""; // keeps track of the body of the table
 
@@ -65,9 +65,12 @@ function QueryResults(err, results) {
 	console.log ("Query Successful");
 	// console.log (results);
 	// iterate through the rows that the query returns
-	if (results.rows.length == 0) {
+	outputString = "<div id=\"numResults\" data-num=\""+results.rows.length.toString()+"\"> </div>"
+	/*if (results.rows.length == 0) {
 		outputString = "<tr class=\"warning\"><td class=\"col-md-10\">No Claims match the current query</td></tr>"
-	}
+	} else {
+		outputString = "<tr><td class=\"col-md-1 col-lg-1\"> "+results.rows.length.toString()+" Rows Returned";
+	}*/
 	for (var i = 0; i < results.rows.length; i++) {
 		//start with a new row tag
 		outputString += "<tr>"; 
@@ -145,6 +148,11 @@ var server = http.createServer(function (request, response) {
 	if (propertyCheck.indexOf("meth") > -1) {
 		whereString = ""; //default - pull claim 1
 		if (queryJSON.srch !=='' && queryJSON.srvl !== '') {
+			// need to parse the " OR " as "% ' OR [cell] LIKE '%"
+			console.log(queryJSON.srvl);
+			queryJSON.srvl = queryJSON.srvl.replace(/ OR /g, "%' OR "+whereObj[queryJSON.srch]+" LIKE '%");
+			queryJSON.srvl = queryJSON.srvl.replace(/ AND /g, "%' AND "+whereObj[queryJSON.srch]+" LIKE '%");
+			console.log(queryJSON.srvl);
 			whereString = "WHERE "+ whereObj[queryJSON.srch] + " LIKE '%" + queryJSON.srvl + "%'"
 			if (queryJSON.doc !== 'false') whereString += " AND claims.IsDocumented = 1";
 		    if (queryJSON.meth !== 'false') whereString += " AND claims.IsMethodClaim = 0";
