@@ -13,6 +13,7 @@ function updateSQL(error, whereClause, params) {
     if (error) {
         console.log("error parsing SQL command !", error);
     } else {
+        // console.log("parsed to "+whereClause+": "+params);
         whereString += whereClause;
         srchParams = params;
     }
@@ -22,6 +23,7 @@ function urlParse(params, savedWhere, savedParams, callback) {
     try {
         // the parameter 'meth' is in the string. A proxy for a valid incoming page-with-query
         // currently handles paramaters 'srch, srvl, doc, meth, save'
+        // TODO: Where clause construction better handled with templates most probably
         if (savedWhere != "") {
             whereString = savedWhere + " AND (";
         } else {
@@ -32,15 +34,15 @@ function urlParse(params, savedWhere, savedParams, callback) {
             sqlParsed(params.srch, params.srvl, updateSQL);
         } else {
             // no search parameters provided
-            if (params.doc === 'false' && params.meth === 'false') {
+            if (params.doc === false && params.meth === false) {
                 whereString += "claims.ClaimNumber = 1"; //nothing selected -- just pull claim 1
             }
         }
-        if (params.doc !== 'false') {
+        if (params.doc !== false) {
             srchParams.push(1);
             updateSQL(null, ' AND claims.IsDocumented = ?', srchParams);
         }
-        if (params.meth !== 'false') {
+        if (params.meth !== false) {
             srchParams.push(0);
             updateSQL(null, ' AND claims.IsMethodClaim = ?', srchParams);
         }

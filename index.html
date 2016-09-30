@@ -1,6 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
+
+<head>
     <meta charset="utf-8" />
     <meta http-equiv="X-UA-Compatible" content="IE=edge" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
@@ -10,60 +11,87 @@
     <!-- Bootstrap -->
     <link href="css/bootstrap.min.css" rel="stylesheet" />
     <!-- Insert this line above script imports  -->
-<script>if (typeof module === 'object') {window.module = module; module = undefined;}</script>
+    <script>
+        if (typeof module === 'object') {
+            window.module = module;
+            module = undefined;
+        }
+    </script>
     <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
-    <script src="js/jquery-2.2.3.js"></script>
+    <script src="js/jquery-2.2.4.min.js"></script>
     <!-- Include all compiled plugins (below), or include individual files as needed -->
     <script src="js/bootstrap.min.js"></script>
-    <!--<script> $(function(){ $("#includeFile").load("testOutput.html")})</script>-->
-  </head>
-  <body>
+</head>
+
+<body>
     <!-- custom JS to launch the query and insert the results into this DOM -->
     <script src="js/reportgenerator.js"></script>
-    <div class="container-responsive">
-      <div class="row spacerrow">
-        <div class="col-md-12"></div>
-      </div>
-      <div class="row">
-        <div class="col-md-8">
-          <div class="input-group">
-            <div class="input-group-btn">
-              <button id="SearchField" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
-              <ul id="FieldList" class="dropdown-menu">
-                <li><a href="#">PMC Reference</a></li>
-                <li><a href="#">Patent Number</a></li>
-                <li><a href="#">Potential Application</a></li>
-                <li><a href="#">Claim Full Text</a></li>
-                <li><a href="#">Watch Items</a></li>
-                <li role="separator" class="divider"></li>
-                <li><a href="#">Clear</a></li>
-              </ul>
-            </div><!-- /btn-group -->
-            <input id="SearchValue" type="text" class="form-control" aria-label="..." placeholder="search value">
-            <div class="input-group-btn">
-              <button type="button" id="addSearch" class="btn btn-default disabled" data-toggle="tooltip" data-placement="bottom" title="Click to Refine Results"><span class="glyphicon glyphicon-plus"></span></button>
-              <button type="button" id="Documented" class="btn btn-default">Documented Only</button>
-              <button type="button" id="Method" class="btn btn-default">Apparatus Only</button>
-              <button id="Update" type="button" class="btn btn-success" tabindex=1>Run Query</button>
-            </div><!-- /btn-group -->
-          </div><!-- /input-group -->
-        </div><!-- /column -->
-        <div class="col-md-4">
-          <button id="rowsReturned" class="btn disabled"> </button>
+    <div>
+    <div class="titlesection">
+        <div>
+            <div class="row spacerrow">
+                <div class="col-md-12 col-sm-12"></div>
+            </div>
+            <div class="row">
+                <div class="col-md-8">
+                    <div class="input-group">
+                        <div class="input-group-btn">
+                            <button id="SearchField" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                            <ul id="FieldList" class="dropdown-menu">
+                                <li><a href="#">PMC Reference</a></li>
+                                <li><a href="#">Patent Number</a></li>
+                                <li><a href="#">Potential Application</a></li>
+                                <li><a href="#">Claim Full Text</a></li>
+                                <li><a href="#">Watch Items</a></li>
+                                <li role="separator" class="divider"></li>
+                                <li><a href="#">Clear</a></li>
+                            </ul>
+                        </div>
+                        <!-- /btn-group -->
+                        <input id="SearchValue" type="text" class="form-control" aria-label="..." placeholder="search value" disabled>
+                        <div class="input-group-btn">
+                            <button type="button" id="addSearch" class="btn btn-default disabled" data-toggle="tooltip" data-placement="bottom" title="Click to Refine Results"><span class="glyphicon glyphicon-plus"></span></button>
+                            <button type="button" id="Documented" class="btn btn-default">Documented Only</button>
+                            <button type="button" id="Method" class="btn btn-default">Apparatus Only</button>
+                            <button id="Update" type="button" class="btn btn-success" tabindex=1>Run Query</button>
+                        </div>
+                        <!-- /btn-group -->
+                    </div>
+                    <!-- /input-group -->
+                </div>
+                <!-- /column -->
+                <div class="col-md-4">
+                    <button id="rowsReturned" class="btn disabled">No Results Yet</button>
+                    <button id="showDetails" class="btn disabled">Show All Claim Txt</button>
+                </div>
+            </div>
+            <!-- /row -->
+            <div class="row spacerrow">
+                <div class="col-md-12 col-sm-12"></div>
+            </div>
         </div>
-      </div><!-- /row -->
-    </div><!-- /container -->
-    <div class="container-responsive">
-      <div class="row h4 bg-primary titlerow">
-        <div class="col-md-1 titlecell">PMC Ref</div>
-        <div class="col-md-1 titlecell">Patent</div>
-        <div class="col-md-1 titlecell">Claim</div>
-        <div class="col-md-7 titlecell">Claim Text</div>
-        <div class="col-md-1 titlecell">Application</div>
-        <div class="col-md-1 titlecell">Watch</div>
+        <!-- /container -->
+    <table class="table-striped">
+    <thead>
+      <tr class="bg-primary titlerow">
+        <th class="col-md-1 col-sm-1 titlecell">PMC Ref</th>
+        <th class="col-md-1 col-sm-1 titlecell">Patent</th>
+        <th class="col-md-8 col-sm-8 titlecell">Claim</th>
+        <th class="col-md-1 col-sm-1 titlecell">Application</th>
+        <th class="col-md-1 col-sm-1 titlecell">Watch</th>
+      </tr>
+    </thead>
+  </table>
       </div>
+      <div id="includeFile">
+        <ol>
+            <li>Use the dropdown to select the field to search.</li>
+            <li> Enter some search values in the box. </li>
+            <li>Use , for OR, + for AND, ! for NOT. </li>
+            <li>To refine the current search, click on the "+" button to save the previous search parameters, then select new parameters to 'AND' with the prior results</li>
+
     </div>
-    <!--<script src="testOutput.js"></script>-->
-    <iframe id="includeFile" src="resultTable.html" onload=updateRows()></div>
-  </body>
+  </div>
+</body>
+
 </html>

@@ -24,38 +24,43 @@
 
 
 /* style tags*/
+.titlesection {
+   background-color: #FFFFFF;
+   position:fixed;
+  }
+
 .spacerrow {
 	height:10px;
 } /*the row before the controls */
 
 .titlerow {
-	width: 99.7%;
-	height:40px;
 	padding-top:10px;
+  padding-bottom:10px;
+  font-size:large;
+  height: 40px;
 } /*the title row*/
 
 .titlecell {
-	text-align:center;
+	text-align: center;
+  font-weight:normal;
 } /*the cells in the title row*/
 
 .claim-text {
-	margin-left: 20px; 
+	margin-left: 20px;
 	text-indent: -20px;
 	margin-bottom: 5px;
 } /*Comes from the database with this class applied*/
-	
+
 .claim-dependent {
 	color: #A0A0A0;
-}
+} /*make dependent claims grey in text*/
 
 /* style by ID */
 #includeFile {
-	width:100%;
+  
 }
 
 /* style by tag */
 claim-ref {
 	font-weight: bold;
 } /*used by dependent claims to reference the independent they depend from */
-	
-

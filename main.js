@@ -1,15 +1,40 @@
 const electron = require('electron');
-// Module to control application life.
-const { app } = electron;
-// Module to create native browser window.
-const { BrowserWindow } = electron;
-// Keep a global reference of the window object, if you don't, the window will
-// be closed automatically when the JavaScript object is garbage collected.
+const exec = require('child_process').exec;
+const dbquery = require('./js/app_DBconnect');
+const htmlparse = require('./js/app_htmlparsetempl');
+const urlParse = require('./js/app_urlParse');
+let changeLog = require('./changeLog.json');
+
+const fs = require('fs');
+const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
+
 let win;
+let savedSearch = {
+    "where": "",
+    "paramArray": []
+}; //used for saved searches
+let dropboxPath = ""; // keeps the path to the local dropbox
+let htmlContent = "";
+
+exec('sqllocaldb s v11.0', (err, stdout, stderr) => {
+  if (err) {
+    console.error(err);
+    return;
+  }
+  console.log(stdout);
+});
 
 function createWindow() {
+    "use strict";
+    // get the file paths
+    getDropBoxPath();
+    // start a connection, to hide some of the startup time for first connection
+    //runNewQuery('TEST',null, null);
     // Create the browser window.
-    win = new BrowserWindow({ width: 1400, height: 800 });
+    win = new BrowserWindow({
+        width: 1440,
+        height: 800
+    });
     // and load the index.html of the app.
     win.loadURL(`file://${__dirname}/index.html`);
     // Open the DevTools.
@@ -41,124 +66,93 @@ app.on('activate', () => {
         createWindow();
     }
 });
-// In this file you can include the rest of your app's specific main process
-// code. You can also put them in separate files and require them here.
-// npm modules needed
-"use strict";
-// query and file writing variables
-var events = require('events');
-var fs = require('fs');
-var dbquery = require('./js/app_DBconnect');
-var htmlparse = require('./js/app_htmlparse');
-var urlParse = require('./js/app_urlParse');
-var globalParams = require('./js/app_config.json');
-var eventEmitter = new events.EventEmitter();
-// server variables
-var http = require('http');
-var finalhandler = require('finalhandler');
-var serveStatic = require('serve-static');
-var queryJSON = {};
-var serve = serveStatic("./");
-var servePatents = serveStatic("./"); // just instantiate this for now, will replace with the dropbox path once we have it
-var thisresp = {}; // tracks the response object for the 'tableReady' checker.
-var savedSearch = ["", []]; //used for saved searches
-var propertyCheck = [];
-var dropboxPath = ""; // keeps the path to the local dropbox
-// called once the file is written !
-function fileWritten(err) {
-    if (err) {
-        console.log("error with writing file");
-        return;
+
+// Listener for updating a potential application
+ipcMain.on('update_application', function (ua_event, claimID, oldValues, newValues) {
+  //log the change to allow future roll-backs
+  changeLog.changes.push({"datetime": Date.now(), "claimID": claimID, "from":oldValues, "to":newValues});
+  fs.writeFile("./changeLog.JSON", JSON.stringify(changeLog), 'utf8', function (err) {
+    if (err) console.log(err);
+    console.log("changeLog updated: ",changeLog.changes[changeLog.changes.length-1]);
+    // now do the insert query
+    dbquery('UPDATE', claimID, newValues.split(), function (err4, result) {
+        if (err4) {
+              console.log(dialog.showErrorBox("Query Error", "Error with query "+err4));
+        }
+        console.log (result);
+      });
+  });
+});
+
+// listener to handle when a user clicks on a patent link
+ipcMain.on('open_patent', function (op_event, linkVal) {
+    console.log("received link click with path " + linkVal);
+    openPDF(linkVal);
+});
+
+// listener to handle when a user launches a new query
+ipcMain.on('new_query', function (op_event, queryJSON, fieldToLoad) {
+    //querystring comes back as {srch:"a%20OR%20b", srvl:} etc.
+    if (queryJSON.save != true) {
+        // don't save the search -- clear the old values
+        savedSearch.where = "";
+        savedSearch.paramArray = [];
     }
-    // otherwise all fine
-    console.log("File successfully written:", globalParams.outputFileName);
-    // emit the 'table Ready' event which is handled by the serveTable callback
-    // thisresp doesn't have a value until 'checkFile' is requested
-    if (Object.keys(thisresp).indexOf("finished") > -1) {
-        eventEmitter.emit('tableReady', thisresp);
-        thisresp = {};
-    }
-} // The FileWritten callback
+    console.log("new query received with parameters: ", queryJSON);
+    urlParse(queryJSON, savedSearch.where, savedSearch.paramArray, function (err5, whereClause, valueArray) {
+        if (err5) {
+            console.log(dialog.showErrorBox("URL Parse Error", "Error parsing url parameters: "+queryJSON+"\n"+err5));
+        } else {
+            runNewQuery(whereClause, valueArray); // now update the results table
+            //TODO: what if the last search was already saved ? don't want to keep appending
+            if (queryJSON.save != true) {
+              // only overwrite the savedSearch values if we haven't already saved some yet
+              savedSearch.where = whereClause; // save the last search for posterity
+              savedSearch.paramArray = valueArray; // save the last search for posterity
+            }
+        }
+    }); //urlParse
+}); //new_query handler
+
+function openPDF(fullPath) {
+    console.log("trying shell: " + dropboxPath + fullPath);
+    shell.openItem(dropboxPath + fullPath);
+}
+
 // RunNewQuery is called once the URL parameters have been parsed
 function runNewQuery(queryString, values) {
     // call the query module with querystring and then html parse the results
     console.log("querying DB ...");
-    dbquery(queryString, values, function (err3, queryResults) {
+    dbquery('SELECT', queryString, values, function (err3, queryResults) {
         if (err3) {
-            console.log("Error with query ", err3);
+            console.log(dialog.showErrorBox("Query Error", "Error with query "+err3));
             return;
         }
+        if (queryResults != 'connect') {
         console.log("good query - " + queryResults.length + " results returned");
         console.log("parsing to html ...");
         htmlparse(queryResults, function (err4, outputString) {
             if (err4) {
-                console.log("Error Parsing query to HTML", err4);
+                console.log(dialog.showErrorBox("HTML Parse Error", "Error Parsing query to HTML: "+err4));
                 return;
             }
-            console.log("good html, writing file ...");
+            console.log("sending html-formatted table with "+queryResults.length+" rows to renderer window");
             // htmlString contains the table-formatted query
-            fs.writeFile(globalParams.outputFileName, outputString, fileWritten);
+            // don't merge ! just send back to the renderer
+            win.webContents.send('tableReady', outputString, queryResults.length);
         });
+      }
     });
-}
-
-function serveTable(res) {
-    // intercept requests for 'checkFile' and respond with an 'OK' and 'table Updated' content once the table is ready
-    res.writeHead(200, {
-        'Content-Type': 'text/plain'
-    });
-    res.end('table Updated');
-    console.log(globalParams.checkFile + " dispatched");
 }
 
 function getDropBoxPath() {
     fs.readFile(process.env.LOCALAPPDATA + '//Dropbox//info.json', 'utf8', function (err2, pathdata) {
         if (err2) {
-            console.log("Error getting Dropbox path", err2);
+            console.log(dialog.showErrorBox("Dropbox Error", "Error getting Dropbox path "+ err2));
             return;
         }
         // first, get the path to the local Dropbox folder and change the \ to /
         dropboxPath = "C\:/" + JSON.parse(pathdata).business.path.match(/:\\(.+)/)[1].replace(/\\/g, "/") + "/";
         console.log("Good DropBox Path:", dropboxPath);
-        servePatents = serveStatic(dropboxPath); // serve anything with pdf in it from this directory instead
     });
 }
-// create the server
-var server = http.createServer(function (request, response) {
-    var done = finalhandler(request, response);
-    // the page requests 'globalParams.checkFile' after asking for a new query. Here we capture that
-    if (request.url.indexOf(globalParams.checkFile) > -1) {
-        console.log(globalParams.checkFile + " requested");
-        thisresp = response;
-    } else if (request.url.indexOf("pdf") > -1) {
-        servePatents(request, response, done);
-    } else {
-        serve(request, response, done);
-    }
-    // if the url is mainFileName then we need to parse the query parameters.
-    if (request.url.indexOf(globalParams.mainFileName) > -1) {
-        queryJSON = require('url').parse(request.url, true).query;
-        propertyCheck = Object.keys(queryJSON);
-        if (propertyCheck.indexOf("meth") > -1) {
-            // the parameter 'meth' is in the string. A proxy for a valid incoming page-with-query
-            if (queryJSON.save != "true") {
-                savedSearch = ["",[]];
-            }
-            console.log(queryJSON, savedSearch);
-            urlParse(queryJSON, savedSearch[0], savedSearch[1], function (err5, resultString, valueString) {
-                if (err5) {
-                    console.log("Error parsing url parameters:", queryJSON);
-                } else {
-                    runNewQuery(resultString, valueString); // now update the results table
-                    savedSearch[0] = resultString; // save the last search for posterity
-                    savedSearch[1] = valueString; // save the last search for posterity
-                }
-            }); //urlParse
-        } //found 'meth' in the properties
-    } //the request is for the mainFileName
-}); // createserver
-// set up emitters, get Dropbox path, start server
-eventEmitter.on('tableReady', serveTable);
-getDropBoxPath();
-server.listen(8080);
-console.log("Server listening at port 8080");

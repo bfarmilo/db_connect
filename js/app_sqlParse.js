@@ -16,17 +16,20 @@ function sqlParse(searchField, searchString, callback) {
         // first the easy case -- there is only one value and no and/or logic
         if (searchString.search(matchExp) === -1) {
             if (searchString.search("NOT") === -1) {
-                //doesn't contain NOT
+                //doesn't contain NOT, so just add percents and push it into the paramater array
                 paramAry.push('%' + searchString + '%');
+                //and add a where clause
                 searchString = pat.whereObj[searchField] + " LIKE ?";
             } else {
                 //strip out 'NOT' from the parameter
                 paramAry.push('%' + searchString.replace("NOT ", "") + '%');
+                //make the where clause 'NOT LIKE'
                 searchString = pat.whereObj[searchField] + " NOT LIKE ?";
             }
         } else {
             // has at least one AND or OR
             paramAry = searchString.split(matchExp);
+            // TODO: may be more appropriate to use array.map since we are mutating the array ?
             paramAry.forEach(function (values, index, theArray) {
                 if (values.search("NOT") === -1) {
                     //doesn't contain NOT

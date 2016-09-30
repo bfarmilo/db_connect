@@ -1,8 +1,9 @@
 {
     "patentDB": {
         "connection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
-        "selectString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
-        "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC"
+        "selectString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
+        "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC",
+        "updateString": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID="
     },
     "urlParams": {
         "whereObj": {
@@ -24,8 +25,8 @@
         }],
         "reg": "\\sOR\\s|\\sAND\\s"
     },
+    "appPath": "./resources/app/",
     "mainFileName": "index.html",
-    "outputFileName": "resultTable.html",
-    "checkFile": "tableReadycheck",
-    "defaultURL": "http://localhost:8080/"
+    "outputFileName": "output.html",
+    "patentURL":"http://patents.google.com/patent/"
 }
