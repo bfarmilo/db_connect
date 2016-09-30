@@ -8,8 +8,6 @@ const endString = "</tbody></table></body></html>"; //closes out the header
 
 var outputString = ""; // keeps track of the body of the table
 
-
-
 // called when we have a good DB connection
 function generateOutput(results, callback) {
   try {

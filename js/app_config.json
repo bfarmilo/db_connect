@@ -1,0 +1,31 @@
+{
+    "patentDB": {
+        "connection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
+        "selectString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
+        "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC"
+    },
+    "urlParams": {
+        "whereObj": {
+            "Cl": "claims.ClaimHtml",
+            "Po": "claims.PotentialApplication",
+            "Wa": "claims.WatchItems",
+            "Pa": "RIGHT(CAST(patents.PatentNumber As char(7)),3)",
+            "PM": "patents.PMCRef"
+        },
+        "pattern": [{
+            "str": " OR ",
+            "rexp": ","
+        }, {
+            "str": " AND ",
+            "rexp": "\\+"
+        }, {
+            "str": "NOT ",
+            "rexp": "!"
+        }],
+        "reg": "\\sOR\\s|\\sAND\\s"
+    },
+    "mainFileName": "index.html",
+    "outputFileName": "resultTable.html",
+    "checkFile": "tableReadycheck",
+    "defaultURL": "http://localhost:8080/"
+}
