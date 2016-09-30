@@ -1,4 +1,5 @@
 {
+<<<<<<< HEAD
   "name": "dbviewer",
   "version": "0.1.0",
   "description": "Viewer application that connects to patent DB",
@@ -21,4 +22,22 @@
     "electron-prebuilt": "^1.2.5",
     "electron-rebuild": "^1.1.5"
   }
+=======
+  "name": "reportserver",
+  "version": "1.0.0",
+  "description": "Connect to LocalDB through node.js",
+  "main": "TestDBConnect.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1"
+  },
+  "author": "B Farmilo",
+  "license": "ISC",
+  "dependencies": {
+    "http": "^0.0.0",
+    "serve-static": "^1.10.2",
+    "node-sqlserver-unofficial": "^1.4.0",
+    "finalhandler": "^0.4.1"
+  },
+  "devDependencies": {}
+>>>>>>> b70a3d1c29aa9aa6c6e9397b0b7f5856996eeb39
 }

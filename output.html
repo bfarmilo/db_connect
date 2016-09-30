@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+	<meta charset="utf-8" />
+	<meta http-equiv="X-UA-Compatible" content="IE=edge" />
+	<meta name="viewport" content="width=device-width, initial-scale=1" />
+	<!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+	<title>PMC Database Output</title>
+	<link rel="stylesheet" href="css/querystyle.css" />
+	<!-- Bootstrap -->
+	<link href="css/bootstrap.min.css" rel="stylesheet" />
+	<!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+	<script src="js/jquery-2.2.3.js"></script> 
+	<!-- Include all compiled plugins (below), or include individual files as needed -->
+	<script src="js/bootstrap.min.js"></script>
+	<!--<script> $(function(){ $("#includeFile").load("testOutput.html")})</script>-->
+  </head>
+  <body>
+	<!-- custom JS to launch the query and insert the results into this DOM -->
+	<script src="js/reportgenerator.js"></script>
+	<div class="container-responsive">
+	<div class="row spacerrow">
+		<div class="col-md-12"></div>
+	</div>
+	<div class="row">
+	  <div class="col-md-8">
+		<div class="input-group">
+		  <div class="input-group-btn">
+            <button id="SearchField" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+            <ul id="FieldList" class="dropdown-menu">
+              <li><a href="#">Patent Number</a></li>
+              <li><a href="#">Potential Application</a></li>
+              <li><a href="#">Claim Full Text</a></li>
+              <li><a href="#">Watch Items</a></li>
+              <li role="separator" class="divider"></li>
+              <li><a href="#">Clear</a></li>
+            </ul>
+          </div><!-- /btn-group -->
+        <input id="SearchValue" type="text" class="form-control" aria-label="..." placeholder="search value">
+		<div class="input-group-btn">
+			<button type="button" id="Documented" class="btn btn-default">Documented Only</button>
+			<button type="button" id="Method" class="btn btn-default">Apparatus Only</button>
+			<button id="Update" type="button" class="btn btn-success" tabindex=1>Run Query</button>
+		</div><!-- /btn-group -->
+      </div><!-- /input-group -->
+	</div><!-- /column -->
+	<div class="col-md-4">
+		<button id="rowsReturned" class="btn disabled"> </button>
+	</div>
+	</div><!-- /row -->
+	</div><!-- /container -->
+	<div class="container-responsive">
+	<div class="row h4 bg-primary titlerow">
+		<div class="col-md-1 titlecell">PMC Ref</div>
+		<div class="col-md-1 titlecell">Patent</div>
+		<div class="col-md-1 titlecell">Claim</div>
+		<div class="col-md-7 titlecell">Claim Text</div>
+		<div class="col-md-1 titlecell">Application</div>
+		<div class="col-md-1 titlecell">Watch</div>
+	</div>
+	</div>
+	<!--<script src="testOutput.js"></script>-->
+	<iframe id="includeFile" src="resultTable.html" onload=updateRows()></div>
+  </body>
+</html>

@@ -41,15 +41,10 @@
             </div><!-- /btn-group -->
             <input id="SearchValue" type="text" class="form-control" aria-label="..." placeholder="search value">
             <div class="input-group-btn">
+              <button type="button" id="addSearch" class="btn btn-default disabled" data-toggle="tooltip" data-placement="bottom" title="Click to Refine Results"><span class="glyphicon glyphicon-plus"></span></button>
               <button type="button" id="Documented" class="btn btn-default">Documented Only</button>
               <button type="button" id="Method" class="btn btn-default">Apparatus Only</button>
               <button id="Update" type="button" class="btn btn-success" tabindex=1>Run Query</button>
-              <a id="Waste" class="btn btn-default" href="/vids.html">
-                Burn
-              </a>
-              <a id="Phone" class="btn btn-default" href="/workphone.html">
-                Phone
-              </a>
             </div><!-- /btn-group -->
           </div><!-- /input-group -->
         </div><!-- /column -->
@@ -72,4 +67,3 @@
     <iframe id="includeFile" src="resultTable.html" onload=updateRows()></div>
   </body>
 </html>
-
