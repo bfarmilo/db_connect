@@ -1,0 +1,393 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8" />
+    <meta http-equiv="X-UA-Compatible" content="IE=edge" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <!-- The above 3 meta tags *must* come first in the head; any other head content must come *after* these tags -->
+    <title>PMC Database Output</title>
+    <link rel="stylesheet" href="css/querystyle.css" />
+    <!-- Bootstrap -->
+    <link href="css/bootstrap.min.css" rel="stylesheet" />
+    <!-- Insert this line above script imports  -->
+    <script>
+        if (typeof module === 'object') {
+            window.module = module;
+            module = undefined;
+        }
+    </script>
+    <!-- jQuery (necessary for Bootstrap's JavaScript plugins) -->
+    <script src="js/jquery-2.2.4.min.js"></script>
+    <!-- Include all compiled plugins (below), or include individual files as needed -->
+    <script src="js/bootstrap.min.js"></script>
+</head>
+
+<body>
+    <!-- custom JS to launch the query and insert the results into this DOM -->
+    <script src="js/reportgenerator.js"></script>
+    <div class="titlesection container">
+        <div class="row spacerrow">
+            <div class="col-md-12 col-sm-12"></div>
+        </div>
+        <div class="row">
+            <div class="col-md-8 col-sm-7">
+                <div class="input-group">
+                    <div class="input-group-btn">
+                        <button id="SearchField" type="button" class="btn btn-default dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false"></button>
+                        <ul id="FieldList" class="dropdown-menu">
+                            <li><a href="#">PMC Reference</a></li>
+                            <li><a href="#">Patent Number</a></li>
+                            <li><a href="#">Potential Application</a></li>
+                            <li><a href="#">Claim Full Text</a></li>
+                            <li><a href="#">Watch Items</a></li>
+                            <li role="separator" class="divider"></li>
+                            <li><a href="#">Clear</a></li>
+                        </ul>
+                    </div>
+                    <!-- /btn-group -->
+                    <input id="SearchValue" type="text" class="form-control" aria-label="..." placeholder="search value" disabled>
+                    <div class="input-group-btn">
+                        <button type="button" id="addSearch" class="btn btn-default disabled" data-toggle="tooltip" data-placement="bottom" title="Click to Refine Results"><span class="glyphicon glyphicon-plus"></span></button>
+                        <button type="button" id="Documented" class="btn btn-default">Doc'd</button>
+                        <button type="button" id="Method" class="btn btn-default">Apparatus</button>
+                        <button id="Update" type="button" class="btn btn-success" tabindex=1>Run Query</button>
+                    </div>
+                    <!-- /btn-group -->
+                </div>
+                <!-- /input-group -->
+            </div>
+            <!-- /column -->
+            <div class="col-md-4 col-sm-5">
+                <button id="rowsReturned" class="btn disabled">No Results Yet</button>
+            </div>
+        </div>
+        <!-- /row -->
+        <div class="row spacerrow">
+            <div class="col-md-12 col-sm-12"></div>
+        </div>
+            </div>
+        <!-- /container -->
+        <table class="table table-striped table-bordered table-condensed">
+        <thead class="row bg-primary titlerow">
+                    <th class="col-md-1 col-sm-1 titlecell">PMC Ref</th>
+                    <th class="col-md-1 col-sm-1 titlecell">Patent</th>
+                    <th class="col-md-8 col-sm-8 titlecell"><span id="showDetails" class="glyphicon glyphicon-plus"></span> Claim</div>
+                    <th class="col-md-1 col-sm-1 titlecell">Application</th>
+                    <th class="col-md-1 col-sm-1 titlecell">Watch</th>
+
+        </thead>
+
+    <tbody id="includeFile">
+
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+            <tr>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">
+                    <div class="patentLink btn btn-small" data-url="#" target="_blank">
+                        ${patent[2]}
+                    </div>
+                </td>
+                <td class="col-sm-8 col-md-8 col-lg-8">
+                    <details>
+                        <summary class="claim-dependent">
+                            Claim ${patent[3]}
+                        </summary>${patent[4]}
+                    </details>
+                </td>
+                <td class="application col-sm-1 col-md-1 col-lg-1" data-claimid="${patent[7]}" contenteditable="true">${patent[5]?patent[5]:" "}</td>
+                <td class="col-sm-1 col-md-1 col-lg-1">${patent[6]?patent[6]:" "}</td>
+            </tr>
+          </tbody>
+        </table>
+</body>
+
+</html>

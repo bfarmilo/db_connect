@@ -38,6 +38,7 @@
   padding-bottom:10px;
   font-size:large;
   height: 40px;
+  background-color: #555555;
 } /*the title row*/
 
 .titlecell {
@@ -57,7 +58,7 @@
 
 /* style by ID */
 #includeFile {
-  
+
 }
 
 /* style by tag */
