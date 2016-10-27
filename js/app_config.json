@@ -3,7 +3,8 @@
         "connection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
         "selectString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
         "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC",
-        "updateString": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID="
+        "updateString": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID=",
+        "markmanString":"SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, document.DocumentPath, document.FileName, claims.PotentialApplication FROM Claim claims JOIN Patent patents ON patents.PatentID = claims.PatentID	JOIN MarkmanTermConstruction mtc ON mtc.ClaimID = claims.ClaimID	JOIN MarkmanTerms mt ON mt.TermID = mtc.TermID	JOIN MarkmanConstructions mc ON mc.ConstructID = mtc.ConstructID JOIN Document document ON document.DocumentID = mc.DocumentID "
     },
     "urlParams": {
         "whereObj": {
@@ -11,7 +12,9 @@
             "Po": "claims.PotentialApplication",
             "Wa": "claims.WatchItems",
             "Pa": "RIGHT(CAST(patents.PatentNumber As char(7)),3)",
-            "PM": "patents.PMCRef"
+            "PM": "patents.PMCRef",
+            "Mt": "mt.ClaimTerm",
+            "Mc": "mc.Construction"
         },
         "pattern": [{
             "str": " OR ",
