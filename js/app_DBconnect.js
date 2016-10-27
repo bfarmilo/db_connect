@@ -2,6 +2,8 @@ module.exports = query;
 // takes arguments (WHEREstring, VALUESarray, callback), returns callback(error, array containing query results)
 var sql = require('msnodesqlv8');
 var DB = require('./app_config.json').patentDB;
+var sqlString = "";
+var returnVal = "";
 // the main query code
 //TODO: Close connection
 function query(qryType, whereString, values, callback) {
@@ -14,32 +16,36 @@ function query(qryType, whereString, values, callback) {
         console.log("Good connection to:", DB.connection.slice(DB.connection.indexOf("Server="), DB.connection.indexOf(";Integrated")));
         // good connection, so query the DB and return the callback when done
         if (qryType === "SELECT") {
-          // if 'null' is passed to whereString we skip a query
-          console.log("Attempting Query: " + DB.selectString + whereString + DB.orderString, values);
-          conn.queryRaw(DB.selectString + whereString + DB.orderString, values, function (err2, data) {
-              if (err2) {
-                  console.log("Error with the Query!", DB.selectString + whereString + DB.orderString, values);
-                  return callback(err2);
-              } else {
-                  return callback(null, data.rows);
-              };
-          }); //queryRaw
-        }
-
-        if (qryType === "TEST") {
-          return callback(null, 'connect');
+          sqlString = DB.selectString + whereString + DB.orderString;
+          returnVal = "data"
         }
 
         if (qryType === "UPDATE") {
-          console.log("Attempting Query: "+ DB.updateString + whereString, values);
-          conn.queryRaw(DB.updateString + whereString, values, function (err3, data2) {
-            if (err3) {
-              console.log("Error with the Query!", DB.updateString+whereString, values);
-              return callback(err3);
-            } else {
-              return callback(null, 'updated');
-            }
-          });
+          sqlString = DB.updateString + whereString;
+          returnVal = "updated";
         }
+
+        if (qryType === "MARKMAN") {
+          sqlString = DB.markmanString + whereString + DB.orderString;
+          returnVal = "data";
+        }
+
+        if (qryType === "TEST") {
+          returnVal = "connect";
+        }
+        // if 'null' is passed to whereString we skip a query
+        console.log("Attempting Query: " + sqlString, values);
+        conn.queryRaw(sqlString, values, function (err2, data) {
+            if (err2) {
+                console.log("Error with the Query!", DB.selectString + whereString + DB.orderString, values);
+                return callback(err2);
+            } else {
+              if (returnVal === "data") {
+                return callback(null, data.rows);
+              } else {
+                return callback(null, returnVal);
+              }
+            };
+        }); //queryRaw
     }); // connection to DB
 }; // the query code

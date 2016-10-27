@@ -15,6 +15,7 @@ let savedSearch = {
 }; //used for saved searches
 let dropboxPath = ""; // keeps the path to the local dropbox
 let htmlContent = "";
+let queryType = "";
 
 exec('sqllocaldb s v11.0', (err, stdout, stderr) => {
   if (err) {
@@ -99,6 +100,11 @@ ipcMain.on('new_query', function (op_event, queryJSON, fieldToLoad) {
         savedSearch.paramArray = [];
     }
     console.log("new query received with parameters: ", queryJSON);
+    if (queryJSON.srch.search("Te") != -1 || queryJSON.srch.search("Co") != -1) {
+      queryType = "MARKMAN";
+    } else {
+      queryType = "SELECT";
+    }
     urlParse(queryJSON, savedSearch.where, savedSearch.paramArray, function (err5, whereClause, valueArray) {
         if (err5) {
             console.log(dialog.showErrorBox("URL Parse Error", "Error parsing url parameters: "+queryJSON+"\n"+err5));
@@ -123,7 +129,7 @@ function openPDF(fullPath) {
 function runNewQuery(queryString, values) {
     // call the query module with querystring and then html parse the results
     console.log("querying DB ...");
-    dbquery('SELECT', queryString, values, function (err3, queryResults) {
+    dbquery(queryType, queryString, values, function (err3, queryResults) {
         if (err3) {
             console.log(dialog.showErrorBox("Query Error", "Error with query "+err3));
             return;

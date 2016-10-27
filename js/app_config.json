@@ -4,7 +4,7 @@
         "selectString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
         "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC",
         "updateString": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID=",
-        "markmanString":"SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, document.DocumentPath, document.FileName, claims.PotentialApplication FROM Claim claims JOIN Patent patents ON patents.PatentID = claims.PatentID	JOIN MarkmanTermConstruction mtc ON mtc.ClaimID = claims.ClaimID	JOIN MarkmanTerms mt ON mt.TermID = mtc.TermID	JOIN MarkmanConstructions mc ON mc.ConstructID = mtc.ConstructID JOIN Document document ON document.DocumentID = mc.DocumentID "
+        "markmanString": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, document.DocumentPath, document.FileName, claims.PotentialApplication FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS document ON document.DocumentID = mc.DocumentID "
     },
     "urlParams": {
         "whereObj": {
