@@ -13,8 +13,8 @@
             "Wa": "claims.WatchItems",
             "Pa": "RIGHT(CAST(patents.PatentNumber As char(7)),3)",
             "PM": "patents.PMCRef",
-            "Mt": "mt.ClaimTerm",
-            "Mc": "mc.Construction"
+            "Te": "mt.ClaimTerm",
+            "Co": "mc.Construction"
         },
         "pattern": [{
             "str": " OR ",

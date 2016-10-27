@@ -43,7 +43,7 @@ $(document).on("keydown", function (event) {
     }
 });
 
-//Takes a string (serachContent), a matchVal array of operators (.rexp and .str at least), and a isURI flag (true - return URI encoded)
+//Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least), and a isURI flag (true - return URI encoded)
 function parseSearch(searchContent, matchVal, isURI) {
     "use strict";
     var reParsed = searchContent;
@@ -61,6 +61,8 @@ function updateApplication (claimID, newValues) {
 
 //now for the onload functions
 $(document).ready(function () {
+    // default to main view
+    $('.markmanView').hide();
     // set up SearchField text & default value
     $('#SearchField').html(defaultField + "<span class=\"caret\">");
     $('#SearchValue').val('');
@@ -99,7 +101,7 @@ $(document).ready(function () {
     $('#FieldList li a').on('click', function () {
         savedField = $(this).text();
         whatField = savedField.substring(0, 2);
-        //replace the above with a lookup
+        //TODO: replace the above with a lookup
         $('#SearchField').html($(this).text() + "<span class=\"caret\">");
         $('#SearchValue').prop('disabled', false);
         if ($(this).text() === "Clear") {
@@ -108,6 +110,16 @@ $(document).ready(function () {
             $('#SearchValue').val('');
             $('#SearchValue').prop('disabled', true);
         }
+        // if a markman-type search is done, show the markman table view
+        if (whatField === "Te" || whatField === "Co") {
+          $('.markmanView').show();
+          $('.mainView').hide();
+        } else {
+          $('.markmanView').hide();
+          $('.mainView').show();
+        }
+
+
     });
     // Documented is clicked
     $('#Documented').on('click', function () {
