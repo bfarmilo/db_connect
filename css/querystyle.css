@@ -56,10 +56,12 @@
 	color: #A0A0A0;
 } /*make dependent claims grey in text*/
 
+.toprow {
+  height: 100px;
+}
 /* style by ID */
 #includeFile {
-  position: fixed;
-  margin-top: 100px;
+
 }
 
 /* style by tag */
