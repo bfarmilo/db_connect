@@ -43,15 +43,15 @@ const markmantable = resultArray =>
 <tbody>
 <tr class="toprow"></tr>
 ${resultArray.map( patent => `    <tr>
-      <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]}</td>
+      <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]?patent[0]:" "}</td>
       <td class="col-sm-1 col-md-1 col-lg-1">
       <div class="patentLink btn btn-small" data-url="${patent[1]?patent[1]:"#"}" target="_blank">
-        ${patent[2]}
+        ${patent[2]:patent[2]:" "}
       </div>
       </td>
-      <td class="col-sm-1 col-md-1 col-lg-1">${patent[3]}</td>
-      <td class="col-sm-3 col-md-3 col-lg-3">${patent[4]}</td>
-      <td class="col-sm-4 col-md-4 col-lg-4">${patent[5]}</td>
+      <td class="col-sm-1 col-md-1 col-lg-1">${patent[3]?patent[3]:" "}</td>
+      <td class="col-sm-3 col-md-3 col-lg-3">${patent[4]?patent[4]:" "}</td>
+      <td class="col-sm-4 col-md-4 col-lg-4">${patent[5]?patent[5]:" "}</td>
       <td class="col-sm-1 col-md-1 col-lg-1">
         <div class="patentLink btn btn-small" data-url="${patent[7].replace(/\\/g, "/")}${patent[8]}" target="_blank">
           <span class="glyphicon glyphicon-new-window"></span> pg.${patent[6]}
