@@ -43,13 +43,14 @@ $(document).on("keydown", function (event) {
     }
 });
 
-//Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least), and a isURI flag (true - return URI encoded)
-function parseSearch(searchContent, matchVal, isURI) {
+//Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least)
+function parseSearch(searchContent, matchVal) {
     "use strict";
     var reParsed = searchContent;
     matchVal.forEach(function (values) {
-        reParsed = reParsed.replace(new RegExp(values.rexp, "g"), (isURI ? encodeURIComponent(values.str) : values.str));
+        reParsed = reParsed.replace(new RegExp(values.rexp, "g"), values.str);
     });
+    console.log(reParsed);
     return reParsed;
 }
 
@@ -175,8 +176,8 @@ $(document).ready(function () {
         // enable the search refinement
         $('#addSearch').removeClass("disabled");
         whatVal = $('#SearchValue').val();
-        // , means OR, replace with "%20OR%20"
-        whatVal = parseSearch(whatVal, urlParams.pattern, false); //encode as URI
+        // now encode whatVal, replace ','with OR, '+' with AND, '! with NOT
+        whatVal = parseSearch(whatVal, urlParams.pattern); //encode as URI
         //qrystring = "?srch=" + whatField + "&srvl=" + whatVal + "&doc=" + filterDoc + "&meth=" + filterMethod + "&save=" + saveSearch;
         qrystring = {
             srch: whatField,
