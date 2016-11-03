@@ -3,6 +3,8 @@
      es6: true
 */
 module.exports = urlParse;
+//converts the incoming parameters and values into a proper WHERE clause
+
 //takes an (array of kvp's (param:value), savedWhere(string), savedParams(array), callback) as argument and returns a callback (error, SQL-formatted 'WHERE', array of paramters)
 var pat = require('./app_config.json').urlParams; //stores the whereObj and regEx
 var sqlParsed = require('./app_sqlParse');
@@ -48,7 +50,7 @@ function urlParse(params, savedWhere, savedParams, callback) {
         }
         whereString += ")";
         srchParams = savedParams.concat(srchParams);
-        console.log(whereString, srchParams);
+        // console.log(whereString, srchParams);
         return callback(null, whereString, srchParams);
     } catch (err) {
         return callback(err);

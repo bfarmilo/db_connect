@@ -1,9 +1,6 @@
-/*jslint
-     node: true
-     es6: true
-*/
 module.exports = sqlParse;
-//takes (field, searchstring, callback) as arguments and returns a callback (error, where string, array of paramaters)
+// takes (field, searchstring, callback) as arguments and
+// returns a callback (error, where string, array of paramaters)
 var pat = require('./app_config.json').urlParams; //stores the whereObj and regEx
 var paramAry = [];
 var matchExp = new RegExp(pat.reg, "g");
