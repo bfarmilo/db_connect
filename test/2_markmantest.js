@@ -3,10 +3,14 @@
       func-names: 0,
       prefer-arrow-callback: 0,
    }*/
- const expect = require('chai').expect;
+ const chai = require('chai');
  const urlParse = require('../js/app_urlParse'); // takes an array of [key:value] and creates a WHERE clause
  const runNewQuery = require('../js/app_runNewQuery');
  const sqlParsed = require('../js/app_sqlParse');
+
+ const expect = chai.expect;
+ chai.config.showDiff = true;
+
  // tests
  describe('Markman Interface', function () {
    describe('Initialize Window', function () {
@@ -26,7 +30,7 @@
      describe('Creates a properly formed SQL', function () {
        sqlParsed(queryJSON.srch, queryJSON.srvl, function (error, where, params) {
          it('expands Po properly?', function () {
-           expect(where).to.match(/.+PotentialApplication.+/);
+           expect(where).to.match(/claims\.PotentialApplication LIKE \?/);
          });
          it('creates a parameter array', function () {
            expect(params).to.be.a('array');
@@ -40,14 +44,22 @@
      });
      describe('loads an array of patents, claims and claimIDs', function () {
        it('produces a valid SQL query', function (done) {
-         // Load a list of patents, claims, claimID into patentsArray
-         urlParse(queryJSON, svSearch.where, svSearch.paramArray, function (err5) {
-           if (!err5) done(err5);
-           else done();
+         // test against meth=true and a multi-search
+         queryJSON.srvl = 'appl AND same AND NOT str';
+         queryJSON.meth = true;
+         urlParse(queryJSON, svSearch, function (err5, where) {
+           if (err5) done(err5);
+           else {
+             expect(where).to.match(/claims\.IsMethodClaim =/);
+             expect(where).to.match(/claims\.PotentialApplication LIKE \? AND claims\.PotentialApplication LIKE \? AND claims\.PotentialApplication NOT LIKE \?/);
+             done();
+           }
          });
+         queryJSON.meth = false;
+         queryJSON.srvl = 'appl';
        });
        it('gets a Markman Patents & Claims array back from the Query', function (done) {
-         urlParse(queryJSON, svSearch.where, svSearch.paramArray, function (err5, whereClause, valueArray) {
+         urlParse(queryJSON, svSearch, function (err5, whereClause, valueArray) {
            runNewQuery('m_PATENTSCLAIMS', whereClause, valueArray, function (err6, queryResults) {
              if (err6) done(err6);
              else {

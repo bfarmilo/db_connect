@@ -114,7 +114,7 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
     if (err) console.log(err);
     console.log(`changeLog updated: ${changeLog.changes[changeLog.changes.length - 1]}`);
     // now do the insert query
-    dbquery('p_UPDATE', claimID, newValues.split(), (err4, result) => {
+    dbquery('u_UPDATE', claimID, newValues.split(), (err4, result) => {
       if (err4) {
         console.log(dialog.showErrorBox('Query Error', `Error with query ${err4}`));
       }
@@ -141,7 +141,7 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
   } else {
     queryType = 'p_SELECT';
   }
-  urlParse(queryJSON, savedSearch.where, savedSearch.paramArray, (err5, whereClause, valueArray) => {
+  urlParse(queryJSON, savedSearch, (err5, whereClause, valueArray) => {
     if (err5) {
       console.log(dialog.showErrorBox('URL Parse Error', `Error parsing url parameters: ${queryJSON}\n ${err5}`));
     } else {

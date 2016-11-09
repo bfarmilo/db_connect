@@ -1,58 +1,52 @@
-/*jslint
-     node: true
-     es6: true
-*/
 module.exports = urlParse;
-//converts the incoming parameters and values into a proper WHERE clause
+// converts the incoming parameters and values into a proper WHERE clause
+// takes an (array of kvp's (param:value), saved({where: string, paramArray: array,
+// callback) as argument and returns a callback (error, SQL-formatted 'WHERE', array of paramters)
+const sqlParsed = require('./app_sqlParse');
 
-//takes an (array of kvp's (param:value), savedWhere(string), savedParams(array), callback) as argument and returns a callback (error, SQL-formatted 'WHERE', array of paramters)
-var pat = require('./app_config.json').urlParams; //stores the whereObj and regEx
-var sqlParsed = require('./app_sqlParse');
-var whereString = "";
-var srchParams = [];
+const parsedUrl = {
+  whereString: '',
+  srchParams: [],
+};
 
-function updateSQL(error, whereClause, params) {
-    if (error) {
-        console.log("error parsing SQL command !", error);
-    } else {
-        // console.log("parsed to "+whereClause+": "+params);
-        whereString += whereClause;
-        srchParams = params;
-    }
+function updateSQL(whereClause, params) {
+  parsedUrl.whereString += whereClause;
+  parsedUrl.srchParams = params;
 }
 
-function urlParse(params, savedWhere, savedParams, callback) {
-    try {
-        // the parameter 'meth' is in the string. A proxy for a valid incoming page-with-query
-        // currently handles paramaters 'srch, srvl, doc, meth, save'
-        // TODO: Where clause construction better handled with templates most probably
-        if (savedWhere != "") {
-            whereString = savedWhere + " AND (";
-        } else {
-            whereString = "WHERE (";
-        }
-        if (params.srch !== '' && params.srvl !== '') {
-            // has a search and searchval we need to parse for the query
-            sqlParsed(params.srch, params.srvl, updateSQL);
-        } else {
-            // no search parameters provided
-            if (params.doc === false && params.meth === false) {
-                whereString += "claims.ClaimNumber = 1"; //nothing selected -- just pull claim 1
-            }
-        }
-        if (params.doc !== false) {
-            srchParams.push(1);
-            updateSQL(null, ' AND claims.IsDocumented = ?', srchParams);
-        }
-        if (params.meth !== false) {
-            srchParams.push(0);
-            updateSQL(null, ' AND claims.IsMethodClaim = ?', srchParams);
-        }
-        whereString += ")";
-        srchParams = savedParams.concat(srchParams);
-        // console.log(whereString, srchParams);
-        return callback(null, whereString, srchParams);
-    } catch (err) {
-        return callback(err);
+function urlParse(params, saved, callback) {
+  try {
+    // currently handles paramaters 'srch, srvl, doc, meth, save'
+    // first set up the start - does it begin with WHERE (new search) or AND (saved search) ?
+    if (params.save === true && saved.where !== '') {
+      parsedUrl.whereString = `${saved.where}  AND (`;
+    } else {
+      parsedUrl.whereString = 'WHERE (';
     }
+    if (params.srch !== '' && params.srvl !== '') {
+      // has a search and searchval we need to parse for the query
+      sqlParsed(params.srch, params.srvl, (error, where, parameters) => {
+        if (error) throw error;
+        updateSQL(where, parameters);
+      });
+    }
+    // no search field, both 'documented' and 'method claims' are false
+    if (params.srch === '' && params.doc === false && params.meth === false) {
+      parsedUrl.whereString += 'claims.ClaimNumber = 1'; // set default where
+    }
+    if (params.doc !== false) {
+      parsedUrl.srchParams.push(1);
+      updateSQL(' AND claims.IsDocumented = ?', parsedUrl.srchParams);
+    }
+    if (params.meth !== false) {
+      parsedUrl.srchParams.push(0);
+      updateSQL(' AND claims.IsMethodClaim = ?', parsedUrl.srchParams);
+    }
+    parsedUrl.whereString += ')';
+    parsedUrl.srchParams = saved.paramArray.concat(parsedUrl.srchParams);
+    // console.log(whereString, srchParams);
+    return callback(null, parsedUrl.whereString, parsedUrl.srchParams);
+  } catch (err) {
+    return callback(err);
+  }
 }

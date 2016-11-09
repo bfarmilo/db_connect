@@ -3,7 +3,7 @@
         "connection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
         "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC",
         "p_SELECT": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
-        "p_UPDATE": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID=",
+        "u_UPDATE": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID=",
         "m_MARKMANALL": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, document.DocumentPath, document.FileName, claims.PotentialApplication FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS document ON document.DocumentID = mc.DocumentID ",
         "m_PATENTSCLAIMS": "SELECT patents.PMCRef, patents.PatentNumber, claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
@@ -29,7 +29,7 @@
             "str": "NOT ",
             "rexp": "!"
         }],
-        "reg": "\\sOR\\s|\\sAND\\s"
+        "reg": "\\sOR\\sNOT\\s|\\sAND\\sNOT\\s|\\sOR\\s|\\sAND\\s"
     },
     "appPath": "./resources/app/",
     "mainFileName": "index.html",
