@@ -16,7 +16,7 @@ ${resultArray.map(patent => `    <tr>
       <td class='col-sm-8 col-md-8 col-lg-8'>
         <details>
           <summary${(patent[4].search('dependent') === -1) ? '' : ' class=\'claim-dependent\''}>
-            Claim ${patent[3]}:${patent[7]}
+            Claim ${patent[3]}
           </summary>${patent[4]}
         </details>
       </td>
@@ -49,7 +49,7 @@ ${resultArray.map(patent => `    <tr>
       </td>
       <td class='col-sm-1 col-md-1 col-lg-1'>${patent[3]}</td>
       <td class='col-sm-3 col-md-3 col-lg-3'>${patent[4]}</td>
-      <td class='col-sm-4 col-md-4 col-lg-4'>${patent[5]}</td>
+      <td class='col-sm-4 col-md-4 col-lg-4'>${patent[5]} <span class='claim-dependent'><small>[${patent[11] ? 'agreed' : patent[10]}]</small></span></td>
       <td class='col-sm-1 col-md-1 col-lg-1'>
         <div class='patentLink btn btn-small' data-url='${patent[7].replace(/\\/g, '/')}${patent[8]}' target='_blank'>
           <span class='glyphicon glyphicon-new-window'></span> pg.${patent[6]}

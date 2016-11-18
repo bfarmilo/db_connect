@@ -87,7 +87,7 @@ $(document).ready(() => {
       $('#SearchValue').prop('disabled', true);
     }
     // if a markman-type search is done, show the markman table view
-    if (srch === 'Te' || srch === 'Co') {
+    if (srch === 'Te' || srch === 'Co' || srch === 'Nu') {
       $('.markmanView').show();
       $('.mainView').hide();
     } else {
