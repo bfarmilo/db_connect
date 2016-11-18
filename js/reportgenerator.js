@@ -153,7 +153,7 @@ $(document).ready(() => {
     srvl = parseSearch(srvl, urlParams.pattern);
     const qrystring = { srch, srvl, doc, meth, save };
     // send the string to the main process
-    // console.log('new query sent to main process: ', qrystring);
+    console.log(JSON.stringify(qrystring));
     ipcRenderer.send('new_query', qrystring);
   });
   // Enter or ESC is pressed

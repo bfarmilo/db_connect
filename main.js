@@ -136,7 +136,7 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
     savedSearch.paramArray = [];
   }
   console.log(`new query received with parameters: ${JSON.stringify(queryJSON)}`);
-  if (queryJSON.srch.search('Te') !== -1 || queryJSON.srch.search('Co') !== -1) {
+  if (queryJSON.srch.search('Te') !== -1 || queryJSON.srch.search('Co') !== -1 || queryJSON.srch.search('Nu') !== -1) {
     queryType = 'm_MARKMANALL';
   } else {
     queryType = 'p_SELECT';

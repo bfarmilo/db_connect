@@ -9,7 +9,7 @@ function query(qryType, whereString, values, callback) {
   sql.open(DB.connection, (err, conn) => {
     if (err) return callback(err);
     // good connection, so query the DB and return the callback when done
-    const sqlString = `${DB[qryType]}${whereString}${(qryType === 'p_SELECT') ? DB.orderString : ''}`;
+    const sqlString = `${DB[qryType]}${whereString}${(qryType === 'p_SELECT' || qryType === 'm_MARKMANALL') ? DB.orderString : ''}`;
     conn.queryRaw(sqlString, values, (err2, data) => {
       if (err2) return callback(err2);
       if (qryType === 'u_UPDATE') return callback(null, 'updated');

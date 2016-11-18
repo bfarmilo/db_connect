@@ -2,7 +2,8 @@
       linebreak-style: ["error", "windows"],
       func-names: 0,
       prefer-arrow-callback: 0,
-   }*/
+   } */
+
  const chai = require('chai');
  const urlParse = require('../js/app_urlParse'); // takes an array of [key:value] and creates a WHERE clause
  const runNewQuery = require('../js/app_runNewQuery');
@@ -10,11 +11,10 @@
 
  const expect = chai.expect;
  chai.config.showDiff = true;
-
  // tests
  describe('Markman Interface', function () {
    describe('Initialize Window', function () {
-     this.timeout(0);
+     this.timeout(5000);
      const queryJSON = {
        srch: 'Po',
        srvl: 'appl',

@@ -17,7 +17,8 @@
             "Pa": "RIGHT(CAST(patents.PatentNumber As char(7)),3)",
             "PM": "patents.PMCRef",
             "Te": "mt.ClaimTerm",
-            "Co": "mc.Construction"
+            "Co": "mc.Construction",
+            "Nu": "RIGHT(CAST(patents.PatentNumber As char(7)),3)"
         },
         "pattern": [{
             "str": " OR ",

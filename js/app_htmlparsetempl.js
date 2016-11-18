@@ -16,7 +16,7 @@ ${resultArray.map(patent => `    <tr>
       <td class='col-sm-8 col-md-8 col-lg-8'>
         <details>
           <summary${(patent[4].search('dependent') === -1) ? '' : ' class=\'claim-dependent\''}>
-            Claim ${patent[3]}
+            Claim ${patent[3]}:${patent[7]}
           </summary>${patent[4]}
         </details>
       </td>

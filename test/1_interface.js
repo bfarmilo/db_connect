@@ -1,83 +1,197 @@
-const expect = require('chai').expect;
-const jsdom = require('jsdom');
-const electron = require('electron');
-const { ipcRenderer, ipcMain } = electron;
-// const $ = require('jquery');
-const fs = require('fs');
-// first load the DOM and enable scripts
-const html = fs.readFileSync('./index.html', 'utf-8');
-const re = /<script src="(.+)">/gim;
-const matches = [];
-let match = re.exec(html);
-//
-while (match !== null) {
-  matches.push(match[1]);
-  match = re.exec(html);
-}
-// scripts.splice(scripts.length - 1, 0, fs.readFileSync(`${__dirname}/mocks/map.js`));
-const src = matches.map(scriptSrc => fs.readFileSync(`./${scriptSrc}`, 'utf8'));
-// variables to store ipc data
-let searchObj = {
-  srch: '',
-  srvl: '',
+const Application = require('spectron').Application;
+const chai = require('chai');
+const chaiAsPromised = require('chai-as-promised');
+const path = require('path');
+const expect = chai.expect;
+const appPath = path.resolve(__dirname, '../');
+const electronPath = path.resolve(__dirname, '../node_modules/.bin/electron.cmd');
+// test varaibles
+const searchObj = {
   doc: false,
   meth: false,
   save: false,
+  srch: '',
+  srvl: '',
 };
-
+let testString = '';
+let testField = '';
+const app = new Application({
+  path: electronPath,
+  args: [appPath],
+});
+// A simple test to verify a visible window is opened with a title
+chai.use(chaiAsPromised);
 // main tests
 describe('The UI responds to user input, can send and recieve data to the main process', () => {
-  describe('The UI can produce basic searches', () => {
-    it('responds to enter key to initiate search', (done) => {
-      jsdom.env({
-        ipcMain.on('new_query', (opEvent, queryJSON) => {
-          // querystring comes back as {srch:'a%20OR%20b', srvl:} etc.
-          const eventFired = opEvent;
-          console.log(`captured event: ${eventFired}`);
-          expect(opEvent).to.not.be.empty;
-          searchObj = queryJSON;
-          window.close();
-          done();
+  describe('The UI can produce basic searches', function () {
+    this.timeout(10000);
+    before(function () {
+      return app.start();
+    });
+    before(function () {
+      chaiAsPromised.transferPromiseness = app.transferPromiseness;
+      return app;
+    });
+    after(function () {
+      if (app && app.isRunning()) {
+        return app.stop();
+      }
+      return null;
+    });
+    /*it('opens a window', function () {
+      expect(app.client.getWindowCount()).to.eventually.equal(1);
+    });*/
+    it('responds to enter key to initiate search', function () {
+      const one = app.client.keys('Enter')
+        .then(function (){
+          return app.client.waitUntilTextExists('#Update', 'Working', 10000)
+        })
+        .then(function () {
+          return app.client.waitUntilTextExists('#Update', 'Run', 10000)
+        })
+        .then(function () {
+          return app.client.getMainProcessLogs(); //clear logs
+        })
+        .then(function (logs) {
+          return app.client.getText('#Update');
         });
-        html,
-        src,
-        done(err, window) {
-          const $ = window.$;
-          // set up event listeners
-
-          const press = $.Event('keypress');
-          // invoke an enter keypress with target = document
-          press.ctrlKey = false;
-          press.which = 13;
-          $('document').trigger(press);
-          $('#Update').click();
-          // update button should fire, might have a timing issue here !
-
-          setTimeout(() => {
-            expect(searchObj.srch).to.be.empty;
-            expect(searchObj.srvl).to.be.empty;
-            // done();
-          }, 1500);
-        },
-      });
+      return expect(one).to.eventually.match(/Run.+/);
     });
-    it('parses an unselected search properly', (done) => {
-      jsdom.env({
-        html,
-        src,
-        done(err, window) {
-          const $ = window.$;
-          // enter test code here
-          window.close();
-          done();
-        },
-      });
+    it('parses a single patent number search properly', function () {
+      testString = '649';
+      testField = '#Pa';
+      searchObj.srch = 'Pa';
+      searchObj.srvl = '649';
+
+      const two = app.client.pause(1000)
+        .then(function () {
+          return app.client.click('#SearchField')
+        })
+        .then(function () {
+          return app.client.click(testField);
+        })
+        .then(function () {
+          return app.client.setValue('#SearchValue', testString);
+        })
+        .then(function () {
+          return app.client.click('#Update');
+        })
+        .then(function (){
+          return app.client.waitUntilTextExists('#Update', 'Working', 10000)
+        })
+        .then(function () {
+          return app.client.waitUntilTextExists('#Update', 'Run', 10000)
+        })
+        .then(function () {
+          return app.client.getMainProcessLogs()
+          .then(function (logs) {
+            // console.log(`0: ${logs[0]}\n1: ${logs[1]}\n2: ${logs[2]}`);
+            // console.log(logs[1].slice(logs[1].search(/{/)));
+            return JSON.parse(logs[1].slice(logs[1].search(/{/)));
+          });
+        });
+      return expect(two).to.eventually.have.property('srvl');
     });
-    it('parses a single patent number search properly');
-    it('parses a AND-OR-NOT patent number search properly');
-    it('parses a single PMC-Ref search properly');
+    it('parses a AND-OR-NOT patent number search properly', function () {
+      testString = '649,650+!252';
+      testField = '#Pa'
+      searchObj.srch = 'Pa';
+      searchObj.srvl = '649 OR 650 AND NOT 252';
+
+      const two = app.client.pause(1000)
+        .then(function () {
+          return app.client.click('#SearchField')
+        })
+        .then(function () {
+          return app.client.click(testField);
+        })
+        .then(function () {
+          return app.client.setValue('#SearchValue', testString);
+        })
+        .then(function () {
+          return app.client.click('#Update');
+        })
+        .then(function (){
+          return app.client.waitUntilTextExists('#Update', 'Working', 10000)
+        })
+        .then(function () {
+          return app.client.waitUntilTextExists('#Update', 'Run', 10000)
+        })
+        .then(function () {
+          return app.client.getMainProcessLogs()
+          .then(function (logs) {
+            return JSON.parse(logs[1].slice(logs[1].search(/{/))).srvl;
+          });
+        });
+        return expect(two).to.eventually.equal(searchObj.srvl);
+    });
+    it('parses a single PMC-Ref search properly', function () {
+      testString = 'DEC';
+      testField = '#PM'
+      searchObj.srch = 'PM';
+      searchObj.srvl = 'DEC';
+
+      const two = app.client.pause(1000)
+        .then(function () {
+          return app.client.click('#SearchField')
+        })
+        .then(function () {
+          return app.client.click(testField);
+        })
+        .then(function () {
+          return app.client.setValue('#SearchValue', testString);
+        })
+        .then(function () {
+          return app.client.click('#Update');
+        })
+        .then(function (){
+          return app.client.waitUntilTextExists('#Update', 'Working', 10000)
+        })
+        .then(function () {
+          return app.client.waitUntilTextExists('#Update', 'Run', 10000)
+        })
+        .then(function () {
+          return app.client.getMainProcessLogs()
+          .then(function (logs) {
+            return JSON.parse(logs[1].slice(logs[1].search(/{/))).srvl;
+          });
+        });
+      return expect(two).to.eventually.equal(searchObj.srvl);
+    });
     it('parses an AND-OR-NOT PMC-Ref search properly');
-    it('parses a single Potential Application search properly');
+    it('parses a single Potential Application search properly', function () {
+      testString = 'appl';
+      testField = '#Po'
+      searchObj.srch = 'Po';
+      searchObj.srvl = 'appl';
+
+      const two = app.client.pause(1000)
+        .then(function () {
+          return app.client.click('#SearchField')
+        })
+        .then(function () {
+          return app.client.click(testField);
+        })
+        .then(function () {
+          return app.client.setValue('#SearchValue', testString);
+        })
+        .then(function () {
+          return app.client.click('#Update');
+        })
+        .then(function (){
+          return app.client.waitUntilTextExists('#Update', 'Working', 10000)
+        })
+        .then(function () {
+          return app.client.waitUntilTextExists('#Update', 'Run', 10000)
+        })
+        .then(function () {
+          return app.client.getMainProcessLogs()
+          .then(function (logs) {
+            return JSON.parse(logs[1].slice(logs[1].search(/{/))).srvl;
+          });
+        });
+      return expect(two).to.eventually.equal(searchObj.srvl);
+    });
     it('parses an AND-OR-NOT Potential Application search properly');
     it('parses a single Claim text search properly');
     it('parses an AND-OR-NOT Claim text search properly');
