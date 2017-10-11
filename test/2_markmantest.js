@@ -40,6 +40,7 @@
              expect(data).to.match(/%.+%/);
            });
          });
+         it('escapes parentheses and other characters properly'); //TODO
        });
      });
      describe('loads an array of patents, claims and claimIDs', function () {
