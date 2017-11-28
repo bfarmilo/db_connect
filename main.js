@@ -116,7 +116,7 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
     // now do the insert query
     dbquery('u_UPDATE', claimID, newValues.split(), (err4, result) => {
       if (err4) {
-        console.log(dialog.showErrorBox('Query Error', `Error with query ${err4}`));
+        console.log(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
       }
       console.log(result);
     });
@@ -145,6 +145,7 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
     if (err5) {
       console.log(dialog.showErrorBox('URL Parse Error', `Error parsing url parameters: ${queryJSON}\n ${err5}`));
     } else {
+      console.log(whereClause, valueArray);
       runNewQuery(queryType, whereClause, valueArray, (err6, queryResults) => {
         if (err6) {
           console.log(dialog.showErrorBox('Query Error', `Error with query: ${whereClause} ${valueArray}\n ${err6}`));

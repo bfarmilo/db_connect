@@ -18,6 +18,7 @@
     "chai": "*",
     "chai-as-promised": "^6.0.0",
     "electron": "^1.7.9",
+    "electron-packager": "^10.1.0",
     "jsdom": "^9.8.3",
     "mocha": "*",
     "mochawesome": "^1.5.3",

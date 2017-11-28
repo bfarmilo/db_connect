@@ -2,7 +2,6 @@ module.exports = urlParse;
 // converts the incoming parameters and values into a proper WHERE clause
 // takes an (array of kvp's (param:value), saved({where: string, paramArray: array,
 // callback) as argument and returns a callback (error, SQL-formatted 'WHERE', array of paramters)
-// TODO: replace ? with named parameters and types
 const sqlParsed = require('./app_sqlParse');
 
 const parsedUrl = {
@@ -37,11 +36,11 @@ function urlParse(params, saved, callback) {
     }
     if (params.doc !== false) {
       parsedUrl.srchParams.push(1);
-      updateSQL(' AND claims.IsDocumented = ?', parsedUrl.srchParams);
+      updateSQL(' AND claims.IsDocumented = @0', parsedUrl.srchParams);
     }
     if (params.meth !== false) {
       parsedUrl.srchParams.push(0);
-      updateSQL(' AND claims.IsMethodClaim = ?', parsedUrl.srchParams);
+      updateSQL(' AND claims.IsMethodClaim = @0', parsedUrl.srchParams);
     }
     parsedUrl.whereString += ')';
     parsedUrl.srchParams = saved.paramArray.concat(parsedUrl.srchParams);

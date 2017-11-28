@@ -11,8 +11,6 @@ function query(qryType, whereString, values, callback) {
   connection.on('connect', err => {
     if (err) return callback(err);
     // good connection, so query the DB and return the callback when done
-    // trick -- expand out the Where String and replace ? with @something
-    // then map the values and addParameter based on the index
     const sqlString = `${DB[qryType]}${whereString}${(qryType === 'p_SELECT' || qryType === 'm_MARKMANALL') ? DB.orderString : ''}`;
     const request = new Request(sqlString, (err, rowCount, rows) => {
       if (err) return callback(err);
