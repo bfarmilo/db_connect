@@ -18,6 +18,7 @@ function query(qryType, whereString, values, callback) {
       if (err) return callback(err);
       console.log('%d rows returned', rowCount);
       connection.close();
+      if (qryType === 'u_UPDATE') return callback(null, 'updated');
       return callback(null, returnResults);
     });
     const expandVals = values.length > 0 ? values.map((item, idx) => {
@@ -25,10 +26,11 @@ function query(qryType, whereString, values, callback) {
       return;
     }) : 'no params';
     request.on('row', (data) => {
-      if (qryType === 'u_UPDATE') return callback(null, 'updated');
-      returnResults.push(data.map(item => item.value));
+      if (qryType !== 'u_UPDATE') {
+        returnResults.push(data.map(item => item.value))
+      };
       return;
-    }); // queryRaw
+    });
     connection.execSql(request);
   });// connection to DB
 } // the query code
