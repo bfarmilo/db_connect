@@ -12,21 +12,15 @@
   "license": "ISC",
   "dependencies": {
     "fs": "^0.0.2",
-    "msnodesqlv8": "^0.2.10"
+    "tedious": "^2.1.1"
   },
   "devDependencies": {
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^1.4.5",
-    "eslint": "^3.9.1",
-    "eslint-config-airbnb": "^12.0.0",
-    "eslint-plugin-import": "^2.2.0",
-    "eslint-plugin-jsx-a11y": "^2.2.3",
-    "eslint-plugin-react": "^6.5.0",
+    "electron": "^1.7.9",
     "jsdom": "^9.8.3",
     "mocha": "*",
     "mochawesome": "^1.5.3",
-    "shell": "^0.3.2",
-    "spectron": "^3.4.0"
+    "shell": "^0.3.2"
   }
 }

@@ -1,19 +1,34 @@
 module.exports = query;
 // takes arguments (WHEREstring, VALUESarray, callback),
 // returns callback(error, array containing query results)
-const sql = require('msnodesqlv8');
+const { Connection, Request, TYPES } = require('tedious');
 const DB = require('./app_config.json').patentDB;
 // the main query code
 function query(qryType, whereString, values, callback) {
+  let returnResults = [];
   // open a connection to the database
-  sql.open(DB.connection, (err, conn) => {
+  const connection = new Connection(DB.connection);
+  connection.on('connect', err => {
     if (err) return callback(err);
     // good connection, so query the DB and return the callback when done
+    // trick -- expand out the Where String and replace ? with @something
+    // then map the values and addParameter based on the index
     const sqlString = `${DB[qryType]}${whereString}${(qryType === 'p_SELECT' || qryType === 'm_MARKMANALL') ? DB.orderString : ''}`;
-    conn.queryRaw(sqlString, values, (err2, data) => {
-      if (err2) return callback(err2);
+    const request = new Request(sqlString, (err, rowCount, rows) => {
+      if (err) return callback(err);
+      console.log('%d rows returned', rowCount);
+      connection.close();
+      return callback(null, returnResults);
+    });
+    const expandVals = values.length > 0 ? values.map((item, idx) => {
+      request.addParameter(`${idx}`, TYPES.VarChar, `${item}`);
+      return;
+    }) : 'no params';
+    request.on('row', (data) => {
       if (qryType === 'u_UPDATE') return callback(null, 'updated');
-      return callback(null, data.rows);
+      returnResults.push(data.map(item => item.value));
+      return;
     }); // queryRaw
-  }); // connection to DB
+    connection.execSql(request);
+  });// connection to DB
 } // the query code

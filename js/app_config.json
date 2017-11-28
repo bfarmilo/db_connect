@@ -1,6 +1,12 @@
 {
     "patentDB": {
-        "connection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
+        "connection": {
+            "userName":"sa",
+            "password":"8ill5Sql",
+            "server":"172.24.166.81",
+            "options": {"database":"PMCDB"}
+        },
+        "localConnection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
         "orderString": " ORDER BY patents.PatentNumber, claims.ClaimNumber ASC",
         "p_SELECT": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
         "u_UPDATE": "UPDATE Claim SET PotentialApplication=? WHERE ClaimID=",

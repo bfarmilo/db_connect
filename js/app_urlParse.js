@@ -2,6 +2,7 @@ module.exports = urlParse;
 // converts the incoming parameters and values into a proper WHERE clause
 // takes an (array of kvp's (param:value), saved({where: string, paramArray: array,
 // callback) as argument and returns a callback (error, SQL-formatted 'WHERE', array of paramters)
+// TODO: replace ? with named parameters and types
 const sqlParsed = require('./app_sqlParse');
 
 const parsedUrl = {

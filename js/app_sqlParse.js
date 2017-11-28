@@ -17,9 +17,9 @@ function sqlParse(searchField, searchString, callback) {
     parsedSearch.param = searchString.split(matchExp).map(values => `%${values}%`);
     const newMatch = new RegExp(parsedSearch.param.join('|').replace(/%/g, ''), 'g');
     parsedSearch.where = searchString.split(newMatch).map((values, index, array) => {
-      if (index === 0) return `${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE ?`;
+      if (index === 0) return `${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index}`;
       if (index === (array.length - 1)) return '';
-      return `${values.match(/ AND | OR /g)}${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE ?`;
+      return `${values.match(/ AND | OR /g)}${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index}`;
     }).join('');
     return callback(null, parsedSearch.where, parsedSearch.param);
   } catch (err) {
