@@ -5,8 +5,10 @@
   "main": "main.js",
   "scripts": {
     "test": "mocha",
-    "start": "electron .",
-    "package": "electron-packager . --platform=win32 --arch=x64 --version=1.4.5 --overwrite"
+    "startOld": "electron .",
+    "sqlip": "docker start sqlserver & docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver",
+    "package": "electron-packager . --platform=win32 --arch=x64 --version=1.4.5 --overwrite",
+    "start": "for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & electron ."
   },
   "author": "Bill Farmilo",
   "license": "ISC",

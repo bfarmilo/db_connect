@@ -3,7 +3,6 @@
         "connection": {
             "userName":"sa",
             "password":"8ill5Sql",
-            "server":"172.24.166.81",
             "options": {"database":"PMCDB"}
         },
         "localConnection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",

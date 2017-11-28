@@ -3,11 +3,13 @@ module.exports = query;
 // returns callback(error, array containing query results)
 const { Connection, Request, TYPES } = require('tedious');
 const DB = require('./app_config.json').patentDB;
+const connectParams = Object.assign(DB.connection);
+connectParams.server = process.env.SQLIP.split('\'')[1];
 // the main query code
 function query(qryType, whereString, values, callback) {
   let returnResults = [];
   // open a connection to the database
-  const connection = new Connection(DB.connection);
+  const connection = new Connection(connectParams);
   connection.on('connect', err => {
     if (err) return callback(err);
     // good connection, so query the DB and return the callback when done

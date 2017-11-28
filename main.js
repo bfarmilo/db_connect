@@ -16,6 +16,8 @@ const savedSearch = {
 let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
 
+//TODO - error if SQLIP is blank
+
 function getDropBoxPath() {
   fs.readFile(`${process.env.LOCALAPPDATA}//Dropbox//info.json`, 'utf8', (err2, pathdata) => {
     if (err2) {
