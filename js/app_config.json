@@ -12,7 +12,8 @@
         "m_MARKMANALL": "SELECT TOP 200 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, document.DocumentPath, document.FileName, client.ClientName, mc.Court, mc.Agreed FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS document ON document.DocumentID = mc.DocumentID INNER JOIN Client AS client ON client.ClientID = mtc.ClientID ",
         "m_PATENTSCLAIMS": "SELECT patents.PMCRef, patents.PatentNumber, claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
-        "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc "
+        "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
+        "u_INSERT" : "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) "
     },
     "urlParams": {
         "whereObj": {

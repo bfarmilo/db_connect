@@ -1,0 +1,877 @@
+{
+    "Patents": [
+        {
+            "Claims": [
+                {
+                    "ClaimHTML": "<div id=\"CLM-00001\" num=\"00001\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">1. A method for sharing network resources, the method comprising:\n<div class=\"claim-text style-scope patent-text\">(1) initializing and maintaining a management local area network (MLAN);</div>\n<div class=\"claim-text style-scope patent-text\">(2) initializing and maintaining a plurality of top-layer virtual local area networks (VLANs);</div>\n<div class=\"claim-text style-scope patent-text\">(3) initializing and maintaining a plurality of client VLANs containing a plurality of network resources; and</div>\n<div class=\"claim-text style-scope patent-text\">(4) using an empty VLAN that is not allocated for external traffic as a virtual wire between a client VLAN and a network resource shared between a plurality of client VLANs;</div>\n<div class=\"claim-text style-scope patent-text\">wherein a plurality of the network resources are virtual resources allocated on at least one networkable computing device, and the step of initializing and maintaining a plurality of client VLANs comprises creating an ethernet device without IP address and routing information on a network resource so that the networkable computing device does not see or respond to the contents of incoming packets.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "1",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00002\" num=\"00002\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">2. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the MLAN is contained within one of the top-level VLANs.</div>\n    </div>",
+                    "ClaimNumber": "2",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00003\" num=\"00003\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">3. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein a plurality of the client VLANs are nested within at least one of the top-level VLANs.</div>\n    </div>",
+                    "ClaimNumber": "3",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00004\" num=\"00004\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">4. The method of <claim-ref idref=\"CLM-00003\" class=\"style-scope patent-text\">claim 3</claim-ref>, wherein at least one of the client VLANs is a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "4",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00005\" num=\"00005\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">5. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein at least one of the network resources is physical hardware.</div>\n    </div>",
+                    "ClaimNumber": "5",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00006\" num=\"00006\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">6. The method of <claim-ref idref=\"CLM-00005\" class=\"style-scope patent-text\">claims 5</claim-ref>, wherein the shared network resource is contained within another client VLAN.</div>\n    </div>",
+                    "ClaimNumber": "6",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00007\" num=\"00007\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">7. The method of <claim-ref idref=\"CLM-00005\" class=\"style-scope patent-text\">claims 5</claim-ref>, wherein the shared network resource is contained within a stand-alone top-layer VLAN.</div>\n    </div>",
+                    "ClaimNumber": "7",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00008\" num=\"00008\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">8. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein every client VLAN and at least one top-layer VLAN contains at least one virtual firewall.</div>\n    </div>",
+                    "ClaimNumber": "8",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00009\" num=\"00009\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">9. The method of <claim-ref idref=\"CLM-00008\" class=\"style-scope patent-text\">claim 8</claim-ref>, wherein the step of using an empty VLAN as a virtual wire between the client VLAN and a shared network resource further comprises:\n<div class=\"claim-text style-scope patent-text\">(1) adding a virtual port to a virtual firewall;</div>\n<div class=\"claim-text style-scope patent-text\">(2) mapping the virtual port in a network address table within the virtual firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">(3) connecting the virtual port to one end of the empty VLAN.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "9",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00010\" num=\"00010\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">10. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the step of initializing and maintaining a plurality of client VLANs further comprises:\n<div class=\"claim-text style-scope patent-text\">(1) preregistering MAC addresses for the client VLAN, wherein when each virtual resource is initialized, an assigned MAC address is taken off a stack of the preregistered MAC addresses; and</div>\n<div class=\"claim-text style-scope patent-text\">(2) initializing a virtual system on any storage device of any computing device in a system capable of implementing the method, transparent to the user.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "10",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00011\" num=\"00011\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">11. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein the storage devices are managed using a distributed file system.</div>\n    </div>",
+                    "ClaimNumber": "11",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00012\" num=\"00012\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">12. A system for sharing network resources, the system comprising:\n<div class=\"claim-text style-scope patent-text\">(1) at least one network switch;</div>\n<div class=\"claim-text style-scope patent-text\">(2) a plurality of computing devices, the computing device comprising:\n<div class=\"claim-text style-scope patent-text\">(i) at least one network connection;</div>\n<div class=\"claim-text style-scope patent-text\">(ii) a plurality of processing nodes; and</div>\n<div class=\"claim-text style-scope patent-text\">(iii) at least one storage device containing software for\n<div class=\"claim-text style-scope patent-text\">a. initializing and maintaining a plurality of top-layer virtual local area networks (VLANs),</div>\n<div class=\"claim-text style-scope patent-text\">b. initializing and maintaining a plurality of client VLANs containing a plurality of network resources; and</div>\n<div class=\"claim-text style-scope patent-text\">c. using an empty VLAN that is not allocated for external traffic as a virtual wire between the client VLAN and a shared network resource;</div>\n</div>\n</div>\n<div class=\"claim-text style-scope patent-text\">wherein a plurality of the network resources are virtual resources allocated on at least one of the networkable computing devices, and the initializing and maintaining a plurality of client VLANs comprises creating an ethernet device without IP address and routing information on a network resource so that the networkable computing device does not see or respond to the contents of incoming packets.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "12",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00013\" num=\"00013\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">13. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein a plurality of the client VLANs are nested VLANs contained in a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "13",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00014\" num=\"00014\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">14. The system of <claim-ref idref=\"CLM-00013\" class=\"style-scope patent-text\">claim 13</claim-ref>, wherein at least one of the client VLANs is a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "14",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00015\" num=\"00015\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">15. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein at least one of the network resources is physical hardware.</div>\n    </div>",
+                    "ClaimNumber": "15",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00016\" num=\"00016\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">16. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein every client VLAN and at least one top-layer VLAN contains at least one virtual firewall.</div>\n    </div>",
+                    "ClaimNumber": "16",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00017\" num=\"00017\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">17. The system of <claim-ref idref=\"CLM-00016\" class=\"style-scope patent-text\">claim 16</claim-ref>, wherein the computing device uses an empty VLAN as a virtual wire by\n<div class=\"claim-text style-scope patent-text\">(1) dynamically adding a virtual port to a virtual firewall;</div>\n<div class=\"claim-text style-scope patent-text\">(2) mapping the port in a network address table within the virtual firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">(3) connecting the virtual port to one end of the empty VLAN.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "17",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00018\" num=\"00018\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">18. The system of <claim-ref idref=\"CLM-00015\" class=\"style-scope patent-text\">claims 15</claim-ref>, wherein the shared network resource is contained within another client VLAN.</div>\n    </div>",
+                    "ClaimNumber": "18",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00019\" num=\"00019\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">19. The system of <claim-ref idref=\"CLM-00015\" class=\"style-scope patent-text\">claims 15</claim-ref>, wherein the shared network resource is contained within another top-layer VLAN.</div>\n    </div>",
+                    "ClaimNumber": "19",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00020\" num=\"00020\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">20. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the network connection is a switched fabric communications link.</div>\n    </div>",
+                    "ClaimNumber": "20",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00021\" num=\"00021\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">21. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the network switch is natively capable of handling Q-in-Q double tagging. </div>\n    </div>",
+                    "ClaimNumber": "21",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                }
+            ],
+            "ClaimsCount": 21,
+            "IndependentClaimsCount": 2,
+            "Number": "11/977,143",
+            "PatentUri": "US.7975033.B2",
+            "Title": "System and method for initializing and maintaining a series of virtual local area networks contained in a clustered computer system",
+            "patentNumber": 7975033,
+            "PMCRef": "MAZARICK 1",
+            "IsInIPR": 0,
+            "TechnologySpaceID": 1,
+            "TechnologySubSpaceID": 1,
+            "CoreSubjectMatterID": 1
+        },
+        {
+            "Claims": [
+                {
+                    "ClaimHTML": "<div id=\"CLM-00001\" num=\"00001\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">1. A method for organizing and managing virtual resources, the method comprising:\n<div class=\"claim-text style-scope patent-text\">(1) initializing a management local area network (MLAN) comprising a firewall;</div>\n<div class=\"claim-text style-scope patent-text\">(2) adding a plurality of client virtual local area networks (VLANs), wherein each client VLAN comprises its own virtual firewall;</div>\n<div class=\"claim-text style-scope patent-text\">(3) adding a plurality of network resources to the client VLANs;</div>\n<div class=\"claim-text style-scope patent-text\">(4) adding an empty VLAN between the MLAN and at least one VLAN, the empty VLAN not allocated for external traffic and used as a virtual wire between the MLAN and the at least one VLAN; and</div>\n<div class=\"claim-text style-scope patent-text\">(5) maintaining the MLAN and client VLANs.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "1",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00002\" num=\"00002\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">2. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein a plurality of the client VLANs comprise nested VLANs contained in a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "2",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00003\" num=\"00003\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">3. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the plurality of the network resources comprises a plurality of virtual network resources.</div>\n    </div>",
+                    "ClaimNumber": "3",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00004\" num=\"00004\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">4. The method of <claim-ref idref=\"CLM-00003\" class=\"style-scope patent-text\">claim 3</claim-ref>, wherein adding a plurality of virtual network resources is made such that each of the virtual network resources is capable of being on any storage device of any computing device in a system capable of implementing the method, transparent to a user.</div>\n    </div>",
+                    "ClaimNumber": "4",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00005\" num=\"00005\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">5. The method of <claim-ref idref=\"CLM-00004\" class=\"style-scope patent-text\">claim 4</claim-ref>, wherein each of the storage devices are managed with a distributed file system.</div>\n    </div>",
+                    "ClaimNumber": "5",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00006\" num=\"00006\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">6. The method of <claim-ref idref=\"CLM-00003\" class=\"style-scope patent-text\">claim 3</claim-ref>, wherein adding a plurality of client VLANs comprises:\n<div class=\"claim-text style-scope patent-text\">preregistering MAC addresses for the client VLANs; and</div>\n<div class=\"claim-text style-scope patent-text\">initializing each virtual resource by assigning a respective MAC address from a stack of the preregistered MAC addresses.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "6",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00007\" num=\"00007\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">7. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein network packets aimed towards a client VLAN go directly to the client VLAN's firewall.</div>\n    </div>",
+                    "ClaimNumber": "7",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00008\" num=\"00008\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">8. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the MLAN firewall comprises a virtual firewall, and, further comprising:\n<div class=\"claim-text style-scope patent-text\">distributing minors of the MLAN virtual firewall across the resources of a system implementing the method.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "8",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00009\" num=\"00009\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">9. The method of <claim-ref idref=\"CLM-00008\" class=\"style-scope patent-text\">claim 8</claim-ref>, wherein a request routed through the MLAN firewall is capable of being serviced by any of the minors.</div>\n    </div>",
+                    "ClaimNumber": "9",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00010\" num=\"00010\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">10. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the plurality of client VLANs share network resources.</div>\n    </div>",
+                    "ClaimNumber": "10",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00011\" num=\"00011\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">11. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein adding network resources further comprises adding a second firewall to each client VLAN which is unmodifiable by a user.</div>\n    </div>",
+                    "ClaimNumber": "11",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00012\" num=\"00012\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">12. The method of <claim-ref idref=\"CLM-00011\" class=\"style-scope patent-text\">claim 11</claim-ref>, wherein the second firewall is used to manage the use of the shared network resources and remote display connections, and to reach a management console connected to the MLAN's firewall.</div>\n    </div>",
+                    "ClaimNumber": "12",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00013\" num=\"00013\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">13. A system for organizing and managing network resources, the system comprising:\n<div class=\"claim-text style-scope patent-text\">(1) at least one network switch;</div>\n<div class=\"claim-text style-scope patent-text\">(2) at least one computing device comprising:</div>\n<div class=\"claim-text style-scope patent-text\">(a) at least one network connection; and</div>\n<div class=\"claim-text style-scope patent-text\">(b) at least one storage device containing software capable of initializing and maintaining:</div>\n<div class=\"claim-text style-scope patent-text\">(i) a management local area network (MLAN) comprising a firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">(ii) a plurality of client virtual local area networks (VLANs), wherein each client VLAN comprises a virtual firewall and a plurality of network resources;</div>\n<div class=\"claim-text style-scope patent-text\">and</div>\n<div class=\"claim-text style-scope patent-text\">(3) an empty VLAN connected between the MLAN and at least one VLAN, the empty VLAN not allocated for external traffic and used as a virtual wire between the MLAN and the at least one VLAN.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "13",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00014\" num=\"00014\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">14. The system of <claim-ref idref=\"CLM-00013\" class=\"style-scope patent-text\">claim 13</claim-ref>, wherein a plurality of the client VLANs are nested VLANs contained in a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "14",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00015\" num=\"00015\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">15. The system of <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, wherein at least one of the client VLANs is a top-level VLAN.</div>\n    </div>",
+                    "ClaimNumber": "15",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00016\" num=\"00016\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">16. The system of <claim-ref idref=\"CLM-00015\" class=\"style-scope patent-text\">claim 15</claim-ref>, wherein the storage devices are managed with a distributed file system.</div>\n    </div>",
+                    "ClaimNumber": "16",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00017\" num=\"00017\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">17. The system of <claim-ref idref=\"CLM-00013\" class=\"style-scope patent-text\">claim 13</claim-ref>, wherein at least some of the plurality of the network resources comprise virtual resources.</div>\n    </div>",
+                    "ClaimNumber": "17",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00018\" num=\"00018\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">18. The system of <claim-ref idref=\"CLM-00017\" class=\"style-scope patent-text\">claim 17</claim-ref>, wherein each of the client VLAN virtual resources is capable of residing on a storage device of any computing device in the system, transparent to a user.</div>\n    </div>",
+                    "ClaimNumber": "18",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00019\" num=\"00019\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">19. The system of <claim-ref idref=\"CLM-00018\" class=\"style-scope patent-text\">claim 18</claim-ref>, wherein a plurality of client VLANs share network resources.</div>\n    </div>",
+                    "ClaimNumber": "19",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00020\" num=\"00020\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">20. The system of <claim-ref idref=\"CLM-00019\" class=\"style-scope patent-text\">claim 19</claim-ref>, wherein each client VLAN further comprises a second firewall which is unmodifiable by a user.</div>\n    </div>",
+                    "ClaimNumber": "20",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00021\" num=\"00021\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">21. The system of <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, wherein the second firewall is able to manage the use of the shared network resources, remote display connections, and reaching a management console connected to the MLAN's firewall.</div>\n    </div>",
+                    "ClaimNumber": "21",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00022\" num=\"00022\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">22. The system of <claim-ref idref=\"CLM-00013\" class=\"style-scope patent-text\">claim 13</claim-ref>, wherein network packets aimed towards a client VLAN go directly to the virtual firewall.</div>\n    </div>",
+                    "ClaimNumber": "22",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00023\" num=\"00023\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">23. The system of <claim-ref idref=\"CLM-00013\" class=\"style-scope patent-text\">claim 13</claim-ref>, wherein the network connections are capable of being trunked together.</div>\n    </div>",
+                    "ClaimNumber": "23",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00024\" num=\"00024\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">24. The system of <claim-ref idref=\"CLM-00023\" class=\"style-scope patent-text\">claim 23</claim-ref>, wherein the network connections comprise a switched fabric communications link. </div>\n    </div>",
+                    "ClaimNumber": "24",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                }
+            ],
+            "ClaimsCount": 24,
+            "IndependentClaimsCount": 2,
+            "Number": "13/113,919",
+            "PatentUri": "US.8549607.B2",
+            "Title": "System and method for initializing and maintaining a series of virtual local area networks contained in a clustered computer system",
+            "patentNumber": 8549607,
+            "PMCRef": "MAZARICK 2",
+            "IsInIPR": 0,
+            "TechnologySpaceID": 1,
+            "TechnologySubSpaceID": 1,
+            "CoreSubjectMatterID": 1
+        },
+        {
+            "Claims": [
+                {
+                    "ClaimHTML": "<div id=\"CLM-00001\" num=\"00001\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">1. A method performed by a management local area network (MLAN), comprising:\n<div class=\"claim-text style-scope patent-text\">receiving indications from a plurality of processing nodes that the plurality of processing nodes are ready to host a number of virtual machines;</div>\n<div class=\"claim-text style-scope patent-text\">assigning the plurality of processing nodes into groups based on each processing node's capabilities and architecture;</div>\n<div class=\"claim-text style-scope patent-text\">receiving a list of virtual machines in need of startup from a data source; and</div>\n<div class=\"claim-text style-scope patent-text\">creating a client virtual local access network (VLAN) for a client, comprising:\n<div class=\"claim-text style-scope patent-text\">mapping a physical server associated with one of the processing nodes to a virtual device, giving a virtual machine operating on the physical server access to a network outside of a network that the physical server is operating on;</div>\n<div class=\"claim-text style-scope patent-text\">starting a number of virtual machines in accordance with the list of virtual machines on at least some of the processing nodes;</div>\n<div class=\"claim-text style-scope patent-text\">connecting to at least one client firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">adding a rule to at least one of the virtual machines to provide the client associated with the client firewall access to a Web interface to the MLAN.</div>\n</div>\n</div>\n    </div>",
+                    "ClaimNumber": "1",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00002\" num=\"00002\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">2. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">starting a number of virtual machines from the list of virtual machines on processing nodes in accordance with a server mask associated with the virtual machines.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "2",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00003\" num=\"00003\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">3. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">receiving indications of CPU usage information and memory usage information from processing nodes;</div>\n<div class=\"claim-text style-scope patent-text\">starting future virtual machines on the processing nodes based on the CPU usage information and memory usage information, ensuring that CPU usage and memory usage on the processing nodes are evenly distributed across the processing nodes.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "3",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00004\" num=\"00004\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">4. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">creating an Ethernet device without IP address and routing information associated with at least one of the virtual machines so that a physical server associated with the virtual machine does not see or respond to contents of incoming packets.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "4",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00005\" num=\"00005\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">5. The method of <claim-ref idref=\"CLM-00004\" class=\"style-scope patent-text\">claim 4</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">routing console and virtual screen information to the client firewall.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "5",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00006\" num=\"00006\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">6. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein creating the client VLAN further comprises:\n<div class=\"claim-text style-scope patent-text\">assigning a number of IP addresses and a subnet to the client;</div>\n<div class=\"claim-text style-scope patent-text\">assigning a first address of the subnet to a firewall associated with the client VLAN; and</div>\n<div class=\"claim-text style-scope patent-text\">providing a gateway to the client configured to deliver the client's network packets to the client firewall.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "6",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00007\" num=\"00007\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">7. The method of <claim-ref idref=\"CLM-00006\" class=\"style-scope patent-text\">claim 6</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">assigning a second address of the subnet as the MLAN;</div>\n<div class=\"claim-text style-scope patent-text\">receiving an instruction from the client via the second address to add a virtual machine to the client's VLAN client.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "7",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00008\" num=\"00008\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">8. The method of <claim-ref idref=\"CLM-00006\" class=\"style-scope patent-text\">claim 6</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">mapping each of the IP addresses to one of a respective MAC address;</div>\n<div class=\"claim-text style-scope patent-text\">creating a DHCP table in the client firewall to store the mappings of the IP addresses to MAC addresses;</div>\n<div class=\"claim-text style-scope patent-text\">assigning one of the IP addresses to the client firewall in accordance with an associated MAC address in the DHCP table.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "8",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00009\" num=\"00009\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">9. The method of <claim-ref idref=\"CLM-00008\" class=\"style-scope patent-text\">claim 8</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">assigning one of the MAC addresses to a template image corresponding to a virtual machine chosen by the client;</div>\n<div class=\"claim-text style-scope patent-text\">initializing the template image; and</div>\n<div class=\"claim-text style-scope patent-text\">adding the virtual machine to the list of virtual machines.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "9",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00010\" num=\"00010\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">10. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">creating an empty VLAN that is not allocated for external traffic between the client firewall and a firewall associated with a shared network resource selected by the client;</div>\n<div class=\"claim-text style-scope patent-text\">adding a virtual port to the client firewall in accordance with a network address table associated with the client firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">sending and receiving data from the shared resource.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "10",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00011\" num=\"00011\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">11. The method of <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the client firewall further comprises a second firewall, the second firewall not editable by the client and containing predefined rules to reach at least one of shared network resource or another client VLAN.</div>\n    </div>",
+                    "ClaimNumber": "11",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00012\" num=\"00012\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">12. A system comprising:\n<div class=\"claim-text style-scope patent-text\">a plurality of processing nodes configured to host one or more virtual machines; and</div>\n<div class=\"claim-text style-scope patent-text\">a management local area network (MLAN) configured to:\n<div class=\"claim-text style-scope patent-text\">receive indications from a plurality of processing nodes that the plurality of processing nodes are ready to host a number of virtual machines;</div>\n<div class=\"claim-text style-scope patent-text\">assign the plurality of processing nodes into groups based on each processing node's capabilities and architecture;</div>\n<div class=\"claim-text style-scope patent-text\">receive a list of virtual machines in need of startup from a data source;</div>\n<div class=\"claim-text style-scope patent-text\">map a physical server associated with one of the processing nodes to a virtual device, giving a virtual machine operating on the physical server access to a network outside of a network that the physical server is operating on;</div>\n<div class=\"claim-text style-scope patent-text\">start a number of virtual machines in accordance with the list of virtual machines on at least some of the processing nodes;</div>\n<div class=\"claim-text style-scope patent-text\">connect to at least one client firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">add a rule to at least one of the virtual machines to provide the client associated with the client firewall access to a Web interface to the MLAN.</div>\n</div>\n</div>\n    </div>",
+                    "ClaimNumber": "12",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00013\" num=\"00013\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">13. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">a server mask associated with the virtual machine and configured to assign the virtual machine to a processing node group,</div>\n<div class=\"claim-text style-scope patent-text\">wherein the MLAN is further configured to start a number of virtual machines from the list of virtual machines on processing nodes group in accordance with the server mask.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "13",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00014\" num=\"00014\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">14. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">receive indications of CPU usage information and memory usage information from the processing nodes; and</div>\n<div class=\"claim-text style-scope patent-text\">start future virtual machines on the processing nodes based on the CPU usage information and memory usage information, ensuring that CPU usage and memory usage on the processing nodes are evenly distributed across the processing nodes.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "14",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00015\" num=\"00015\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">15. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">create an Ethernet device without IP address and routing information associated with at least one of the virtual machines so that a physical server associated with the virtual machine does not see or respond to contents of incoming packets.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "15",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00016\" num=\"00016\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">16. The system of <claim-ref idref=\"CLM-00015\" class=\"style-scope patent-text\">claim 15</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">route console and virtual screen information to the client firewall.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "16",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00017\" num=\"00017\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">17. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">assign a number of IP addresses and a subnet to the client;</div>\n<div class=\"claim-text style-scope patent-text\">assign a first address of the subnet to a firewall associated with the client VLAN; and</div>\n<div class=\"claim-text style-scope patent-text\">provide a gateway to the client configured to deliver the client's network packets to the client firewall.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "17",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00018\" num=\"00018\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">18. The system of <claim-ref idref=\"CLM-00017\" class=\"style-scope patent-text\">claim 17</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">assign a second address of the subnet as the MLAN;</div>\n<div class=\"claim-text style-scope patent-text\">receive an instruction from the client via the second address to add a virtual machine to the client's VLAN client.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "18",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00019\" num=\"00019\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">19. The system of <claim-ref idref=\"CLM-00017\" class=\"style-scope patent-text\">claim 17</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">map each of the IP addresses to one of a respective MAC address;</div>\n<div class=\"claim-text style-scope patent-text\">create a DHCP table in the client firewall to store the mappings of the IP addresses to MAC addresses;</div>\n<div class=\"claim-text style-scope patent-text\">assign one of the IP addresses to the client firewall in accordance with an associated MAC address in the DHCP table.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "19",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00020\" num=\"00020\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">20. The system of <claim-ref idref=\"CLM-00019\" class=\"style-scope patent-text\">claim 19</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">assign one of the MAC addresses to a template image corresponding to a virtual machine chosen by the client;</div>\n<div class=\"claim-text style-scope patent-text\">initialize the template image; and</div>\n<div class=\"claim-text style-scope patent-text\">add the virtual machine to the list of virtual machines.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "20",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00021\" num=\"00021\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">21. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the MLAN is further configured to:\n<div class=\"claim-text style-scope patent-text\">create an empty VLAN that is not allocated for external traffic between the client firewall and a firewall associated with a shared network resource selected by the client;</div>\n<div class=\"claim-text style-scope patent-text\">add a virtual port to the client firewall in accordance with a network address table associated with the client firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">send and receive data from the shared resource.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "21",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00022\" num=\"00022\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">22. The system of <claim-ref idref=\"CLM-00012\" class=\"style-scope patent-text\">claim 12</claim-ref>, wherein the client firewall further comprises a second firewall, the second firewall not editable by the client and containing predefined rules to reach at least one of shared network resource or another client VLAN. </div>\n    </div>",
+                    "ClaimNumber": "22",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                }
+            ],
+            "ClaimsCount": 22,
+            "IndependentClaimsCount": 2,
+            "Number": "14/040,805",
+            "PatentUri": "US.9282055.B2",
+            "Title": "System and method for initializing and maintaining a series of virtual local area networks contained in a clustered computer system",
+            "patentNumber": 9282055,
+            "PMCRef": "MAZARICK 3",
+            "IsInIPR": 0,
+            "TechnologySpaceID": 1,
+            "TechnologySubSpaceID": 1,
+            "CoreSubjectMatterID": 1
+        },
+        {
+            "Claims": [
+                {
+                    "ClaimHTML": "<div id=\"CLM-00001\" num=\"00001\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">1. A method for achieving seamless transition of IPv4 addresses to IPv6 addresses, the method comprising:\n<div class=\"claim-text style-scope patent-text\">deploying, by an Internet Service Provider (ISP), at least an IPv6 address holding an IPv4 address and the IPv6 address simultaneously for allocating at least the IPv4 address or the IPv6 address to at least one customer in the network, wherein the IPv6 address maintains an IPv4 address register holding the IPv4 address along with an IPv6 address register holding the IPv6 address, and a software library call available for the IPv4 address is configured to utilize the IPv6 address register;</div>\n<div class=\"claim-text style-scope patent-text\">migrating at least an application, used by the customer, utilizing the software library call available for the IPv4 address to utilize the software library call available for the IPv6 address;</div>\n<div class=\"claim-text style-scope patent-text\">enabling, after migration, transition of the IPv4 address to the IPv6 address and routing of the data and calls based on the transition achieved.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "1",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00002\" num=\"00002\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">2. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the software library call for IPv4 address comprises “gethostbyaddress32” call, and the software library call for the IPv6 address comprises “gethostbyaddress128” call.</div>\n    </div>",
+                    "ClaimNumber": "2",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00003\" num=\"00003\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">3. The method as claimed in <claim-ref idref=\"CLM-00002\" class=\"style-scope patent-text\">claim 2</claim-ref>, wherein “gethostbyaddress128” call and “gethostbyaddress32” call utilizes the IPv6 register.</div>\n    </div>",
+                    "ClaimNumber": "3",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00004\" num=\"00004\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">4. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein upon migration, the application is configured to use both the IPv4 register and the IPv6 register.</div>\n    </div>",
+                    "ClaimNumber": "4",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00005\" num=\"00005\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">5. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein upon migration, the IPv4 address is available for re-use and/or reallocation to at least a new customer available in the network.</div>\n    </div>",
+                    "ClaimNumber": "5",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00006\" num=\"00006\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">6. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein upon migration, further comprises using both “gethostbyaddress32” (IPv4) and “gethostbyaddress128” (IPv6) library call.</div>\n    </div>",
+                    "ClaimNumber": "6",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00007\" num=\"00007\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">7. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the IPv6 address holds the IPv4 address register and the IPv6 address register simultaneously.</div>\n    </div>",
+                    "ClaimNumber": "7",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00008\" num=\"00008\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">8. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further comprises routing the data/calls based on the transition achieved.</div>\n    </div>",
+                    "ClaimNumber": "8",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00009\" num=\"00009\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">9. The method as claimed in <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, before migrating, the method further comprises:\n<div class=\"claim-text style-scope patent-text\">differentiating which applications or databases hosted by the customer based on utilization of the IPv4 software library call or the IPv6 software library call to service calls to provide a host name by address; and</div>\n<div class=\"claim-text style-scope patent-text\">providing a list of applications or databases to the customer that highlight which applications or databases may be transitioned to use the IPv6 address.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "9",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00010\" num=\"00010\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">10. A method for achieving seamless transition of IPv4 addresses to IPv6 addresses, the method comprising:\n<div class=\"claim-text style-scope patent-text\">detecting, by an Internet Service Provider (ISP), one or more IPv4 addresses and one or more IPv6 addresses available for allocation to at least one customer in the network;</div>\n<div class=\"claim-text style-scope patent-text\">maintaining an IPv4 address register and an IPv6 address register for the IPv4 addresses and the IPv6 addresses detected;</div>\n<div class=\"claim-text style-scope patent-text\">allocating the IPv4 address and the IPv6 address at a defined portion of an address field of an IPv6 packet header;</div>\n<div class=\"claim-text style-scope patent-text\">matching the IPv4 address registers and IPv6 address registers, available on the network at the same time, based on a software library call available on the IPv6 address thereby enabling the IPv4 address registers to use the IPv6 address;</div>\n<div class=\"claim-text style-scope patent-text\">migrating at least an application utilizing a software library call available in the IPv4 address to utilize the IPv6 address and a software library call available in the IPv6 address, to achieve transition of the IPv4 addresses to the IPv6 address; and</div>\n<div class=\"claim-text style-scope patent-text\">routing the data and/or calls based on the transition achieved.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "10",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00011\" num=\"00011\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">11. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein, matching further comprises allocating a software library call available in the IPv4 address to the IPv6 address register matched and thereby removing the IPv4 address register from the IPv4 address.</div>\n    </div>",
+                    "ClaimNumber": "11",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00012\" num=\"00012\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">12. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein matching the IPv4 address registers and IPv6 address registers is based on “gethostbyname32” call.</div>\n    </div>",
+                    "ClaimNumber": "12",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00013\" num=\"00013\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">13. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein, migrating further comprises the software library call, “gethostbyaddress32” call, available in the IPv4 address to utilize the IPv6 address and the software library call, “gethostbyaddress128” call available in the IPv6 address.</div>\n    </div>",
+                    "ClaimNumber": "13",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00014\" num=\"00014\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">14. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein, migrating further comprises allocating, based at least one a routing information, the software library call, “gethostbyaddress32” call, of the IPv4 address to the IPv6 address register, and thereby de-allocating the IPv4 address register.</div>\n    </div>",
+                    "ClaimNumber": "14",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00015\" num=\"00015\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">15. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein, migrating further comprises recompiling at least a source code of the application to utilize the software library call, “gethostbyaddress128” call, available on the IPv6 address.</div>\n    </div>",
+                    "ClaimNumber": "15",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00016\" num=\"00016\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">16. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, further comprises routing based on at least a routing information provided by broadcasting permissible routes to at least an autonomous system (AS) numbers, wherein the permissible routes utilizes a private instance of a Resource Key Public Infrastructure to broadcast the routing information pertaining to the transition achieved to a Regional Internet Registrar.</div>\n    </div>",
+                    "ClaimNumber": "16",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00017\" num=\"00017\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">17. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein, migrating the application to utilize the software library call available on the IPv6 address, comprises:\n<div class=\"claim-text style-scope patent-text\">recompiling a source code of the application to the software library call available on the IPv6 address provided by an operating system (OS); and</div>\n<div class=\"claim-text style-scope patent-text\">substituting using a direct binary substitution.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "17",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00018\" num=\"00018\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">18. The method of <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, further comprises:\n<div class=\"claim-text style-scope patent-text\">using the IPv4 software library call to provide the host name address for applications that only support IPv4 addressing; and</div>\n<div class=\"claim-text style-scope patent-text\">using the IPv6 software library call to provide the host name by address for applications that support IPv6 addressing.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "18",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00019\" num=\"00019\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">19. The method as claimed in <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, before migrating, the method further comprises:\n<div class=\"claim-text style-scope patent-text\">differentiating which applications or databases hosted by the customer based on utilization of the IPv4 software library call or the IPv6 software library call to service calls to provide a host name by address; and</div>\n<div class=\"claim-text style-scope patent-text\">providing a list of applications or databases to the customer that highlight which applications or databases may be transitioned to use the IPv6 address.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "19",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00020\" num=\"00020\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">20. A method for achieving seamless transition of IPv4 addresses to IPv6 addresses, the method comprising:\n<div class=\"claim-text style-scope patent-text\">allocating one or more IPv4 addresses and one or more IPv6 addresses at same time with a gethostbyname32 pointing to an IPv4 register and a gethostbyname128 pointing to an IPv6 register;</div>\n<div class=\"claim-text style-scope patent-text\">changing the gethostbyname32 library calls to specifically access the IPv6 register and deallocating the IPv4 register; and</div>\n<div class=\"claim-text style-scope patent-text\">migrating at least an application utilizing the gethostbyname32, a software library call, to utilize the gethostbyname128, a software library call, to achieve transition of the IPv4 addresses to the IPv6 addresses.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "20",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00021\" num=\"00021\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">21. The method as claimed in <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, further comprises allocating the software library call to the IPv4 address register and the IPv6 address register by pointing a gethostbyname32, the software library call, to the IPv4 register, and a gethostbyname128, the software library call, to the IPv6 register.</div>\n    </div>",
+                    "ClaimNumber": "21",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00022\" num=\"00022\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">22. The method as claimed in <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, wherein after deallocating the IPv4 register, the method further comprises reusing the IPv4 address associated with the IPv4 deallocated.</div>\n    </div>",
+                    "ClaimNumber": "22",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00023\" num=\"00023\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">23. The method as claimed in <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, further comprise routing the data/calls based on the transition achieved.</div>\n    </div>",
+                    "ClaimNumber": "23",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00024\" num=\"00024\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">24. The method as claimed in <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, before migrating, the method further comprises:\n<div class=\"claim-text style-scope patent-text\">differentiating which applications or databases hosted by the customer based on utilization of the IPv4 software library call or the IPv6 software library call to service calls to provide a host name by address; and</div>\n<div class=\"claim-text style-scope patent-text\">providing a list of applications or databases to the customer that highlight which applications or databases may be transitioned to use the IPv6 address.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "24",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00025\" num=\"00025\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">25. The method as claimed in <claim-ref idref=\"CLM-00020\" class=\"style-scope patent-text\">claim 20</claim-ref>, further comprises ceasing to utilize the IPv4 register after the software library has migrated to use the IPv6 address, wherein the ceasing includes re-allocating an IPv4 software library call to use the IPv4 address located within the IPv6 register.</div>\n    </div>",
+                    "ClaimNumber": "25",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                }
+            ],
+            "ClaimsCount": 25,
+            "IndependentClaimsCount": 3,
+            "Number": "14/658,241",
+            "PatentUri": "US.9479475.B1",
+            "Title": "System and method for IPv4 to IPv6 transition rather than an outage",
+            "patentNumber": 9479475,
+            "PMCRef": "MAZARICK 4",
+            "IsInIPR": 0,
+            "TechnologySpaceID": 1,
+            "TechnologySubSpaceID": 1,
+            "CoreSubjectMatterID": 1
+        },
+        {
+            "Claims": [
+                {
+                    "ClaimHTML": "<div id=\"CLM-00001\" num=\"00001\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">1. A system for organizing and managing network resources, the system comprising:\n<div class=\"claim-text style-scope patent-text\">at least one network switch;</div>\n<div class=\"claim-text style-scope patent-text\">at least one computing device comprising:\n<div class=\"claim-text style-scope patent-text\">at least one management console to interface with at least one client;</div>\n<div class=\"claim-text style-scope patent-text\">at least one network connection; and</div>\n<div class=\"claim-text style-scope patent-text\">at least one storage device containing software capable of initializing and maintaining:</div>\n<div class=\"claim-text style-scope patent-text\">a management local area network (MLAN) comprising a firewall; and</div>\n<div class=\"claim-text style-scope patent-text\">a plurality of client virtual local area networks (VLANs), wherein each client VLAN comprises a virtual firewall and a plurality of network resources;</div>\n<div class=\"claim-text style-scope patent-text\">wherein the plurality of network resources are virtual resources determined, and allocated via a selection mechanism using at least a resource factor, on at least one networkable computing devices, the resource factor includes at least cost to allocate and initialize the virtual resources or network latency, or functioning of the virtual resources, or any combination thereof for allocation of the virtual resources; and</div>\n<div class=\"claim-text style-scope patent-text\">wherein the storage device further comprising: at least an encrypting folder configured to store at least encryption keys;</div>\n<div class=\"claim-text style-scope patent-text\">wherein the storage device is further configured to:\n<div class=\"claim-text style-scope patent-text\">utilize/add at least additional virtual resources of the networkable computing devices deprived of configuration time with zero cost and downtime; and</div>\n<div class=\"claim-text style-scope patent-text\">change at least configuration of the virtual resources determined with zero cost and downtime.</div>\n</div>\n</div>\n</div>\n    </div>",
+                    "ClaimNumber": "1",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00002\" num=\"00002\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">2. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the encryption keys are accessible by customers/clients connected via the network switch to the system.</div>\n    </div>",
+                    "ClaimNumber": "2",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00003\" num=\"00003\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">3. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the storage device is further configured to:\n<div class=\"claim-text style-scope patent-text\">communicate the determination of the virtual resources on the networkable computing devices to at least client/customer connected via network switch;</div>\n<div class=\"claim-text style-scope patent-text\">receive the client/customer information regarding the virtual resources determined;</div>\n<div class=\"claim-text style-scope patent-text\">initialize and maintain the virtual resources by allocation based on the client/customer information received.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "3",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00004\" num=\"00004\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">4. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the storage device is hosted by at least a cloud service provider or at least a server or any combination thereof.</div>\n    </div>",
+                    "ClaimNumber": "4",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00005\" num=\"00005\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">5. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the storage device is further configured to receive at least one request into the system via management console, the request is preferably received remotely and preferably associated with rules that limit the request.</div>\n    </div>",
+                    "ClaimNumber": "5",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00006\" num=\"00006\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">6. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the storage device further comprising:\n<div class=\"claim-text style-scope patent-text\">at least virtual machine monitor (VMM) configured to determine the virtual resources on the networkable computing devices.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "6",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00007\" num=\"00007\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">7. The system according to <claim-ref idref=\"CLM-00006\" class=\"style-scope patent-text\">claim 6</claim-ref>, wherein the storage device further comprises: at least a cost to allocate and initialize the virtual resources, or network latency, or functioning of the virtual resources, or the resource factor for allocation of the virtual resources or any combination thereof.</div>\n    </div>",
+                    "ClaimNumber": "7",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00008\" num=\"00008\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">8. The system according to <claim-ref idref=\"CLM-00006\" class=\"style-scope patent-text\">claim 6</claim-ref>, further comprises generating at least a report associated with the virtual resources, the report generated is displayed using the management console.</div>\n    </div>",
+                    "ClaimNumber": "8",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00009\" num=\"00009\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">9. The system according to <claim-ref idref=\"CLM-00008\" class=\"style-scope patent-text\">claim 8</claim-ref>, wherein the report further comprises\n<div class=\"claim-text style-scope patent-text\">including information associated with the resource factor for the allocation of the virtual resources, or any combination thereof for allocating the virtual resources.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "9",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00010\" num=\"00010\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">10. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein the storage device further configured to generate at least a report associated with the virtual resources.</div>\n    </div>",
+                    "ClaimNumber": "10",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00011\" num=\"00011\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">11. The system according to <claim-ref idref=\"CLM-00010\" class=\"style-scope patent-text\">claim 10</claim-ref>, wherein the report generated is displayed using the management console.</div>\n    </div>",
+                    "ClaimNumber": "11",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00012\" num=\"00012\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">12. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, wherein at least some of the plurality of the network resources comprise virtual resources.</div>\n    </div>",
+                    "ClaimNumber": "12",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00013\" num=\"00013\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">13. The system according to <claim-ref idref=\"CLM-00001\" class=\"style-scope patent-text\">claim 1</claim-ref>, further configured to determine a location for instantiating the virtual resources on the networkable computing devices.</div>\n    </div>",
+                    "ClaimNumber": "13",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00014\" num=\"00014\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">14. A method for organizing and managing network resources, the method comprising:\n<div class=\"claim-text style-scope patent-text\">initializing a management local area network (MLAN) comprising a firewall;</div>\n<div class=\"claim-text style-scope patent-text\">adding a plurality of client virtual local area networks (VLANs), wherein each client VLAN comprises a virtual firewall and a plurality of network resources;</div>\n<div class=\"claim-text style-scope patent-text\">maintaining MLAN and client VLANs; and</div>\n<div class=\"claim-text style-scope patent-text\">wherein the plurality of the network resources are virtual resources determined, and allocated via a selection mechanism using at least a resource factor, on at least one networkable computing devices, the resource factor includes at least cost to allocate and initialize the virtual resources or network latency, or functioning of the virtual resources, or any combination thereof for allocation of the virtual resources;</div>\n<div class=\"claim-text style-scope patent-text\">further comprising:\n<div class=\"claim-text style-scope patent-text\">storing at least encryption keys accessible by customers/clients;</div>\n<div class=\"claim-text style-scope patent-text\">utilizing/adding at least additional virtual resources of the networkable computing devices deprived of configuration time with zero cost and downtime; and</div>\n<div class=\"claim-text style-scope patent-text\">changing at least configuration of the virtual resources determined with zero cost and downtime.</div>\n</div>\n</div>\n    </div>",
+                    "ClaimNumber": "14",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00015\" num=\"00015\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">15. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising:\n<div class=\"claim-text style-scope patent-text\">communicating the determination of the virtual resources on the networkable computing devices to at least client/customer connected via network switch;</div>\n<div class=\"claim-text style-scope patent-text\">receiving the client/customer information regarding the virtual resources determined;</div>\n<div class=\"claim-text style-scope patent-text\">initializing and maintain the virtual resources by allocation based on the client/customer information received.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "15",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00016\" num=\"00016\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">16. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising receiving at least one request into the system via management console, the request is preferably received remotely and preferably associated with rules that limit the request.</div>\n    </div>",
+                    "ClaimNumber": "16",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00017\" num=\"00017\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">17. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising determining, using at least virtual machine monitor (VMM), the virtual resources on the networkable computing devices.</div>\n    </div>",
+                    "ClaimNumber": "17",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00018\" num=\"00018\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">18. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising generating at least a report associated with the virtual resources, the report generated is displayed using the management console.</div>\n    </div>",
+                    "ClaimNumber": "18",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00019\" num=\"00019\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">19. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising including at least cost to allocate the resource and initialize the virtual resources, or network latency, or functioning of the virtual resources, or any combination thereof for allocating the virtual resources.</div>\n    </div>",
+                    "ClaimNumber": "19",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00020\" num=\"00020\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">20. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, further comprising: determining a location for instantiating the virtual resources on the networkable computing devices.</div>\n    </div>",
+                    "ClaimNumber": "20",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00021\" num=\"00021\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">21. The method according to <claim-ref idref=\"CLM-00014\" class=\"style-scope patent-text\">claim 14</claim-ref>, wherein the report further comprises:\n<div class=\"claim-text style-scope patent-text\">generating at least a report associated with the virtual resources, the report generated is displayed using the management console</div>\n<div class=\"claim-text style-scope patent-text\">Or including at least a cost to allocate the resource and initialize the virtual resources, or network latency, or functioning of the virtual resources, or information associated with the resource factor for the allocation of the virtual resources, or any combination thereof for allocating the virtual resources.</div>\n</div>\n    </div>",
+                    "ClaimNumber": "21",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 1,
+                    "PatentID": 0
+                },
+                {
+                    "ClaimHTML": "<div id=\"CLM-00022\" num=\"00022\" class=\"claim style-scope patent-text\">\n      <div class=\"claim-text style-scope patent-text\">22. A system for organizing and managing network resources, the system comprising:\n<div class=\"claim-text style-scope patent-text\">at least one network switch; and</div>\n<div class=\"claim-text style-scope patent-text\">at least one computing device comprising:\n<div class=\"claim-text style-scope patent-text\">at least one management console to interface with at least one client;</div>\n<div class=\"claim-text style-scope patent-text\">at least one network connection; and</div>\n<div class=\"claim-text style-scope patent-text\">at least one storage device containing program instructions, when executed by a processor to perform the steps of:\n<div class=\"claim-text style-scope patent-text\">initializing a management local area network (MLAN) comprising a firewall;</div>\n<div class=\"claim-text style-scope patent-text\">adding a plurality of client virtual local area networks (VLANs), wherein each client VLAN comprises a virtual firewall and a plurality of network resources;</div>\n<div class=\"claim-text style-scope patent-text\">maintaining MLAN and client VLANs;</div>\n<div class=\"claim-text style-scope patent-text\">determining the plurality of network resources on the networkable computing devices; determining a location for instantiating the plurality of network resources;</div>\n<div class=\"claim-text style-scope patent-text\">wherein the plurality of network resources are virtual resources determined, and allocated via a selection mechanism using at least a resource factor, on at least one networkable computing devices, the resource factor includes at least cost to allocate and initialize the virtual resources, or network latency, or functioning of the virtual resources, or any combination thereof for allocation of the virtual resources;</div>\n<div class=\"claim-text style-scope patent-text\">storing at least encryption keys accessible by customers/clients;</div>\n<div class=\"claim-text style-scope patent-text\">utilizing/adding at least additional virtual resources of the networkable computing devices deprived of configuration time with zero cost and downtime; and</div>\n<div class=\"claim-text style-scope patent-text\">changing at least configuration of the virtual resources determined with zero cost and downtime.</div>\n</div>\n</div>\n</div>\n    </div>",
+                    "ClaimNumber": "22",
+                    "IsDocumented": 0,
+                    "IsMethodClaim": 0,
+                    "PatentID": 0
+                }
+            ],
+            "ClaimsCount": 22,
+            "IndependentClaimsCount": 3,
+            "Number": "15/062,218",
+            "PatentUri": "US.9749149.B2",
+            "Title": "System and method for initializing and maintaining a series of virtual local area networks contained in a clustered computer system",
+            "patentNumber": 9749149,
+            "PMCRef": "MAZARICK 5",
+            "IsInIPR": 0,
+            "TechnologySpaceID": 1,
+            "TechnologySubSpaceID": 1,
+            "CoreSubjectMatterID": 1
+        }
+    ]
+}

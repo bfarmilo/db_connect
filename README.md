@@ -2,8 +2,7 @@
 Node-based connector to db and publish query results. Latest version is for electron build and localDB in MS SQLServer 2010.
 
 ### Requirements:
-* Microsoft's SQL Management Studio installed locally
-* Patent Database installed locally
+* Docker container running sql server express (min)
 
 ### Current Version features:
 * Search by 4 different fields
@@ -18,5 +17,7 @@ Currently very much a work-in-progress.
 
 ### Known issues include:
 1. Getting the header of the table to align properly and still float over with the buttons
-2. DB format change from LocalDB to really anything else (to remove SQL Mgt Studio dependency, work of 1 copy of the DB)
-3. Interface to allow addition and linking of markman terms to patents and constructions
+2. Interface to allow addition and linking of markman terms to patents and constructions
+3. Better reporting for shortlisting, claim export
+4. Migration to CSS Grid and away from Bootstrap
+5. General refactoring !

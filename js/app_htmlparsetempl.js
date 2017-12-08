@@ -2,7 +2,7 @@ module.exports = generateOutput;
 // takes arguments (QueryResultsarray, callback), returns callback(error, formattedHTMLstring)
 // note - a?b:c is the ternary operator, means 'if a, then b else c'
 // template for claim view
-const table = resultArray => `<table class='table-striped table-bordered'>
+const table = (resultArray, uriMode) => `<table class='table-striped table-bordered'>
 <!--0:PMC Ref-1:PatentURL-2:Patent Number-3:Claim Number-4:Claim HTML-5:Application-6:Watch Items-7:ClaimID-->
 <tbody>
 <tr class='toprow'></tr>
@@ -17,7 +17,7 @@ ${resultArray.map(patent => `    <tr>
         <details>
           <summary${(patent[4].search('dependent') === -1) ? '' : ' class=\'claim-dependent\''}>
             Claim ${patent[3]}
-          </summary>${patent[4]}
+          </summary>${uriMode ? decodeURIComponent(patent[4]) : patent[4]}
         </details>
       </td>
       <td class='application col-sm-1 col-md-1 col-lg-1' data-claimid='${patent[7]}' contenteditable='true'>${patent[5] ? patent[5] : ' '}</td>
@@ -35,7 +35,7 @@ ${resultArray.map(patent => `    <tr>
 // note line 24: if patent[6] (watch items) is null then show a space instead
 
 // template for markman view
-const markmantable = resultArray =>
+const markmantable = (resultArray, uriMode) =>
 `<table class='table-striped table-bordered'>
 <!--0:PMC Ref-1:PatentURL-2:Patent Number-3:Claim Number-4:Claim Term-5:Construction-6:Page-7:Path to Ruling-8:Filename of ruling-9:application-->
 <tbody>
@@ -63,11 +63,11 @@ ${resultArray.map(patent => `    <tr>
 `;
 
 // called when we have a good DB connection
-function generateOutput(type, results, callback) {
+function generateOutput(type, results, uriMode, callback) {
   try {
     if (type[0] === 'p') {
       // querytype starting with 'p' is the patents table
-      return callback(null, table(results), results.length.toString());
+      return callback(null, table(results, uriMode), results.length.toString());
     }
     // otherwise, querytype starts with 'm'
     return callback(null, markmantable(results), results.length.toString());

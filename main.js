@@ -15,7 +15,8 @@ const savedSearch = {
 }; // used for saved searches
 let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
-
+let uriMode = (process.env.USEDB) ? true : false;
+console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
 //TODO - error if SQLIP is blank
 
 function getDropBoxPath() {
@@ -153,7 +154,7 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
           console.log(dialog.showErrorBox('Query Error', `Error with query: ${whereClause} ${valueArray}\n ${err6}`));
         } else {
           console.log('parsing to html ...');
-          htmlparse(queryType, queryResults, (err4, outputString) => {
+          htmlparse(queryType, queryResults, uriMode, (err4, outputString) => {
             if (err4) {
               console.log(dialog.showErrorBox('HTML Parse Error', `Error Parsing query to HTML: ${err4}`));
             }

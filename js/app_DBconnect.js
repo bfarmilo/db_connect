@@ -5,6 +5,8 @@ const { Connection, Request, TYPES } = require('tedious');
 const DB = require('./app_config.json').patentDB;
 const connectParams = Object.assign(DB.connection);
 connectParams.server = process.env.SQLIP.split('\'')[1];
+if (process.env.USEDB) connectParams.options.database = process.env.USEDB;
+console.log('connecting to sql server %s and database %s',connectParams.server, connectParams.options.database);
 // the main query code
 function query(qryType, whereString, values, callback) {
   let returnResults = [];

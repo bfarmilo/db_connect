@@ -8,13 +8,16 @@
     "startOld": "electron .",
     "sqlip": "docker start sqlserver & docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver",
     "package": "electron-packager . --platform=win32 --arch=x64 --version=1.4.5 --overwrite",
-    "start": "for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & electron ."
+    "start": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & electron .",
+    "startNext": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & set USEDB=NextIdea& electron .",
+    "startUpload": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & set USEDB=NextIdea& node ./test/3_insertPatents.js"
   },
   "author": "Bill Farmilo",
   "license": "ISC",
   "dependencies": {
     "fs": "^0.0.2",
-    "tedious": "^2.1.1"
+    "tedious": "^2.1.1",
+    "tedious-promises": "^0.4.1"
   },
   "devDependencies": {
     "chai": "*",
