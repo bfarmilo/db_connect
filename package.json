@@ -15,7 +15,7 @@
   "author": "Bill Farmilo",
   "license": "ISC",
   "dependencies": {
-    "fs": "^0.0.2",
+    "fs-extra": "^4.0.3",
     "tedious": "^2.1.1",
     "tedious-promises": "^0.4.1"
   },
@@ -27,6 +27,7 @@
     "jsdom": "^9.8.3",
     "mocha": "*",
     "mochawesome": "^1.5.3",
+    "nightmare": "^2.10.0",
     "shell": "^0.3.2"
   }
 }

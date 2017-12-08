@@ -4,7 +4,7 @@ const dbquery = require('./js/app_DBconnect');
 const urlParse = require('./js/app_urlParse');
 const htmlparse = require('./js/app_htmlparsetempl');
 const changeLog = require('./changeLog.json');
-const fs = require('fs');
+const fse = require('fs-extra');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
@@ -20,13 +20,13 @@ console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' 
 //TODO - error if SQLIP is blank
 
 function getDropBoxPath() {
-  fs.readFile(`${process.env.LOCALAPPDATA}//Dropbox//info.json`, 'utf8', (err2, pathdata) => {
+  fse.readJSON(`${process.env.LOCALAPPDATA}//Dropbox//info.json`, 'utf8', (err2, pathdata) => {
     if (err2) {
       console.log(dialog.showErrorBox('Dropbox Error', `Error getting Dropbox path: ${err2}`));
       return;
     }
     // first, get the path to the local Dropbox folder and change the \ to /
-    dropboxPath = `C:/${JSON.parse(pathdata).business.path.match(/:\\(.+)/)[1].replace(/\\/g, '/')}/`;
+    dropboxPath = `${pathdata.business.path}/`;
     console.log('Good DropBox Path:', dropboxPath);
   });
 }
@@ -113,9 +113,9 @@ ipcMain.on('add_claimconstructions', () => {
 ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
   // log the change to allow future roll-backs
   changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues });
-  fs.writeFile('./changeLog.JSON', JSON.stringify(changeLog), 'utf8', (err) => {
+  fse.writeJSON('./changeLog.JSON', changeLog, 'utf8', (err) => {
     if (err) console.log(err);
-    console.log(`changeLog updated: ${changeLog.changes[changeLog.changes.length - 1]}`);
+    console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
     // now do the insert query
     dbquery('u_UPDATE', claimID, newValues.split(), (err4, result) => {
       if (err4) {

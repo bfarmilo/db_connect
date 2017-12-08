@@ -1,5 +1,5 @@
 const { insertNewPatents, insertClaims } = require('../js/app_bulkUpload');
-const { Patents } = require('C:\\Users\\bfarm\\Documents\\Sync\\Projects\\nightmare\\patentRecord.json');
+const { Patents } = require('./patentRecord.json');
 
 Promise.all(Patents.map(x => {
     // PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR,

@@ -125,6 +125,18 @@
             "claimID": "435",
             "from": "streaming&nbsp;adds an encrypted first signal and a second signal, second signalhas identificating information to be transmitted to receiver station, receiver station steps involve decrypting and executing",
             "to": "streaming&nbsp;adds an encrypted first signal and a second signal, second signal has identificating information to be transmitted to receiver station, receiver station steps involve decrypting and executing"
+        },
+        {
+            "datetime": 1512758182934,
+            "claimID": "866",
+            "from": " ",
+            "to": "test"
+        },
+        {
+            "datetime": 1512758214197,
+            "claimID": "866",
+            "from": "test",
+            "to": "testing"
         }
     ]
 }
