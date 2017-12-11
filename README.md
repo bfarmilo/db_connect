@@ -21,3 +21,8 @@ Currently very much a work-in-progress.
 3. Better reporting for shortlisting, claim export
 4. Migration to CSS Grid and away from Bootstrap
 5. General refactoring !
+
+### Build Notes:
+* Look to customize installation shortcut with either command line options or custom powershell script
+  * see http://nsis.sourceforge.net/Reference/CreateShortCut
+  * and https://www.electron.build/configuration/nsis#NsisOptions-include
