@@ -4,6 +4,7 @@ const dbquery = require('./js/app_DBconnect');
 const urlParse = require('./js/app_urlParse');
 const htmlparse = require('./js/app_htmlparsetempl');
 const changeLog = require('./changeLog.json');
+const connectParams = require('./js/app_config.json').patentDB.connection;
 const fse = require('fs-extra');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
@@ -15,9 +16,16 @@ const savedSearch = {
 }; // used for saved searches
 let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
-let uriMode = (process.env.USEDB) ? true : false;
+let uriMode = false; // flag that indicates if claim HTML is uri-encoded or not
+
+// initialize SQL and database connection parameters passed from environment variables
+connectParams.server = process.env.SQLIP.split('\'')[1];
+if (process.env.USEDB) {
+  connectParams.options.database = process.env.USEDB;
+  uriMode = true;
+};
+console.log('connecting to sql server %s',connectParams.server);
 console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
-//TODO - error if SQLIP is blank
 
 function getDropBoxPath() {
   fse.readJSON(`${process.env.LOCALAPPDATA}//Dropbox//info.json`, 'utf8', (err2, pathdata) => {
@@ -117,7 +125,7 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
     if (err) console.log(err);
     console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
     // now do the insert query
-    dbquery('u_UPDATE', claimID, newValues.split(), (err4, result) => {
+    dbquery(connectParams, 'u_UPDATE', claimID, newValues.split(), (err4, result) => {
       if (err4) {
         console.log(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
       }
@@ -150,7 +158,7 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
       console.log(dialog.showErrorBox('URL Parse Error', `Error parsing url parameters: ${queryJSON}\n ${err5}`));
     } else {
       console.log(whereClause, valueArray);
-      runNewQuery(queryType, whereClause, valueArray, (err6, queryResults) => {
+      runNewQuery(connectParams, queryType, whereClause, valueArray, (err6, queryResults) => {
         if (err6) {
           console.log(dialog.showErrorBox('Query Error', `Error with query: ${whereClause} ${valueArray}\n ${err6}`));
         } else {
