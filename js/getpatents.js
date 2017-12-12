@@ -7,6 +7,8 @@ let nightmare = {};
  * getPatentData queries USPTO and Google to retreive the following information
  * @param patentNumber: number the patent number without commas
  * @param PMCRef: string designation for family
+ * @param {string} dropBoxPath: path to local dropbox
+ * @param {string} outputPath: path to save PDF's
  * @param testMode: boolean true for showing the browser
  * @returns Promise that resolves to {
  * PatentUri: US.x,xxx,xxx.B1,
@@ -24,7 +26,7 @@ let nightmare = {};
  * }
  * **/
 
-const getPatentData = (patentNumber, PMCRef, testMode = false) => {
+const getPatentData = (patentNumber, PMCRef, dropBoxPath, outputPath, stestMode = false) => {
   if (testMode) {
     nightmare = Nightmare({
       openDevTools: {
@@ -40,6 +42,7 @@ const getPatentData = (patentNumber, PMCRef, testMode = false) => {
     .goto(`https://patents.google.com/patent/US${patentNumber}/en`)
     .evaluate(() => {
       const result = {};
+      result.PatentPath = document.querySelector('.knowledge-card-action-bar a').href;
       // code to select (application) Number
       result.Number = document.querySelector('.applist .approw .appno b').innerHTML
         // formatted as USAABBBCCC
@@ -61,7 +64,7 @@ const getPatentData = (patentNumber, PMCRef, testMode = false) => {
       result.Claims = claimChildren
         .filter(y => y.localName !== 'claim-statement')
         .map(x => ({
-          ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1],10), 
+          ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
           ClaimHTML: encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27'),
           IsMethodClaim: x.innerText.includes('method') ? 1 : 0,
           IsDocumented: 0,
@@ -80,6 +83,13 @@ const getPatentData = (patentNumber, PMCRef, testMode = false) => {
       patentRecord.TechnologySpaceID = 1;
       patentRecord.TechnologySubSpaceID = 1;
       patentRecord.CoreSubjectMatterID = 1;
+      console.log('writing to file %s',`${dropBoxPath}${outputPath}US${patentNumber}.pdf` );
+      /* return nightmare
+        .goto(patentRecord.PatentPath)
+        .download(`${dropboxPath}${outputPath}US${patentNumber}.pdf`)
+    })
+    .then(() => { */
+      patentRecord.PatentPath = `${outputPath}US${patentNumber}.pdf`;
       return Promise.resolve(patentRecord);
     })
     .catch(err => Promise.reject(err))
