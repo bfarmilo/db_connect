@@ -10,7 +10,9 @@
     "package": "electron-packager . --platform=win32 --arch=x64 --version=1.4.5 --overwrite",
     "start": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & electron .",
     "startNext": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & set USEDB=NextIdea& electron .",
-    "startUpload": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & set USEDB=NextIdea& node ./test/3_insertPatents.js"
+    "startUpload": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a & set USEDB=NextIdea& node ./test/3_insertPatents.js",
+    "getSQLIP": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a",
+    "testUpdate": "docker start sqlserver && for /f \"usebackq delims=\" %a in (`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' sqlserver`) do @set SQLIP=%a && set USEDB=NextIdea && node ./test/5_updatePatents.test.js"
   },
   "author": "Bill Farmilo",
   "license": "ISC",
