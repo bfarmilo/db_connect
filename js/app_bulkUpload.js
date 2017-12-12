@@ -29,6 +29,20 @@ const insertNewPatents = (qryType, values, PatentUri) => {
     .fail(err => Promise.reject(err));
 }
 
+/**
+ * updatePatents takes a single field, value, and PatentUri and updates it
+ * @param {string} field 
+ * @param {string} value 
+ * @param {string} PatentUri
+ * @returns {promise} resolves to 'OK' 
+ */
+const updatePatents = (field, value, PatentUri) => {
+  return tp.sql(`UPDATE Patent SET ${field}='${value}' WHERE Patent.PatentUri LIKE '${PatentUri}'`)
+  .execute()
+  .then(() => Promise.resolve('OK'))
+  .fail(err => Promise.reject(err));
+}
+
 const insertClaims = (PatentID, claim) => {
   return tp.sql(`INSERT INTO Claim (ClaimNumber, ClaimHtml, IsMethodClaim, PatentID, IsDocumented ) VALUES (${claim.ClaimNumber}, '${claim.ClaimHTML}', ${claim.IsMethodClaim}, ${PatentID}, ${claim.IsDocumented})`)
   .execute()
@@ -36,4 +50,4 @@ const insertClaims = (PatentID, claim) => {
   .fail(err => Promise.reject(err))
 }
 
-module.exports = { insertNewPatents, insertClaims };
+module.exports = { insertNewPatents, insertClaims, updatePatents };
