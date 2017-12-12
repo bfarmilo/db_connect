@@ -1,4 +1,5 @@
 const electron = require('electron');
+const { getDropBoxPath } = require('./js/getDropBoxPath');
 const runNewQuery = require('./js/app_runNewQuery');
 const dbquery = require('./js/app_DBconnect');
 const urlParse = require('./js/app_urlParse');
@@ -27,18 +28,6 @@ if (process.env.USEDB) {
 console.log('connecting to sql server %s',connectParams.server);
 console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
 
-function getDropBoxPath() {
-  fse.readJSON(`${process.env.LOCALAPPDATA}//Dropbox//info.json`, 'utf8', (err2, pathdata) => {
-    if (err2) {
-      console.log(dialog.showErrorBox('Dropbox Error', `Error getting Dropbox path: ${err2}`));
-      return;
-    }
-    // first, get the path to the local Dropbox folder and change the \ to /
-    dropboxPath = `${pathdata.business.path}/`;
-    console.log('Good DropBox Path:', dropboxPath);
-  });
-}
-
 function openPDF(fullPath) {
   console.log(`trying shell: ${dropboxPath}${fullPath}`);
   shell.openItem(dropboxPath + fullPath);
@@ -46,7 +35,13 @@ function openPDF(fullPath) {
 
 function createWindow() {
   // get the file paths
-  getDropBoxPath();
+  getDropBoxPath((err, dropbox) => {
+    if (err) {
+      console.error (err);
+    } else {
+      dropboxPath = dropbox;
+    }
+  });
   // Create the browser window.
   win = new BrowserWindow({
     width: 1440,
