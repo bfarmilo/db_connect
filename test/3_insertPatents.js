@@ -4,7 +4,7 @@ const { Patents } = require('./patentRecord.json');
 Promise.all(Patents.map(x => {
     // PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR,
     // TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath
-    const values = `VALUES ('${x.PatentUri}','${x.PMCRef}','${x.Title}',${x.ClaimsCount},${x.patentNumber},${x.IndependentClaimsCount},'${x.Number}',${x.IsInIPR}, ${x.TechnologySpaceID},${x.TechnologySubSpaceID},${x.CoreSubjectMatterID},'PMC Public\\Licensing\\NextIdea\\Mike Mazarick\\US${x.patentNumber}.pdf')`
+    const values = `VALUES ('${x.PatentUri}','${x.PMCRef}','${x.Title}',${x.ClaimsCount},${x.patentNumber},${x.IndependentClaimsCount},'${x.Number}',${x.IsInIPR}, ${x.TechnologySpaceID},${x.TechnologySubSpaceID},${x.CoreSubjectMatterID},${x.PatentPath})`
     return insertNewPatents('u_INSERT', values, x.PatentUri)
 }))
     .then(result => {
