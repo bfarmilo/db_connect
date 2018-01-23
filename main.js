@@ -7,6 +7,7 @@ const htmlparse = require('./js/app_htmlparsetempl');
 const changeLog = require('./changeLog.json');
 const connectParams = require('./js/app_config.json').patentDB.connection;
 const fse = require('fs-extra');
+const spawn = require('child_process').spawn;
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
@@ -20,13 +21,20 @@ let queryType = '';
 let uriMode = false; // flag that indicates if claim HTML is uri-encoded or not
 
 // initialize SQL and database connection parameters passed from environment variables
-connectParams.server = process.env.SQLIP.split('\'')[1];
-if (process.env.USEDB) {
-  connectParams.options.database = process.env.USEDB;
+const dbname = process.env.USEDB || 'sqlserver';
+
+const child = spawn("powershell.exe",[`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' ${dbname}`]);
+child.stdout.on("data",function(data){
+  connectParams.server = data.toString().split(/\n/g)[0];
   uriMode = true;
-};
-console.log('connecting to sql server %s',connectParams.server);
-console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
+  console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
+  console.log("connecting with parameters %j", connectParams);
+});
+child.stderr.on("data",function(data){
+    console.log(`Error getting IP address of ${dbname}: ${data}`);
+});
+child.stdin.end(); //end input
+
 
 function openPDF(fullPath) {
   console.log(`trying shell: ${dropboxPath}${fullPath}`);

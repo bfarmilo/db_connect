@@ -26,3 +26,5 @@ Currently very much a work-in-progress.
 * Look to customize installation shortcut with either command line options or custom powershell script
   * see http://nsis.sourceforge.net/Reference/CreateShortCut
   * and https://www.electron.build/configuration/nsis#NsisOptions-include
+  * ... or just hard code it into two different applications !!
+  * better yet build a simple front-end to set this, use exec() to run the SQL IP extraction code
