@@ -18,7 +18,7 @@ const savedSearch = {
 }; // used for saved searches
 let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
-let uriMode = false; // flag that indicates if claim HTML is uri-encoded or not
+let uriMode = process.env.USEDB === 'NextIdea'; // flag that indicates if claim HTML is uri-encoded or not
 
 // initialize SQL and database connection parameters passed from environment variables
 const dbname = process.env.USEDB || 'sqlserver';
@@ -26,7 +26,7 @@ const dbname = process.env.USEDB || 'sqlserver';
 const child = spawn("powershell.exe",[`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' ${dbname}`]);
 child.stdout.on("data",function(data){
   connectParams.server = data.toString().split(/\n/g)[0];
-  uriMode = true;
+  // uriMode = true; NOTE this messes up compound queries, TODO Fix this
   console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
   console.log("connecting with parameters %j", connectParams);
 });

@@ -1,11 +1,11 @@
 {
   "name": "dbviewer",
-  "version": "0.1.0",
+  "version": "1.0.0",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
     "test": "mocha",
-    "package": "electron-packager . --platform=win32 --arch=x64 --version=1.4.5 --overwrite",
+    "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
     "start": "docker start sqlserver && electron .",
     "startNext": "docker start sqlserver && set USEDB=NextIdea& electron .",
     "startUpload": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",

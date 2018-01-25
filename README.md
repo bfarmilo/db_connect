@@ -20,7 +20,7 @@ Currently very much a work-in-progress.
 2. Interface to allow addition and linking of markman terms to patents and constructions
 3. Better reporting for shortlisting, claim export
 4. Migration to CSS Grid and away from Bootstrap
-5. General refactoring !
+5. Parse %20 and other characters in search terms better for SQL
 
 ### Build Notes:
 * Look to customize installation shortcut with either command line options or custom powershell script
