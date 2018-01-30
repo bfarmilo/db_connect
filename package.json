@@ -9,10 +9,14 @@
     "start": "docker start sqlserver && electron .",
     "startNext": "docker start sqlserver && set USEDB=NextIdea& electron .",
     "startUpload": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
-    "testUpdate": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js"
+    "testUpdate": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
+    "getPatents": "docker start sqlserver && set USEDB=NextIdea& node ./test/4_getpatents.test.js"
   },
   "author": "Bill Farmilo",
   "license": "ISC",
+  "engines": {
+    "node": ">9.0.0"
+  },
   "dependencies": {
     "fs-extra": "^4.0.3",
     "tedious": "^2.1.1",
@@ -21,12 +25,13 @@
   "devDependencies": {
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^1.7.9",
+    "electron": "^1.8.0",
     "electron-packager": "^10.1.0",
     "jsdom": "^9.8.3",
     "mocha": "*",
     "mochawesome": "^1.5.3",
     "nightmare": "^2.10.0",
+    "nightmare-inline-download": "^0.2.2",
     "shell": "^0.3.2"
   }
 }

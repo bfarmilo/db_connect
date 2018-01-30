@@ -7,7 +7,7 @@ function getDropBoxPath(callback) {
         return callback(err2);
       }
       // first, get the path to the local Dropbox folder and change the \ to /
-      return callback(null, `${pathdata.business.path}/`);
+      return callback(null, `${pathdata.business.path}\\`);
     });
   }
 

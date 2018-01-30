@@ -5,13 +5,14 @@ const dbquery = require('./js/app_DBconnect');
 const urlParse = require('./js/app_urlParse');
 const htmlparse = require('./js/app_htmlparsetempl');
 const changeLog = require('./changeLog.json');
-const connectParams = require('./js/app_config.json').patentDB.connection;
 const fse = require('fs-extra');
 const spawn = require('child_process').spawn;
+const { connectDocker } = require('./js/connectDocker');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
 let markmanwin;
+let connectParams;
 const savedSearch = {
   where: '',
   paramArray: [],
@@ -20,21 +21,12 @@ let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
 let uriMode = process.env.USEDB === 'NextIdea'; // flag that indicates if claim HTML is uri-encoded or not
 
-// initialize SQL and database connection parameters passed from environment variables
-const dbname = process.env.USEDB || 'sqlserver';
-
-const child = spawn("powershell.exe",[`docker inspect --format '{{.NetworkSettings.Networks.nat.IPAddress}}' ${dbname}`]);
-child.stdout.on("data",function(data){
-  connectParams.server = data.toString().split(/\n/g)[0];
-  // uriMode = true; NOTE this messes up compound queries, TODO Fix this
-  console.log(`using ${process.env.USEDB||'PMCDB'}, URI Decoding ${uriMode ? 'on' : 'off'}`);
-  console.log("connecting with parameters %j", connectParams);
-});
-child.stderr.on("data",function(data){
-    console.log(`Error getting IP address of ${dbname}: ${data}`);
-});
-child.stdin.end(); //end input
-
+connectDocker(require('./js/app_config.json').patentDB.connection)
+  .then(params => {
+    connectParams = params;
+    console.log('new connection parameters set: %j', connectParams);
+  })
+  .catch(err => console.error(err));
 
 function openPDF(fullPath) {
   console.log(`trying shell: ${dropboxPath}${fullPath}`);
@@ -45,7 +37,7 @@ function createWindow() {
   // get the file paths
   getDropBoxPath((err, dropbox) => {
     if (err) {
-      console.error (err);
+      console.error(err);
     } else {
       dropboxPath = dropbox;
     }
@@ -120,7 +112,7 @@ ipcMain.on('add_claimconstructions', () => {
   // confirm if update not applied
   // close window
 });
-  // Listener for updating a potential application
+// Listener for updating a potential application
 ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
   // log the change to allow future roll-backs
   changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues });
