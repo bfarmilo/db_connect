@@ -141,7 +141,9 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
     savedSearch.where = '';
     savedSearch.paramArray = [];
   }
-  if (uriMode) queryJSON.srvl = encodeURIComponent(queryJSON.srvl).replace(/\'/g, '%27').replace('%', '[%]');
+  // in uriMode, need to convert % to [%] to parse SQL properly
+  // NOTE: Only do this for Uri encoded fields (namely, Claim full text only at this point)
+  if (uriMode && queryJSON.srch === 'Cl') queryJSON.srvl = encodeURIComponent(queryJSON.srvl).replace(/\'/g, '%27').replace('%', '[%]');
   console.log(`new query received with parameters: ${JSON.stringify(queryJSON)}`);
   if (queryJSON.srch.search('Te') !== -1 || queryJSON.srch.search('Co') !== -1 || queryJSON.srch.search('Nu') !== -1) {
     queryType = 'm_MARKMANALL';
