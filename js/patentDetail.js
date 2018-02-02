@@ -11,7 +11,8 @@ class PatentDetail extends Component {
                 Title: 'No Patent Loaded',
                 PatentNumber: 1111111,
                 IndependentClaimsCount: 0,
-                ClaimsCount: 0
+                ClaimsCount: 0,
+                summaries:[]
             }
         };
         this.openClickHandler = this.openClickHandler.bind(this);
@@ -20,8 +21,9 @@ class PatentDetail extends Component {
 
     componentDidMount() {
         ipcRenderer.on('state', (event, result) => {
-            console.log('received data', result[0]);
-            this.setState({ result: result[0] });
+            console.log('received data', result);
+            console.log('summary:', result.summaries)
+            this.setState({ result });
         });
     }
 
@@ -64,6 +66,9 @@ const Result = (props) => (
             </a><span>: {props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} </span>
             <div>"{props.result.Title}"</div>
             <div>Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
+            {!!props.result.summaries[0] && (
+                <div>{props.result.summaries[0].PatentSummaryText}</div>
+            )}
             <button onClick={props.openClickHandler}>Open PDF</button>
             <button onClick={props.goBackClickHandler}>Close Window</button>
         </div>

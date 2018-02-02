@@ -7,7 +7,7 @@
     "test": "mocha",
     "transpile": "babel ./js/patentDetail.js --out-file ./jsx/patentDetail.js",
     "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
-    "start": "docker start sqlserver && electron .",
+    "start": "docker start sqlserver && npm run transpile && electron .",
     "startNext": "docker start sqlserver && npm run transpile && set USEDB=NextIdea& electron .",
     "startUpload": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
     "testUpdate": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
@@ -17,12 +17,6 @@
   "license": "ISC",
   "engines": {
     "node": ">9.0.0"
-  },
-  "babel": {
-    "presets": [
-      "es2015",
-      "preact"
-    ]
   },
   "dependencies": {
     "fs-extra": "^4.0.3",

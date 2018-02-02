@@ -14,7 +14,7 @@
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
         "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
         "u_INSERT" : "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) ",
-        "p_PATENT" : "SELECT * FROM Patent "
+        "p_PATENT" : "SELECT * FROM Patent AS patents LEFT OUTER JOIN PatentSummary AS summaries ON patents.PatentID = summaries.PatentID "
     },
     "urlParams": {
         "whereObj": {
