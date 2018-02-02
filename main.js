@@ -1,3 +1,4 @@
+require('babel-register');
 const electron = require('electron');
 const { getDropBoxPath } = require('./js/getDropBoxPath');
 const runNewQuery = require('./js/app_runNewQuery');
@@ -56,6 +57,8 @@ function createWindow() {
     // Dereference the window object, usually you would store windows
     // in an array if your app supports multi windows, this is the time
     // when you should delete the corresponding element.
+    if (detailWindow) detailWindow.close();
+    if (markmanwin) markmanwin.close();
     win = null;
   });
 }
@@ -78,6 +81,41 @@ app.on('activate', () => {
     createWindow();
   }
 });
+//TODO: Listener for launching patent details
+ipcMain.on('view_patentdetail', (event, patentNumber) => {
+  // open new window for applications
+  detailWindow = new BrowserWindow({
+    width: 800,
+    height: 400,
+    show:false
+  });
+  // and load the index.html of the app.
+  detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
+  // Emitted when the window is closed.
+  detailWindow.on('closed', () => {
+    // Dereference the window object, usually you would store windows
+    // in an array if your app supports multi windows, this is the time
+    // when you should delete the corresponding element.
+    detailWindow = null;
+  });
+  detailWindow.on('ready-to-show', () => {
+    console.log('got call for patent detail view with patent number', patentNumber);
+    dbquery(connectParams, 'p_PATENT', `WHERE PatentNumber=@0 FOR JSON AUTO`, [patentNumber], (err, data) => {
+      if (err) {
+        console.error(err)
+      } else {
+        console.log('got results: ', JSON.parse(data[0][0])[0]);
+        detailWindow.webContents.send('state', JSON.parse(data[0][0]));
+      }
+    })
+    detailWindow.show();
+  })
+})
+
+ipcMain.on('close_patent_window', event => {
+  detailWindow.close();
+})
+
 // Listener for launching the Markman Linking applications
 ipcMain.on('add_claimconstructions', () => {
   // open new window for applications

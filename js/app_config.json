@@ -13,7 +13,8 @@
         "m_PATENTSCLAIMS": "SELECT patents.PMCRef, patents.PatentNumber, claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
         "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
-        "u_INSERT" : "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) "
+        "u_INSERT" : "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) ",
+        "p_PATENT" : "SELECT * FROM Patent "
     },
     "urlParams": {
         "whereObj": {
