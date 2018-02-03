@@ -83,7 +83,7 @@ app.on('activate', () => {
 });
 //Listener for launching patent details
 ipcMain.on('view_patentdetail', (event, patentNumber) => {
-  
+
   const sendUpdate = () => {
     console.log('got call for patent detail view with patent number', patentNumber);
     dbquery(connectParams, 'p_PATENT', `WHERE PatentNumber=@0 FOR JSON AUTO`, [patentNumber], (err, data) => {
@@ -103,7 +103,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
     detailWindow = new BrowserWindow({
       width: 800,
       height: 400,
-      show: false
+      show: false,
+      autoHideMenuBar: true
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
     detailWindow.on('closed', () => {
