@@ -11,7 +11,7 @@
     "startNext": "docker start sqlserver && npm run transpile && set USEDB=NextIdea& electron .",
     "startUpload": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
     "testUpdate": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
-    "getPatents": "docker start sqlserver && set USEDB=NextIdea& node ./test/4_getpatents.test.js"
+    "getPatents": "docker start sqlserver && set USEDB=PMCDB& node ./test/4_getpatents.test.js"
   },
   "author": "Bill Farmilo",
   "license": "ISC",
@@ -36,6 +36,7 @@
     "mochawesome": "^1.5.3",
     "nightmare": "^2.10.0",
     "nightmare-inline-download": "^0.2.2",
+    "node-fetch": "^1.7.3",
     "shell": "^0.3.2"
   }
 }
