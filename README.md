@@ -20,7 +20,9 @@ Currently very much a work-in-progress.
 2. Interface to allow addition and linking of markman terms to patents and constructions
 3. Better reporting for shortlisting, claim export
 4. Migration to CSS Grid and away from Bootstrap
-5. Parse %20 and other characters in search terms better for SQL
+6. View for patent summary
+7. Markdown syntax for editable fields (markdown display) and auto-save
+8. Interface for getting patents (setting a list of patents, path to save, PMCRef)
 
 ### Build Notes:
 * Look to customize installation shortcut with either command line options or custom powershell script
