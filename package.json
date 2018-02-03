@@ -9,8 +9,8 @@
     "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
     "start": "docker start sqlserver && npm run transpile && electron .",
     "startNext": "docker start sqlserver && npm run transpile && set USEDB=NextIdea& electron .",
-    "startUpload": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
-    "testUpdate": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
+    "insertNew": "docker start sqlserver && set USEDB=PMCDB& node ./test/3_insertPatents.js",
+    "updateExisting": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
     "getPatents": "docker start sqlserver && set USEDB=PMCDB& node ./test/4_getpatents.test.js"
   },
   "author": "Bill Farmilo",
