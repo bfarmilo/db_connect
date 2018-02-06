@@ -15,7 +15,8 @@ const connectDB = () => connectDocker(DB.connection)
 
 
 // the main query code
-/**
+/**insertNewPatents executes the queryType then
+ * returns the PatentID associated with that PatentURI
  * 
  * @param {string} qryType = "u_INSERT" 
  * @param {string} values =VALUES (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath)
@@ -48,7 +49,7 @@ const updatePatents = (field, value, PatentUri) => {
 }
 
 const insertClaims = (PatentID, claim) => {
-  return tp.sql(`INSERT INTO Claim (ClaimNumber, ClaimHtml, IsMethodClaim, PatentID, IsDocumented ) VALUES (${claim.ClaimNumber}, '${claim.ClaimHTML}', ${claim.IsMethodClaim}, ${PatentID}, ${claim.IsDocumented})`)
+  return tp.sql(`INSERT INTO Claim (ClaimNumber, ClaimHtml, IsMethodClaim, PatentID, IsDocumented ) VALUES (${claim.ClaimNumber}, '${claim.ClaimHTML}', ${claim.IsMethodClaim ? 1 : 0}, ${PatentID}, ${claim.IsDocumented ? 1 : 0})`)
     .execute()
     .then(() => Promise.resolve('OK'))
     .fail(err => Promise.reject(err))
