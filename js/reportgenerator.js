@@ -12,7 +12,12 @@ let meth = false;
 let save = false;
 const defaultField = 'First 200 Claims';
 let showDetails = false;
-let oldApplication = '';
+let potentialApplication = { claimID: 0, text: '' }
+let state = {
+  lastOriginal: potentialApplication,
+  current: potentialApplication,
+  lastUpdated: potentialApplication
+}
 // global config
 let urlParams = {};
 // first load global config values
@@ -20,10 +25,8 @@ $.getJSON('js/app_config.json', (data) => {
   urlParams = data.urlParams;
 });
 // define sending the call to the main process
-function updateApplication(claimID, newValues) {
-  if (oldApplication !== newValues) {
-    ipcRenderer.send('update_application', claimID, oldApplication, newValues);
-  }
+function updateApplication(record) {
+  ipcRenderer.send('update_application', record.lastOriginal.claimID, record.lastOriginal.text, record.lastUpdated.text);
 }
 // Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least)
 function parseSearch(searchContent, matchVal) {
@@ -60,13 +63,40 @@ $(document).ready(() => {
     // add listeners to each patentLink element
     $('.patentLink').on('click', (patentEvent) => {
       console.log(patentEvent);
-      ipcRenderer.send('open_patent', patentEvent.target.attributes.getNamedItem('data-url').value);
+      //ipcRenderer.send('open_patent', patentEvent.target.attributes.getNamedItem('data-url').value);
+      ipcRenderer.send('view_patentdetail', patentEvent.target.innerText);
     });
     // add listeners to Potential Application
     $('.application').on('click', (applicationEvent) => {
-      oldApplication = applicationEvent.target.innerHTML;
-      // console.log($(this).data('claimid'), $(this).html());
+      state.current = {
+        claimID: applicationEvent.target.attributes.getNamedItem('data-claimid').value,
+        text: applicationEvent.target.innerHTML
+      };
+      console.log('Application field clicked. current state', Object.assign(state));
+      if (state.lastUpdated.claimID !== state.current.claimID && state.lastUpdated.claimID !== 0 && state.lastOriginal.claimID !== 0) {
+        // clicking a new claim, and clicked one before, better update the old one first
+        if (state.lastUpdated.text !== state.lastOriginal.text) updateApplication(state);
+      }
+      // now update these state variables
+      state.lastOriginal = state.current;
+      state.lastUpdated = state.current;
+      // console.log($(this).data('claimid'), $(this).html()); F
     });
+    $('.application').on('keyup', (applicationEvent) => {
+      const selection = window.getSelection();
+      const enterPos = selection.anchorOffset;
+      let text = applicationEvent.target.innerHTML;
+      if (applicationEvent.which === 13) {
+        console.log('splitting at position %d', enterPos)
+        text = `${text.slice(0, enterPos)}<br>${text.slice(enterPos)}`;
+        applicationEvent.target.innerHTML = text;
+      }
+      // as typing goes, update lastUpdated
+      state.lastUpdated = {
+        claimID: applicationEvent.target.attributes.getNamedItem('data-claimid').value,
+        text
+      }
+    })
     // return the spinner to normal
     $('#Update').html('Run Query');
     // enable the showDetails box
@@ -161,16 +191,15 @@ $(document).ready(() => {
     // track enter key
     const isApplication = (event.target.className.search('application') !== -1);
     if (event.which === 13) { // keycode for enter key
-      // force the 'Enter Key' to implicitly click the Update button
-      if (isApplication) {
-        updateApplication(event.target.attributes.getNamedItem('data-claimid').value, event.target.innerHTML);
-      } else {
+      // force the 'Enter Key' to implicitly click the Update button, unless editing an applicationo
+      if (!isApplication) {
         $('#Update').click();
       }
       return false;
     } else if (event.which === 27) {
+      // escape key cancels the update of the 'Application' text
       if (isApplication) {
-        event.target.innerHTML = oldApplication;
+        //TODO something about this
       }
       return false;
     }
