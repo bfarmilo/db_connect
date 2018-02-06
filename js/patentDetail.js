@@ -12,7 +12,7 @@ class PatentDetail extends Component {
                 PatentNumber: 1111111,
                 IndependentClaimsCount: 0,
                 ClaimsCount: 0,
-                summaries:[]
+                summaries: [ {} ]
             }
         };
         this.openClickHandler = this.openClickHandler.bind(this);
@@ -54,24 +54,19 @@ class PatentDetail extends Component {
 }
 
 const Result = (props) => (
-    <div style={{
-        padding: 10,
-        margin: 10,
-        background: 'white',
-        boxShadow: '0 1px 5px rgba(0,0,0,0.5)'
-    }}>
-        <div>
-            <a href={props.result.PatentPath} target="_blank">
-                {props.result.PMCRef}
-            </a><span>: {props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} </span>
-            <div>"{props.result.Title}"</div>
-            <div>Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
-            {!!props.result.summaries[0] && (
-                <div>{props.result.summaries[0].PatentSummaryText}</div>
-            )}
-            <button onClick={props.openClickHandler}>Open PDF</button>
-            <button onClick={props.goBackClickHandler}>Close Window</button>
+    <div class="PatentDetail">
+        <div class="PMCRef">
+            {props.result.PMCRef}
         </div>
+        <div class="PatentNumber">: {props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} </div>
+        <div />
+        <div class="CloseWindow"><button onClick={props.goBackClickHandler}>X</button></div>
+        <div class="Title">"{props.result.Title}"</div>
+        {Object.keys(props.result.summaries[0]).length ? (
+            <div class="Summary">{props.result.summaries[0].PatentSummaryText}</div>
+        ) : <div />}
+        <div class="ClaimsCount">Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
+        <div class="OpenPDF"><button onClick={props.openClickHandler}>Open PDF</button></div>
     </div>
 );
 
