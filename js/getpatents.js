@@ -7,11 +7,12 @@ let nightmare = {};
 
 /** 
  * getPatentData queries USPTO and Google to retreive the following information
- * @param patentNumber: number the patent number without commas
- * @param PMCRef: string designation for family
+ * @param {number} patentNumber: number the patent number without commas
+ * @param {string} PMCRef: string designation for family
  * @param {string} dropBoxPath: path to local dropbox
  * @param {string} outputPath: path to save PDF's
- * @param testMode: boolean true for showing the browser
+ * @param {boolean}
+ * @param {boolean} testMode: boolean true for showing the browser
  * @returns Promise that resolves to {
  * PatentUri: US.x,xxx,xxx.B1,
  * PMCRef,
@@ -29,7 +30,9 @@ let nightmare = {};
  * **/
 
 const getPatentData = (patentNumber, PMCRef, dropBoxPath, outputPath, uriMode, testMode = false) => {
-  let patentRecord;
+  let patentRecord = {};
+  let downloadURL = '';
+
   if (testMode) {
     nightmare = Nightmare({
       openDevTools: {
@@ -40,6 +43,7 @@ const getPatentData = (patentNumber, PMCRef, dropBoxPath, outputPath, uriMode, t
   } else {
     nightmare = Nightmare();
   }
+
   console.log('retrieving %s patent %d', PMCRef, patentNumber);
   return nightmare
     .goto(`https://patents.google.com/patent/US${patentNumber}/en`)
@@ -55,6 +59,8 @@ const getPatentData = (patentNumber, PMCRef, dropBoxPath, outputPath, uriMode, t
       result.Title = document.querySelector('#title').innerHTML
         //now clean off whitespace
         .trim().split('\n')[0];
+      // code to select the download URL
+      result.downloadLink = document.querySelector('a.style-scope.patent-result').href;
       // code to select PatentUri
       result.PatentUri = document.querySelector('.knowledge-card h2').innerHTML
         // formatted as USXYYYZZZBB
@@ -69,27 +75,27 @@ const getPatentData = (patentNumber, PMCRef, dropBoxPath, outputPath, uriMode, t
         .map(x => ({
           ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
           ClaimHTML: encodeURI ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-          IsMethodClaim: x.innerText.includes('method') ? 1 : 0,
-          IsDocumented: 0,
+          IsMethodClaim: x.innerText.includes('method'),
+          IsDocumented: false,
+          IsIndependent: !x.className.includes('claim-dependent'),
           PatentID: 0
         }));
       result.IndependentClaimsCount = claimChildren.filter(y => y.localName !== 'claim-statement' && !y.className.includes('claim-dependent')).length;
       result.ClaimsCount = result.Claims.length;
+      console.log('got result', result);
       return result;
     }, uriMode)
+    .end()
     .then(result => {
       patentRecord = { ...result };
-      patentRecord.patentNumber = patentNumber;
+      patentRecord.PatentNumber = patentNumber;
       patentRecord.PMCRef = PMCRef;
-      patentRecord.IsInIPR = 0;
+      patentRecord.IsInIPR = false;
       patentRecord.TechnologySpaceID = 1;
       patentRecord.TechnologySubSpaceID = 1;
       patentRecord.CoreSubjectMatterID = 1;
-      return nightmare.end()
-    })
-    .then(() => {
-      console.log('writing link %s to file %s', patentRecord.PatentPath, `${dropBoxPath}${outputPath}US${patentNumber}.pdf`);
       patentRecord.PatentPath = `${outputPath}US${patentNumber}.pdf`;
+      console.log('returning patent ', patentRecord.PMCRef);
       return Promise.resolve(patentRecord);
     })
     .catch(err => Promise.reject(err))
@@ -106,33 +112,40 @@ const getClaimData = (claims, patentID, testMode) => {
   return claims.map(x => x.patentID = patentID);
 }
 
-/**downloadPatents takes an array of url's and downloads them
+/**downloadPatents takes an array of url's and downloads them SLICE_SIZE at a time
  * @param {Array<string>} patentList list of url's in string form
  * @param {string} dropBoxPath
  * @param {string} outputPath
  * @returns {void}
  */
 
-const downloadPatents = async (patentList, dropBoxPath, outputPath) => {
+const downloadPatents = async (recordList, dropBoxPath) => {
 
   const SLICE_SIZE = 3;
   let currentSlice = [];
   let blobs = [];
+  // convert the incoming record file into an array of {downloadLink, PatentPath}
+  const patentList = recordList.map(x => ({ downloadLink: x.downloadLink, PatentPath: x.PatentPath }));
 
-  const getNextSlice = async (newStart) => {
+  const getNextSlice = newStart => {
     if (newStart > patentList.length) {
       return;
     }
-    currentSlice = patentList.slice(newStart, newStart+SLICE_SIZE);
-    blobs = currentSlice.map(async url => {
-      let result = await fetch(url);
-      let file = await result.blob();
-      return await fse.writeFile(`${dropBoxPath}${outputPath}${url.slice(-13)}`)
-    });
-    return getNextSlice(newStart+SLICE_SIZE);
+    currentSlice = patentList.slice(newStart, newStart + SLICE_SIZE);
+    blobs = Promise.all(currentSlice.map(async patent => {
+      try {
+        return await (await fetch(patent.downloadLink)).body
+          .pipe(fse.createWriteStream(`${dropBoxPath}${patent.PatentPath}`))
+            .on('close', () => console.log('file downloaded'))
+      } catch (err) {
+        return Promise.reject(err)
+      }
+    })
+    );
+    return getNextSlice(newStart + SLICE_SIZE);
   }
 
-  return await getNextSlice(0);  
+  return await getNextSlice(0);
 
 }
 
