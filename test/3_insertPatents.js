@@ -7,7 +7,8 @@ connectDB()
         return Promise.all(Patents.map(x => {
             // PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR,
             // TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath
-            const values = `VALUES ('${x.PatentUri}','${x.PMCRef}','${x.Title}',${x.ClaimsCount},${x.patentNumber},${x.IndependentClaimsCount},'${x.Number}',${x.IsInIPR}, ${x.TechnologySpaceID},${x.TechnologySubSpaceID},${x.CoreSubjectMatterID},'${x.PatentPath}')`
+            // TODO: Add 'IsIndependentClaim' to DB so can filter on this
+            const values = `VALUES ('${x.PatentUri}','${x.PMCRef}','${x.Title}',${x.ClaimsCount},${x.PatentNumber},${x.IndependentClaimsCount},'${x.Number}',${x.IsInIPR ? 1:0}, ${x.TechnologySpaceID},${x.TechnologySubSpaceID},${x.CoreSubjectMatterID},'${x.PatentPath}')`
             console.log('query: %s', values);
             return insertNewPatents('u_INSERT', values, x.PatentUri)
         }))
