@@ -5,11 +5,13 @@ const pat = require('./app_config.json').urlParams; // stores the whereObj and r
 //
 const matchExp = new RegExp(pat.reg, 'g');
 
-function sqlParse(searchField, searchString, callback) {
+function sqlParse(searchField, saved, savedParamCount, searchString, callback) {
   const parsedSearch = {
     where: '',
     param: [],
   };
+  // if saved, we need to add one to all of the indeces
+  const delta = saved ? savedParamCount : 0;
   try {
     // if searchString is blank return all patents
     // searchString is of the form word1 OR word2 AND word3
@@ -18,10 +20,10 @@ function sqlParse(searchField, searchString, callback) {
     parsedSearch.param = searchString !== '' ? searchString.split(matchExp).map(values => `%${values}%`) : ['%'];
     const newMatch = new RegExp(parsedSearch.param.join('|').replace(/%/g, ''), 'g');
     parsedSearch.where = searchString !== '' ? searchString.split(newMatch).map((values, index, array) => {
-      if (index === 0) return `${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index}`;
+      if (index === 0) return `${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index + delta}`;
       if (index === (array.length - 1)) return '';
-      return `${values.match(/ AND | OR /g)}${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index}`;
-    }).join('') : `${pat.whereObj[searchField]} LIKE @0`;
+      return `${values.match(/ AND | OR /g)}${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index + delta}`;
+    }).join('') : `${pat.whereObj[searchField]} LIKE @${delta}`;
     return callback(null, parsedSearch.where, parsedSearch.param);
   } catch (err) {
     return callback(err);
