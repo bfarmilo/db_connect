@@ -12,7 +12,8 @@ class PatentDetail extends Component {
                 PatentNumber: 1111111,
                 IndependentClaimsCount: 0,
                 ClaimsCount: 0,
-                summaries: [ {} ]
+                summaries: [{}],
+                PatentHtml: '[""]'
             }
         };
         this.openClickHandler = this.openClickHandler.bind(this);
@@ -47,6 +48,9 @@ class PatentDetail extends Component {
                         openClickHandler={this.openClickHandler}
                         goBackClickHandler={this.goBackClickHandler}
                     />
+                    <FullText
+                        patentHtml={JSON.parse(result.PatentHtml)}
+                    />
                 </div>
             </div>
         );
@@ -69,5 +73,20 @@ const Result = (props) => (
         <div class="OpenPDF"><button onClick={props.openClickHandler}>Open PDF</button></div>
     </div>
 );
+
+const FullText = (props) => {
+    return (
+        <div class="FullText">
+            {props.patentHtml.filter(item => item.length > 2).map(paragraph => {
+            const header = paragraph.toUpperCase() === paragraph;
+            return (
+                <div class={ header ? "PatentParagraph PatentHeader" : "PatentParagraph"} key={[].reduce.call(paragraph, (p, c, i, a) => (p << 5) - p + a.charCodeAt(i), 0)}>
+                    {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}
+                </div>
+            )
+            })}
+        </div>
+    )
+}
 
 render(<PatentDetail />, document.getElementById('patentDetail'))
