@@ -8,6 +8,7 @@ const changeLog = require('./changeLog.json');
 const fse = require('fs-extra');
 const spawn = require('child_process').spawn;
 const { connectDocker } = require('./js/connectDocker');
+const { getFullText } = require('./js/getFullText');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
@@ -84,27 +85,51 @@ app.on('activate', () => {
 //Listener for launching patent details
 ipcMain.on('view_patentdetail', (event, patentNumber) => {
 
+  const updateRenderWindow = (newData) => {
+    console.log('sending state for patent', newData.PMCRef);
+    detailWindow.webContents.send('state', newData);
+    detailWindow.show();
+  }
+
   const sendUpdate = () => {
     console.log('got call for patent detail view with patent number', patentNumber);
-    dbquery(connectParams, 'p_PATENT', `WHERE PatentNumber=@0 FOR JSON AUTO`, [patentNumber], (err, data) => {
+    dbquery(connectParams, 'p_PATENT', `WHERE PatentNumber=@0 FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER`, [patentNumber], (err, data) => {
       if (err) {
         console.error(err)
       } else {
-        // data returns a string containing an array nested two levels deep in an array
-        // ie [ [ '[ {the JSON data we want} ]' ] ]
-        console.log('got results: ', JSON.parse(data[0][0])[0]);
-        detailWindow.webContents.send('state', JSON.parse(data[0][0])[0]);
-        detailWindow.show();
+        // TODO: if the query returns PatentHtml, serve it up,
+        // otherwise, go fetch it, serve it up, and meanwhile update the DB with it !
+        // data returns the row in multiple columns of an array (if large)
+        const state = JSON.parse(data.reduce((accum, item) => accum.concat(item), ''));
+        if (!state.PatentHtml) {
+          console.log('no PatentHtml found, querying USPTO for patent Full Text');
+          getFullText(patentNumber)
+            .then(PatentHtml => {
+              state.PatentHtml = JSON.stringify(PatentHtml);
+              dbquery(connectParams, 'u_FULLTEXT', '', [state.PatentHtml, state.PatentID], (err2, status) => {
+                if (err2) {
+                  console.error(err2);
+                } else {
+                  console.log('record updated with new fullText');
+                  updateRenderWindow(state);
+                }
+              })
+              return;
+            })
+            .catch(err3 => console.error(err3))
+        } else {
+          updateRenderWindow(state);
+        }
       }
     })
   }
-  console.log(detailWindow);
+
   if (detailWindow === null) {
     detailWindow = new BrowserWindow({
       width: 800,
-      height: 400,
+      height: 1000,
       show: false,
-      autoHideMenuBar: true
+      //autoHideMenuBar: true
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
     detailWindow.on('closed', () => {
@@ -162,15 +187,17 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
   // log the change to allow future roll-backs
   changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues });
   fse.writeJSON('./changeLog.JSON', changeLog, 'utf8', (err) => {
-    if (err) console.log(err);
-    console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
-    // now do the insert query
-    dbquery(connectParams, 'u_UPDATE', claimID, newValues.split(), (err4, result) => {
-      if (err4) {
-        console.log(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
-      }
-      console.log(result);
-    });
+    if (err) { console.error(err) } else {
+      console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
+      // now do the insert query
+      dbquery(connectParams, 'u_UPDATE', claimID, newValues.split(), (err4, result) => {
+        if (err4) {
+          console.error(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
+        } else {
+          console.log('Potential Application updated', result);
+        }
+      });
+    }
   });
 });
 // listener to handle when a user clicks on a patent link
@@ -197,20 +224,21 @@ ipcMain.on('new_query', (opEvent, queryJSON) => {
   }
   urlParse(queryJSON, savedSearch, (err5, whereClause, valueArray) => {
     if (err5) {
-      console.log(dialog.showErrorBox('URL Parse Error', `Error parsing url parameters: ${queryJSON}\n ${err5}`));
+      console.error(dialog.showErrorBox('URL Parse Error', `Error parsing url parameters: ${queryJSON}\n ${err5}`));
     } else {
       console.log(whereClause, valueArray);
       runNewQuery(connectParams, queryType, whereClause, valueArray, (err6, queryResults) => {
         if (err6) {
-          console.log(dialog.showErrorBox('Query Error', `Error with query: ${whereClause} ${valueArray}\n ${err6}`));
+          console.error(dialog.showErrorBox('Query Error', `Error with query: ${whereClause} ${valueArray}\n ${err6}`));
         } else {
           console.log('parsing to html ...');
           htmlparse(queryType, queryResults, uriMode, (err4, outputString) => {
             if (err4) {
-              console.log(dialog.showErrorBox('HTML Parse Error', `Error Parsing query to HTML: ${err4}`));
+              console.error(dialog.showErrorBox('HTML Parse Error', `Error Parsing query to HTML: ${err4}`));
+            } else {
+              console.log(`sending html-formatted table with ${queryResults.length} rows to renderer window`);
+              win.webContents.send('tableReady', outputString, queryResults.length); // now update the results table
             }
-            console.log(`sending html-formatted table with ${queryResults.length} rows to renderer window`);
-            win.webContents.send('tableReady', outputString, queryResults.length); // now update the results table
           });
           if (queryJSON.save !== true) {
             // only overwrite the savedSearch values if we haven't already saved some yet
