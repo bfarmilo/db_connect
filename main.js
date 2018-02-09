@@ -200,6 +200,24 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
     }
   });
 });
+
+ipcMain.on('update_watch', (uaEvent, claimID, oldValues, newValues) => {
+  // log the change to allow future roll-backs
+  changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues, column:'WatchItems'});
+  fse.writeJSON('./changeLog.JSON', changeLog, 'utf8', (err) => {
+    if (err) { console.error(err) } else {
+      console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
+      // now do the insert query
+      dbquery(connectParams, 'u_WATCH', claimID, newValues.split(), (err4, result) => {
+        if (err4) {
+          console.error(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
+        } else {
+          console.log('Watch Item updated', result);
+        }
+      });
+    }
+  });
+});
 // listener to handle when a user clicks on a patent link
 ipcMain.on('open_patent', (opEvent, linkVal) => {
   console.log(`received link click with path ${linkVal}`);

@@ -16,7 +16,10 @@ let potentialApplication = { claimID: 0, text: '' }
 let state = {
   lastOriginal: potentialApplication,
   current: potentialApplication,
-  lastUpdated: potentialApplication
+  lastUpdated: potentialApplication,
+  lastWatch: potentialApplication,
+  currentWatch: potentialApplication,
+  updatedWatch: potentialApplication
 }
 // global config
 let urlParams = {};
@@ -27,6 +30,10 @@ $.getJSON('js/app_config.json', (data) => {
 // define sending the call to the main process
 function updateApplication(record) {
   ipcRenderer.send('update_application', record.lastOriginal.claimID, record.lastOriginal.text, record.lastUpdated.text);
+}
+function updateWatch(record) {
+  console.log('sending update_watch event with ', record);
+  ipcRenderer.send('update_watch', record.lastWatch.claimID, record.lastWatch.text, record.updatedWatch.text);
 }
 // Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least)
 function parseSearch(searchContent, matchVal) {
@@ -63,7 +70,6 @@ $(document).ready(() => {
     // add listeners to each patentLink element
     $('.patentLink').on('click', (patentEvent) => {
       console.log(patentEvent);
-      //ipcRenderer.send('open_patent', patentEvent.target.attributes.getNamedItem('data-url').value);
       ipcRenderer.send('view_patentdetail', patentEvent.target.innerText);
     });
     // add listeners to Potential Application
@@ -95,6 +101,28 @@ $(document).ready(() => {
       state.lastUpdated = {
         claimID: applicationEvent.target.attributes.getNamedItem('data-claimid').value,
         text
+      }
+    })
+    // add listeners to Potential Application
+    $('.watch').on('click', (watchEvent) => {
+      state.currentWatch = {
+        claimID: watchEvent.target.attributes.getNamedItem('data-claimid').value,
+        text: watchEvent.target.innerHTML
+      };
+      console.log('Watch field clicked. current state', Object.assign(state));
+      if (state.updatedWatch.claimID !== state.currentWatch.claimID && state.updatedWatch.claimID !== 0 && state.lastWatch.claimID !== 0) {
+        // clicking a new claim, and clicked one before, better update the old one first
+        if (state.updatedWatch.text !== state.lastWatch.text) updateWatch(state);
+      }
+      // now update these state variables
+      state.lastWatch = state.currentWatch;
+      state.updatedWatch = state.currentWatch;
+      // console.log($(this).data('claimid'), $(this).html()); F
+    });
+    $('.watch').on('keyup', watchEvent => {
+      state.updatedWatch = {
+        claimID: watchEvent.target.attributes.getNamedItem('data-claimid').value,
+        text: watchEvent.target.innerHTML
       }
     })
     // return the spinner to normal

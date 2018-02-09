@@ -17,7 +17,8 @@
         "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
         "u_INSERT": "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) ",
         "p_PATENT": "SELECT * FROM Patent AS patents LEFT OUTER JOIN PatentSummary AS summaries ON patents.PatentID = summaries.PatentID ",
-        "u_FULLTEXT":  "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1"
+        "u_FULLTEXT":  "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
+        "u_WATCH": "UPDATE Claim SET WatchItems=@0 WHERE ClaimID="
     },
     "urlParams": {
         "whereObj": {
