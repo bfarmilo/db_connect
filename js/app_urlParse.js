@@ -25,7 +25,7 @@ function urlParse(params, saved, callback) {
     }
     if (params.srch !== '') {
       // has a search we need to parse for the query
-      sqlParsed(params.srch, params.save, saved.paramArray.length, params.srvl, (error, where, parameters) => {
+      sqlParsed(params.srch, params.save, saved.paramArray.length=0, params.srvl, (error, where, parameters) => {
         if (error) throw error;
         updateSQL(where, parameters);
       });

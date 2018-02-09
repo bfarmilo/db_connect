@@ -18,7 +18,11 @@ function sqlParse(searchField, saved, savedParamCount, searchString, callback) {
     // could also be word1 OR NOT word2 AND NOT word3
     // has at least one AND or OR
     parsedSearch.param = searchString !== '' ? searchString.split(matchExp).map(values => `%${values}%`) : ['%'];
-    const newMatch = new RegExp(parsedSearch.param.join('|').replace(/%/g, ''), 'g');
+    // now create a RegExp of the form /param1|param2|param3/g
+    // TODO ! Fix bug where a search for A, N, D, O, R, T will mess up this regex. Hope they are at the start or end
+    const newMatch = new RegExp(`^${parsedSearch.param.join('|').replace(/%/g, '')}$`, 'g');
+    console.log(newMatch);
+    // split the where into words like OR, AND, OR NOT, AND NOT
     parsedSearch.where = searchString !== '' ? searchString.split(newMatch).map((values, index, array) => {
       if (index === 0) return `${pat.whereObj[searchField]}${(values.search('NOT') !== -1) ? ' NOT' : ''} LIKE @${index + delta}`;
       if (index === (array.length - 1)) return '';
