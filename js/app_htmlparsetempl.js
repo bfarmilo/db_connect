@@ -21,7 +21,7 @@ ${resultArray.map(patent => `    <tr>
         </details>
       </td>
       <td class='application col-sm-1 col-md-1 col-lg-1' data-claimid='${patent[7]}' contenteditable='true'>${patent[5] ? patent[5] : ' '}</td>
-      <td class='col-sm-1 col-md-1 col-lg-1'>${patent[6] ? patent[6] : ' '}</td>
+      <td class='watch col-sm-1 col-md-1 col-lg-1' data-claimid='${patent[7]}' contenteditable='true'>${patent[6] ? patent[6] : ' '}</td>
      </tr>
   `).join('')}
  </tbody>
