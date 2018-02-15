@@ -1,5 +1,7 @@
 const { ipcRenderer } = require('electron');
 const { h, render, Component } = require('preact');
+/** @jsx h */
+
 
 class PatentDetail extends Component {
 

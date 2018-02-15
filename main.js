@@ -1,14 +1,20 @@
 const electron = require('electron');
 const { getDropBoxPath } = require('./js/getDropBoxPath');
-const runNewQuery = require('./js/app_runNewQuery');
 const dbquery = require('./js/app_DBconnect');
+// these are for old style queries
+const runNewQuery = require('./js/app_runNewQuery');
 const urlParse = require('./js/app_urlParse');
 const htmlparse = require('./js/app_htmlparsetempl');
+//
 const changeLog = require('./changeLog.json');
 const fse = require('fs-extra');
 const spawn = require('child_process').spawn;
 const { connectDocker } = require('./js/connectDocker');
 const { getFullText } = require('./js/getFullText');
+const { patentDB } = require('./js/app_config.json');
+const { parseQuery } = require('./js/app_sqlParse');
+// developer
+const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
@@ -23,7 +29,7 @@ let dropboxPath = ''; // keeps the path to the local dropbox
 let queryType = '';
 let uriMode = process.env.USEDB === 'NextIdea'; // flag that indicates if claim HTML is uri-encoded or not
 
-connectDocker(require('./js/app_config.json').patentDB.connection)
+connectDocker(patentDB.connection)
   .then(params => {
     connectParams = params;
     console.log('new connection parameters set: %j', connectParams);
@@ -50,9 +56,16 @@ function createWindow() {
     height: 800,
   });
   // and load the index.html of the app.
-  win.loadURL(`file://${__dirname}/index.html`);
+  win.loadURL(`file://${__dirname}/claimtable.html`);
   // Open the DevTools.
-  // win.webContents.openDevTools();
+  installExtension(REACT_DEVELOPER_TOOLS).then(name => {
+    console.log(`Added Extension:  ${name}`);
+    win.webContents.openDevTools();
+  })
+    .catch(err => {
+      console.error('An error occurred: ', err);
+    });
+
   // Emitted when the window is closed.
   win.on('closed', () => {
     // Dereference the window object, usually you would store windows
@@ -62,7 +75,10 @@ function createWindow() {
     if (markmanwin) markmanwin.close();
     win = null;
   });
+
+
 }
+
 // This method will be called when Electron has finished
 // initialization and is ready to create browser windows.
 // Some APIs can only be used after this event occurs.
@@ -194,7 +210,8 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
         if (err4) {
           console.error(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
         } else {
-          console.log('Potential Application updated', result);
+          console.log('Potential Application', result);
+          win.send('ready');
         }
       });
     }
@@ -203,7 +220,7 @@ ipcMain.on('update_application', (uaEvent, claimID, oldValues, newValues) => {
 
 ipcMain.on('update_watch', (uaEvent, claimID, oldValues, newValues) => {
   // log the change to allow future roll-backs
-  changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues, column:'WatchItems'});
+  changeLog.changes.push({ datetime: Date.now(), claimID, from: oldValues, to: newValues, column: 'WatchItems' });
   fse.writeJSON('./changeLog.JSON', changeLog, 'utf8', (err) => {
     if (err) { console.error(err) } else {
       console.log(`changeLog updated: ${JSON.stringify(changeLog.changes[changeLog.changes.length - 1])}`);
@@ -213,16 +230,40 @@ ipcMain.on('update_watch', (uaEvent, claimID, oldValues, newValues) => {
           console.error(dialog.showErrorBox('Query Error', `Error with update query ${err4}`));
         } else {
           console.log('Watch Item updated', result);
+          win.send('ready');
         }
       });
     }
   });
 });
+
 // listener to handle when a user clicks on a patent link
 ipcMain.on('open_patent', (opEvent, linkVal) => {
   console.log(`received link click with path ${linkVal}`);
   openPDF(linkVal);
 });
+
+ipcMain.on('json_query', (event, query) => {
+  console.log('got query object %s', JSON.stringify(query, null, 1));
+  //remove duplicates and create an array of ({field, value}) objects
+  const fieldList = Object.keys(query).filter(item => query[item] !== '').map(item => ({ field: item, value: query[item] }));
+  //make sure to URI-encode ClaimHtml if appropriate
+  if (uriMode && fieldList.ClaimHtml) {
+    fieldList.ClaimHtml = encodeURIComponent(fieldList.ClaimHtml).replace(/\'/g, '%27').replace('%', '[%]');
+  }
+  //in the case where a blank query is passed, default query is only show claim 1
+  const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
+  dbquery(connectParams, 'p_SELECTJSON', `WHERE ${parsedQuery.where} FOR JSON AUTO`, parsedQuery.param, (err, result) => {
+    if (err) {
+      console.error(err);
+    } else {
+      // query comes down as an array of chunks. So need to join the chunks,
+      // Parse as JSON, then send to window
+      win.webContents.send('json_result', result.length > 0 ? JSON.parse(result.join('')) : '');
+    }
+  })
+});
+
 // listener to handle when a user launches a new query
 ipcMain.on('new_query', (opEvent, queryJSON) => {
   // querystring comes back as {srch:'a%20OR%20b', srvl:} etc.

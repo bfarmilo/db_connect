@@ -1,0 +1,153 @@
+body {
+  font-family:"Arial"
+}
+
+button {
+  border-radius: 2px;
+  background-color: #337ab7;
+  color:lightgrey;
+  font-weight: bold;
+  border:none;
+  outline:none;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+
+.FullTable {
+  display:grid;
+  grid-template-rows: 2em (auto);
+}
+
+.ButtonArea {
+  display:flex;
+  justify-content: flex-end;
+}
+
+.ButtonArea button {
+  flex-grow: 1;
+}
+
+.ResultCount {
+  flex-grow:7;
+  font-size:large;
+  color:white;
+  background-color: rgba(51, 122, 183, 1);
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+.TableHeading {
+  display:grid;
+  grid-template-columns: 1fr 1fr 3fr 2fr 2fr;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+  font-size:large;
+  color:white;
+  background-color: rgba(51, 122, 183, 1);
+}
+
+.ValuesField {
+  border-radius: 2px;
+  color:lightgray;
+  border:none;
+  outline:none;
+  background-color: rgba(51, 122, 183, 0.8);
+  width:90%
+}
+.ColumnControl {
+  display:grid;
+  grid-template-columns: 4fr 1fr; 
+}
+
+.ColumnControl div {
+  display:flex;
+  justify-content:flex-end;
+  margin: 0 0.5em 0 0;
+  padding:0
+}
+
+.Selected {
+  background-color: rgba(183, 130, 51, 0.8)
+}
+
+.ColumnControl div button {
+  border:1px solid rgba(41, 94, 141, 0.8);
+  padding: 1px;
+  background-color: rgba(51,122,183,0.5);
+}
+
+::placeholder {
+  opacity:1;
+  color:lightgray;
+  font-style:italic;
+}
+
+.TableArea {
+
+}
+
+.TableRow {
+  display:grid;
+  grid-template-columns: 1fr 1fr 3fr 2fr 2fr;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+.EditBoxContainer {
+  display:flex;
+  flex-direction:column;
+}
+
+.EditableBox {
+  display:grid;
+  grid-template-rows: auto 1fr;
+  background-color: rgba(183, 130, 51, 0.8);
+}
+
+.EditArea {
+  flex-grow:1;
+}
+
+.SaveCancel {
+  grid-row-start:2;
+  grid-column-start: 2;
+  text-align:right
+}
+  
+/* Styling for the simple query return */
+
+/*Throbber for loading button*/
+.glyphicon-refresh-animate {
+  -animation: spin 1s infinite linear;
+  -webkit-animation: spin 1s infinite linear;
+-moz-animation: spin 1s infinite linear;
+}
+
+@-webkit-keyframes spin {
+  from { -webkit-transform: rotate(0deg);}
+  to { -webkit-transform: rotate(360deg);}
+}
+
+@-moz-keyframes spin {
+  from { -moz-transform: rotate(0deg);}
+  to { -moz-transform: rotate(360deg);}
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg);}
+  to { transform: rotate(360deg);}
+}
+
+/* style tags*/
+
+.claim-text {
+margin-left: 20px;
+text-indent: -20px;
+margin-bottom: 5px;
+} /*Comes from the database with this class applied*/
+
+.claim-dependent {
+color: #A0A0A0;
+} /*make dependent claims grey in text*/
+
+/* style by tag */
+.claim-ref {
+font-weight: bold;
+} /*used by dependent claims to reference the independent they depend from */
