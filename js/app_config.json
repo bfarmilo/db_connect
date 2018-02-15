@@ -16,9 +16,22 @@
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
         "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
         "u_INSERT": "INSERT INTO Patent (PatentUri, PMCRef, Title, ClaimsCount, PatentNumber, IndependentClaimsCount, Number, IsInIPR, TechnologySpaceID, TechnologySubSpaceID, CoreSubjectMatterID, PatentPath) ",
+        "p_SELECTJSON": "SELECT TOP 1000 patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
         "p_PATENT": "SELECT * FROM Patent AS patents LEFT OUTER JOIN PatentSummary AS summaries ON patents.PatentID = summaries.PatentID ",
-        "u_FULLTEXT":  "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
-        "u_WATCH": "UPDATE Claim SET WatchItems=@0 WHERE ClaimID="
+        "u_FULLTEXT": "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
+        "u_WATCH": "UPDATE Claim SET WatchItems=@0 WHERE ClaimID=",
+        "fieldMap": [
+                {"name": "PMCRef", "prefix":"patents", "suffix": " LIKE "},
+                {"name": "PatentNumber", "prefix":"RIGHT(CAST(patents", "suffix": " AS char(7)),3)="},
+                {"name": "IsInIPR", "prefix":"patents", "suffix":"="},
+                {"name": "ClaimNumber", "prefix":"claims", "suffix":"="},
+                {"name": "ClaimHtml", "prefix":"claims", "suffix":" LIKE "},
+                {"name": "IsDocumented", "prefix":"claims", "suffix":"="},
+                {"name": "IsIndependentClaim", "prefix":"claims", "suffix":"="},
+                {"name": "IsMethodClaim", "prefix":"claims", "suffix":"="},
+                {"name": "PotentialApplication", "prefix":"claims", "suffix":" LIKE "},
+                {"name": "WatchItems", "prefix":"claims", "suffix":" LIKE "}
+            ]
     },
     "urlParams": {
         "whereObj": {
@@ -64,8 +77,8 @@
             "l": 50
         },
         "startMatch": "<i>Description",
-        "endMatch":"\\* \\* \\* \\* \\*",
-        "breakMatch":" ?<BR><BR> ?",
-        "stripMatch":"( ?<CENTER> ?| ?<\\/CENTER> ?|<HR>|<b>|<\\/b>|<i>|<\\/i>)"
+        "endMatch": "\\* \\* \\* \\* \\*",
+        "breakMatch": " ?<BR><BR> ?",
+        "stripMatch": "( ?<CENTER> ?| ?<\\/CENTER> ?|<HR>|<b>|<\\/b>|<i>|<\\/i>)"
     }
 }
