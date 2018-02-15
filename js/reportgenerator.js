@@ -29,10 +29,12 @@ $.getJSON('js/app_config.json', (data) => {
 });
 // define sending the call to the main process
 function updateApplication(record) {
+  showSpinner(true, 'Saving App');
   ipcRenderer.send('update_application', record.lastOriginal.claimID, record.lastOriginal.text, record.lastUpdated.text);
 }
 function updateWatch(record) {
   console.log('sending update_watch event with ', record);
+  showSpinner(true, 'Saving Watch');
   ipcRenderer.send('update_watch', record.lastWatch.claimID, record.lastWatch.text, record.updatedWatch.text);
 }
 // Takes a string (searchContent), a matchVal array of operators (.rexp and .str at least)
@@ -45,6 +47,14 @@ function parseSearch(searchContent, matchVal) {
   return reParsed;
 }
 
+function showSpinner(activate, message) {
+  if (activate) {
+    $('#Update').html(`<span class=\'glyphicon glyphicon-refresh glyphicon-refresh-animate\'></span> ${message}`);
+  } else {
+    $('#Update').html(message);
+  }
+}
+
 // now for the onload functions
 $(document).ready(() => {
   // default to main view
@@ -55,6 +65,9 @@ $(document).ready(() => {
   // TODO: populate Fieldlist with the valid parameters --
   // do this to keep things in sync with a single config
   // start event listeners
+  ipcRenderer.on('ready', (event) => {
+    showSpinner(false, 'Run Query');
+  })
   ipcRenderer.on('tableReady', (event, contents, countResults) => {
     // update the results Count
     if (countResults === '0') {
@@ -126,7 +139,7 @@ $(document).ready(() => {
       }
     })
     // return the spinner to normal
-    $('#Update').html('Run Query');
+    showSpinner(false, 'Run Query');
     // enable the showDetails box
     $('#showDetails').removeClass('disabled');
     $('#showDetails').addClass('btn-default');
@@ -203,7 +216,7 @@ $(document).ready(() => {
   // Update page is clicked
   $('#Update').on('click', () => {
     // start the spinner
-    $('#Update').html('<span class=\'glyphicon glyphicon-refresh glyphicon-refresh-animate\'></span> Working...');
+    showSpinner(true, 'Working ...');
     // enable the search refinement
     $('#addSearch').removeClass('disabled');
     srvl = $('#SearchValue').val();
@@ -219,7 +232,7 @@ $(document).ready(() => {
     // track enter key
     const isApplication = (event.target.className.search('application') !== -1);
     if (event.which === 13) { // keycode for enter key
-      // force the 'Enter Key' to implicitly click the Update button, unless editing an applicationo
+      // force the 'Enter Key' to implicitly click the Update button, unless editing an application
       if (!isApplication) {
         $('#Update').click();
       }
