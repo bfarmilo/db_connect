@@ -12,6 +12,7 @@ function query(connectParams, qryType, whereString, values, callback) {
     if (err) return callback(err);
     // good connection, so query the DB and return the callback when done
     const sqlString = `${DB[qryType]}${whereString}${(qryType === 'p_SELECT' || qryType === 'm_MARKMANALL') ? DB.orderString : ''}`;
+    console.log('querying with SQL: %s\n Params:', sqlString, values);
     const request = new Request(sqlString, (err, rowCount, rows) => {
       if (err) return callback(err);
       console.log('%d rows returned', rowCount);
