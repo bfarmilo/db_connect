@@ -37,7 +37,7 @@ button {
 
 .TableHeading {
   display:grid;
-  grid-template-columns: 1fr 1fr 3fr 2fr 2fr;
+  grid-template-columns: 1fr 1fr 5fr 2fr 2fr;
   padding: 0.4em 0.5em 0.4em 0.5em;
   font-size:large;
   color:white;
@@ -86,30 +86,11 @@ button {
 
 .TableRow {
   display:grid;
-  grid-template-columns: 1fr 1fr 3fr 2fr 2fr;
+  grid-template-columns: 1fr 1fr 5fr 2fr 2fr;
   padding: 0.4em 0.5em 0.4em 0.5em;
 }
 
-.EditBoxContainer {
-  display:flex;
-  flex-direction:column;
-}
 
-.EditableBox {
-  display:grid;
-  grid-template-rows: auto 1fr;
-  background-color: rgba(183, 130, 51, 0.8);
-}
-
-.EditArea {
-  flex-grow:1;
-}
-
-.SaveCancel {
-  grid-row-start:2;
-  grid-column-start: 2;
-  text-align:right
-}
   
 /* Styling for the simple query return */
 
@@ -117,7 +98,7 @@ button {
 .glyphicon-refresh-animate {
   -animation: spin 1s infinite linear;
   -webkit-animation: spin 1s infinite linear;
--moz-animation: spin 1s infinite linear;
+  -moz-animation: spin 1s infinite linear;
 }
 
 @-webkit-keyframes spin {
