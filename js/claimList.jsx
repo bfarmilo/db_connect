@@ -1,7 +1,13 @@
 import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
+import { ControlArea } from './jsx/controlArea';
+import { EditCell } from './jsx/editCell';
+import { getCurrent, modifyClaim, countResults, dropWorkingValue } from './jsx/claimListMethods';
 import 'preact/devtools';
+
+const SET_ALL_CLAIMS = 'all';
+const SET_ALL_FLAGS = 'all';
 
 // TODO: enable IsIndependentClaim search
 const enabledButtons = [
@@ -19,44 +25,6 @@ const enabledColumns = [
     { display: 'Watch', field: 'WatchItems' }
 ]
 
-/** modifies a value within the claim List
- * 
- * @param {*} claimTable the claim table to edit
- * @param {*} changeType type of change - 'set', 'clear', 'resetAll', 'toggle', 'update_set', 'update_clear'
- * @param {*} field the field to target. Note for the 'update' mode this refers to the element storing the text not the edit flag
- * @param {*} claimID the claimID to apply the change to
- * @param {*} newValue the new value for the change, active in 'update' mode only
- */
-const modifyClaim = (claimTable, changeType, field = '', claimID = '', newValue = '') => {
-    return claimTable.map(item => ({
-        PMCRef: item.PMCRef,
-        PatentPath: item.PatentPath,
-        PatentNumber: item.PatentNumber,
-        claims: item.claims.map(claim => {
-            if (changeType === 'resetAll') return { ...claim, editPA: false, editWI: false, expandClaim: false }
-            if (claim.ClaimID === parseInt(claimID, 10) || claimID === 'all') {
-                if (changeType === 'toggle') return { ...claim, [field]: !claim[field] }
-                if (changeType === 'set') return { ...claim, [field]: true }
-                if (changeType === 'clear') return { ...claim, [field]: false }
-                if (changeType.includes('update')) {
-                    // update the text and mark the field as edit mode
-                    const flagField = field === 'PotentialApplication' ? 'editPA' : 'editWI';
-                    return {
-                        ...claim,
-                        [field]: newValue,
-                        [flagField]: changeType.includes('set') ? true : false
-                    }
-                }
-            }
-            return { ...claim }
-        }),
-    }));
-}
-
-const countResults = claimTable => {
-    return claimTable.map(item => item.claims).reduce((total, claims) => total += claims.length, 0)
-}
-
 const initialList = [
     {
         PMCRef: '',
@@ -68,8 +36,6 @@ const initialList = [
             ClaimHtml: '',
             PotentialApplication: '',
             WatchItems: '',
-            editPA: false,
-            editWI: false,
             expandClaim: false
         }]
     }
@@ -98,7 +64,9 @@ class ClaimTable extends Component {
             queryValues,
             windowHeight: 600,
             resultCount: 0,
-            undo: []
+            undo: [],
+            working: true,
+            activeRows: [],
         };
         this.toggleExpand = this.toggleExpand.bind(this);
         this.runQuery = this.runQuery.bind(this);
@@ -107,6 +75,7 @@ class ClaimTable extends Component {
         this.toggleFilter = this.toggleFilter.bind(this);
         this.editMode = this.editMode.bind(this);
         this.clickSaveCancel = this.clickSaveCancel.bind(this);
+        this.changeDB = this.changeDB.bind(this);
     }
 
     // lifecycle Methods
@@ -114,23 +83,24 @@ class ClaimTable extends Component {
         ipcRenderer.on('json_result', (event, data) => {
             if (data) {
                 // add the state variables to each claim of the query
-                const claimList = modifyClaim(data, 'resetAll');
+                const claimList = modifyClaim(data, 'clear', { field: 'expandClaim' });
                 console.log('got new table data');
                 const resultCount = countResults(claimList);
-                this.setState({ claimList, resultCount });
+                this.setState({ claimList, resultCount, working: false });
             } else {
                 console.log('no results received');
-                this.setState({ claimList: initialList, resultCount: 0 })
+                this.setState({ claimList: initialList, resultCount: 0, working: false })
             }
         });
         ipcRenderer.on('resize', (event, newX, newY) => {
             console.log('resize to %d x %d', newX, newY)
             //TODO: Update window size and set new scollbar heights
         })
-        this.runQuery();
+        setTimeout(() => this.runQuery(), 2000); //hack to wait for docker to get server
     }
     //Control Panel Methods
     runQuery(event) {
+        this.setState({ working: true })
         console.log('sending new query');
         ipcRenderer.send('json_query', this.state.queryValues)
     }
@@ -159,10 +129,18 @@ class ClaimTable extends Component {
         this.runQuery();
     }
 
+    changeDB(event) {
+        console.log('changing database');
+        ipcRenderer.send('change_db');
+        this.setState({ claimList: initialList, queryValues, undo: [] });
+        this.runQuery();
+    }
+
     // TODO: Add sort by heading !
 
     // Shared Methods
     toggleExpand(event) {
+        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
         console.log('expanding claim with ID', claimID);
         let action = 'toggle';
@@ -172,7 +150,7 @@ class ClaimTable extends Component {
         }
         // update the claim list, and if it was an 'expand-all' call flip the state of expandAll
         this.setState({
-            claimList: modifyClaim(this.state.claimList, action, 'expandClaim', claimID),
+            claimList: modifyClaim(this.state.claimList, action, { claimID, field: 'expandClaim' }),
             expandAll: claimID === 'all' && !this.state.expandAll
         })
     }
@@ -185,79 +163,69 @@ class ClaimTable extends Component {
     }
 
     editMode(event) {
+        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
         const field = event.currentTarget.getAttribute('data-field');
-        const newValue = event.currentTarget.textContent;
-        console.log('detected edit event in %s for claim ID %s, new value %s', field, claimID, newValue);
-        //load undo values into undo array, if needed (don't duplicate)
-        let newUndo;
-        if (this.state.undo.filter(item => item.claimID === claimID && item.field === field).length === 0) {
-            newUndo = this.state.claimList.reduce((result, item) => {
-                const checkVal = item.claims.filter(claim => `${claim.ClaimID}` === `${claimID}`);
-                if (checkVal.length > 0) result.push({
-                    claimID: `${checkVal[0].ClaimID}`,
-                    field,
-                    value: checkVal[0][field]
-                })
-                return result;
-            },[])
-            console.log('saved undo values', newUndo);
+        const newValue = event.currentTarget.innerText;
+        const keyPressed = event.keyCode;
+        // catch the enter key, otherwise it creates a new div and messes everything up
+        if (keyPressed === 13) {
+            console.log('enter pressed')
+            event.preventDefault();
         } else {
-            console.log('item already in undo');
+            console.log('detected edit event in %s for claim ID %s, new value %s, key %d', field, claimID, newValue, keyPressed);
+            //intelligently load undo values into undo array using getCurrent
+            const undo = getCurrent(this.state.claimList, this.state.undo, patentNumber, claimID, field)
+            //load current record into active array, if needed (don't duplicate)
+            const activeRows = getCurrent(this.state.claimList, this.state.activeRows, patentNumber, claimID, field)
+            //Set the value for the activeRow corresponding to this field so it updates !
+            this.setState({
+                activeRows: activeRows.map(item => {
+                    if (item.claimID === claimID && item.field===field) return { ...item, value: newValue };
+                    return item;
+                }),
+                undo
+            });
         }
-        this.setState({
-            claimList: modifyClaim(this.state.claimList, 'update_set', field, claimID, newValue),
-            undo: newUndo ? this.state.undo.concat(newUndo) : this.state.undo
-        });
     }
 
+
     clickSaveCancel(event) {
+        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
         const field = event.currentTarget.getAttribute('data-field');
         const action = event.currentTarget.getAttribute('data-action');
         console.log('detected %s event in %s for claim ID %s', action, field, claimID);
+        // with either save or cancel, we need to know the activeData.table and activeData.value
+        const activeData = dropWorkingValue(this.state.activeRows, claimID, field);
+        // likewise we need the remaining undo.table and value we undid undo.value
+        const undoData = dropWorkingValue(this.state.undo, claimID, field);
         // load the original value into oldValue from the undo array, and create a newValue placeholder
-        const oldValue = this.state.undo.filter(item => item.claimID === claimID && item.field === field)[0].value
-        if (action === 'cancel') {
-            // write old value back into the claimList state
-            console.log(oldValue);
-            this.setState({
-                claimList: modifyClaim(this.state.claimList, 'update_clear', field, claimID, oldValue)
-            });
-        } else if (action === 'save') {
-            // get the new value from the current claimList state
-            const newValue = this.state.claimList.reduce((result, item) => {
-                let checkVal = item.claims.filter(claim => `${claim.ClaimID}` === claimID);
-                if (checkVal.length > 0) {
-                    result = checkVal[0][field];
-                }
-                return result;
-            }, '')
+        if (action === 'save') {
             // send off an updateQuery to the database
             ipcRenderer.send(
-                field==='PotentialApplication' ? 'update_application' : 'update_watch',
-                claimID,
-                oldValue,
-                newValue
+                'json_update',
+                undoData.value,
+                activeData.value
             )
-            // clear the 'edit' flag
-            // and clear this item out of undo
+            // splice in the record and update the main table
             this.setState({
-                claimList: modifyClaim(this.state.claimList, 'clear', field === 'PotentialApplication' ? 'editPA' : 'editWI', claimID),
-                undo: this.state.undo.reduce((result, item) => {
-                    if (item.claimID !== claimID || item.field !== field) {
-                        result.push(item);
-                    }
-                    return result;
-                },[])
+                claimList: modifyClaim(this.state.claimList, 'update', activeData.value)
             })
         }
+        // clear out and update undo and activeRows
+        this.setState({
+            undo: undoData.table,
+            activeRows: activeData.table
+        })
+
     }
 
     render({ props }, { state }) {
         return (
             <div class="FullTable">
                 <ControlArea
+                    enabledButtons={enabledButtons}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
                     expandAll={this.state.expandAll}
@@ -265,64 +233,32 @@ class ClaimTable extends Component {
                     editQuery={this.editQuery}
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
+                    changeDB={this.changeDB}
                 />
-                <Scrollbars
-                    autoHide
-                    autoHeight
-                    autoHeightMax={this.state.windowHeight}
-                    style={{ width: '100%' }}
-                >
-                    <TableArea
-                        claimList={this.state.claimList}
-                        getDetail={this.getPatentDetail}
-                        expand={this.toggleExpand}
-                        editMode={this.editMode}
-                        clickSaveCancel={this.clickSaveCancel}
-                    />
-                </Scrollbars>
+                {this.state.working ? (
+                    <div class="glyphicon-refresh-animate">|</div>
+                ) : (
+                        <Scrollbars
+                            autoHide
+                            autoHeight
+                            autoHeightMax={this.state.windowHeight}
+                            style={{ width: '100%' }}
+                        >
+                            <TableArea
+                                claimList={this.state.claimList}
+                                activeRows={this.state.activeRows}
+                                getDetail={this.getPatentDetail}
+                                expand={this.toggleExpand}
+                                editMode={this.editMode}
+                                clickSaveCancel={this.clickSaveCancel}
+                            />
+                        </Scrollbars>
+                    )}
             </div>
         );
     }
 }
 
-const ControlArea = props => {
-    return (
-        <div class="ControlArea">
-            <div class="ButtonArea">
-                <div class="ResultCount">{`${props.resultCount} Matching Claim${props.resultCount == 1 ? '' : 's'} Found`}</div>
-                {enabledButtons.map(button => (
-                    <button
-                        key={button.field}
-                        data-value={button.field}
-                        data-setvalue={button.setValue}
-                        onClick={props.toggleFilter}
-                        class={`FilterButton ${props.queryValues[button.field] && 'Selected'}`}
-                    >{button.display}</button>
-                ))}
-                <button class={`ToggleExpand ${props.expandAll && 'Selected'}`} data-claimid='all' onClick={props.toggleExpand}>{props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}</button>
-            </div>
-            <div class="TableHeading">
-                {enabledColumns.map(column => (
-                    <div key={column.field}>
-                        <div>{column.display}</div>
-                        <div class="ColumnControl">
-                            <input
-                                class={`ValuesField ${!!props.queryValues[column.field] && "Selected"}`}
-                                data-field={column.field}
-                                onKeyUp={props.editQuery}
-                                placeholder='Filter by ...'
-                                value={props.queryValues[column.field]} />
-                            <div class={`${!!props.queryValues[column.field] && "Selected"}`}>
-                                {!!props.queryValues[column.field] && <button onClick={props.editQuery} data-field={column.field} data-action='clear'>X</button>}
-                                <button onClick={props.runQuery}>Go</button>
-                            </div>
-                        </div>
-                    </div>
-                ))}
-            </div>
-        </div>
-    )
-}
 
 const TableArea = props => {
     // need to deal with expanding the ClaimFullText
@@ -339,68 +275,24 @@ const TableArea = props => {
                     <div data-patentnumber={`${patent.PatentNumber}`} data-field="PatentNumber" onClick={props.getDetail}>
                         {patent.PatentNumber}
                     </div>
-                    <div data-claimid={`${item.ClaimID}`} data-field="ClaimFullText" onClick={props.expand} >
+                    <div data-claimid={`${item.ClaimID}`} data-field="ClaimFullText" data-patentnumber={patent.PatentNumber} onClick={props.expand} >
                         <div>Claim {item.ClaimNumber}{item.expandClaim ? ': ' : ' (expand)'}</div>
                         {item.expandClaim && (<div dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />)}
                     </div>
-                    <div class={`EditBoxContainer ${item.editPA && "EditableBox"}`}>
-                        <div
-                        class="EditArea"
-                            data-claimid={`${item.ClaimID}`}
-                            data-field="PotentialApplication"
-                            contentEditable={true}
-                            onKeyUp={props.editMode}
-                        >
-                            {item.PotentialApplication}
-                        </div>
-                        {item.editPA ? (
-                            <div>
-                                <SaveCancel handleClick={props.clickSaveCancel} claimID={item.ClaimID} field="PotentialApplication" />
-                            </div>) : ("")}
-
-                    </div>
-                    <div class={`EditBoxContainer ${item.editWI && "EditableBox"}`}>
-                        <div
-                            class="EditArea"
-                            data-claimid={`${item.ClaimID}`}
-                            data-field="WatchItems"
-                            contentEditable={true}
-                            onKeyUp={props.editMode}
-                        >
-                            {item.WatchItems}
-                        </div>
-                        {item.editWI ? (
-                            <div>
-                                <SaveCancel handleClick={props.clickSaveCancel} claimID={item.ClaimID} field="WatchItems" />
-                            </div>
-                        ) : ("")}
-                    </div>
+                    {["PotentialApplication", "WatchItems"].map(cell => {
+                        const activeValue = props.activeRows.find(claim => claim.claimID === `${item.ClaimID}` && claim.field === cell);
+                        return (<EditCell
+                            patentNumber={`${patent.PatentNumber}`}
+                            claimID={`${item.ClaimID}`}
+                            field={cell}
+                            editMode={activeValue}
+                            value={activeValue ? activeValue.value : item[cell]}
+                            clickSaveCancel={props.clickSaveCancel}
+                            activateEditMode={props.editMode}
+                        />)
+                    })}
                 </div>
             )))}
-        </div>
-    );
-};
-
-const SaveCancel = props => {
-    // TODO pass the click handlers up
-    return (
-        <div class="SaveCancel">
-            <button
-                data-claimid={`${props.claimID}`}
-                data-field={props.field}
-                data-action="save"
-                onClick={props.handleClick}
-            >
-                Save Changes
-        </button>
-            <button
-                data-claimid={props.claimID}
-                data-field={props.field}
-                data-action="cancel"
-                onClick={props.handleClick}
-            >
-                Cancel
-        </button>
         </div>
     );
 };
