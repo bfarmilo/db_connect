@@ -101,7 +101,17 @@ const parseQuery = query => {
   }, {});
 }
 
+const parseOrder = orderBy => {
+    // each element is [{fieldname, direction}]
+    // lookup the prefix and suffix associated with fieldName
+    return orderBy.map(element => {
+      const parser = element.field !== 'PatentNumber' ? patentDB.fieldMap.filter(val => val.name === element.field)[0] : {prefix:'patents'};
+      return `${parser.prefix}.${element.field} ${element.direction}`;
+    });
+}
+
 module.exports = {
   sqlParse,
-  parseQuery
+  parseQuery,
+  parseOrder
 };
