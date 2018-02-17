@@ -8,7 +8,6 @@
     "transpile": "babel ./js/ -x .jsx --out-dir ./jsx/",
     "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
     "start": "docker start sqlserver && npm run transpile && electron .",
-    "startNext": "docker start sqlserver && npm run transpile && set USEDB=NextIdea& electron .",
     "insertNew": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
     "updateExisting": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
     "getPatents": "docker start sqlserver && set USEDB=NextIdea& set DEBUG=nightmare& node ./test/4_getpatents.test.js"
