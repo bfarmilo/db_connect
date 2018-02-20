@@ -11,13 +11,13 @@ const EditCell = props => {
         EditableBox: {
             display: 'grid',
             gridTemplateRows: 'auto 1fr',
-            backgroundColor: 'rgba(183, 130, 51, 0.8)'
         },
         ViewArea: {
             flexGrow: '1'
         },
         EditArea: {
-            display: 'inline-block'
+            display: 'inline-block',
+            backgroundColor: props.selectedColor
         }
     }
     return (
