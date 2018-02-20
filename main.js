@@ -62,21 +62,24 @@ const createWindow = () => {
   // Open the DevTools.
   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
     console.log(`Added Extension:  ${name}`);
-    win.webContents.openDevTools();
+    // win.webContents.openDevTools();
   })
     .catch(err => {
       console.error('An error occurred: ', err);
     });
-
+  win.on('resize', () => {
+    console.log('window size changed, sending new size');
+    win.webContents.send('resize', {width: win.getSize()[0], height:win.getSize()[1]});
+  });
   // Emitted when the window is closed.
   win.on('closed', () => {
-    // Dereference the window object, usually you would store windows
-    // in an array if your app supports multi windows, this is the time
-    // when you should delete the corresponding element.
-    if (detailWindow) detailWindow.close();
-    if (markmanwin) markmanwin.close();
-    win = null;
-  });
+      // Dereference the window object, usually you would store windows
+      // in an array if your app supports multi windows, this is the time
+      // when you should delete the corresponding element.
+      if (detailWindow) detailWindow.close();
+      if (markmanwin) markmanwin.close();
+      win = null;
+    });
 }
 // Electron listeners
 // initialization and is ready to create browser windows.
@@ -241,7 +244,7 @@ ipcMain.on('json_update', (event, oldItem, newItem) => {
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, query) => {
   const orderBy = [
-    {field:"PatentNumber", direction:"ASC"}
+    { field: "PatentNumber", ascending: true }
   ];
   //remove duplicates and create an array of ({field, value}) objects
   const fieldList = Object.keys(query).filter(item => query[item] !== '').map(item => ({ field: item, value: query[item] }));

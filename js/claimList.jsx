@@ -2,19 +2,19 @@ import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
-import { EditCell } from './jsx/editCell';
+import { TableArea } from './jsx/tableArea';
 import { getCurrent, modifyClaim, countResults, dropWorkingValue } from './jsx/claimListMethods';
 import 'preact/devtools';
 
 const SET_ALL_CLAIMS = 'all';
 const SET_ALL_FLAGS = 'all';
 
-// TODO: enable IsIndependentClaim search
 const enabledButtons = [
     { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
     { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
     { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
-    { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' }
+    { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
+    { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
 ];
 
 const enabledColumns = [
@@ -23,6 +23,18 @@ const enabledColumns = [
     { display: 'Claim Full Text', field: 'ClaimHtml' },
     { display: 'Notes', field: 'PotentialApplication' },
     { display: 'Watch', field: 'WatchItems' }
+]
+
+const markmanColumns = [
+    { display: 'Reference', field: 'PMCRef' },
+    { display: 'Patent', field: 'PatentNumber' },
+    { field: 'Claim Number', field: 'ClaimNumber' },
+    { display: 'Claim Term', field: 'ClaimTerm' },
+    { display: 'Construction', field: 'Construction' },
+    { display: 'Page', field: 'MarkmanPage' },
+    { display: 'Path to Ruling', field: 'DocumentPath' },
+    { field: 'Filename of ruling', field: 'Document' },
+    { field: 'Case', field: 'ClientName' }
 ]
 
 const initialList = [
@@ -54,6 +66,11 @@ const queryValues = {
     IsIndependentClaim: ''
 }
 
+const sortOrder = [{
+    field: 'PatentNumber',
+    ascending: true
+}];
+
 /** */
 class ClaimTable extends Component {
     constructor(props) {
@@ -62,11 +79,12 @@ class ClaimTable extends Component {
             claimList: initialList,
             expandAll: false,
             queryValues,
-            windowHeight: 600,
+            windowHeight: 625,
             resultCount: 0,
             undo: [],
             working: true,
             activeRows: [],
+            sortOrder
         };
         this.toggleExpand = this.toggleExpand.bind(this);
         this.runQuery = this.runQuery.bind(this);
@@ -92,9 +110,10 @@ class ClaimTable extends Component {
                 this.setState({ claimList: initialList, resultCount: 0, working: false })
             }
         });
-        ipcRenderer.on('resize', (event, newX, newY) => {
-            console.log('resize to %d x %d', newX, newY)
+        ipcRenderer.on('resize', (event, newSize) => {
+            console.log('resize to %d x %d', newSize.width, newSize.height, newSize)
             //TODO: Update window size and set new scollbar heights
+            this.setState({ windowHeight: newSize.height - 175 });
         })
         setTimeout(() => this.runQuery(), 2000); //hack to wait for docker to get server
     }
@@ -181,7 +200,7 @@ class ClaimTable extends Component {
             //Set the value for the activeRow corresponding to this field so it updates !
             this.setState({
                 activeRows: activeRows.map(item => {
-                    if (item.claimID === claimID && item.field===field) return { ...item, value: newValue };
+                    if (item.claimID === claimID && item.field === field) return { ...item, value: newValue };
                     return item;
                 }),
                 undo
@@ -234,6 +253,7 @@ class ClaimTable extends Component {
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
                     changeDB={this.changeDB}
+                    selectedColor={'rgba(183, 130, 51, 0.8)'}
                 />
                 {this.state.working ? (
                     <div class="glyphicon-refresh-animate">|</div>
@@ -251,6 +271,7 @@ class ClaimTable extends Component {
                                 expand={this.toggleExpand}
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
+                                selectedColor={'rgba(183, 130, 51, 0.8)'}
                             />
                         </Scrollbars>
                     )}
@@ -258,43 +279,5 @@ class ClaimTable extends Component {
         );
     }
 }
-
-
-const TableArea = props => {
-    // need to deal with expanding the ClaimFullText
-    // and handle changes to Potential Application and Watch Items
-    // TODO Make PotentialApplication and WatchItems markdown windows !!
-    // Also need to include buttons for save / cancel for each of those
-    // to check data, use event.target.getAttribute('data-[value]')
-    // props: Array{editPA:boolean, editWI:boolean, ...record}
-    return (
-        <div class="TableArea">
-            {props.claimList.map(patent => patent.claims.map(item => (
-                <div key={item.ClaimID} class="TableRow">
-                    <div>{patent.PMCRef}</div>
-                    <div data-patentnumber={`${patent.PatentNumber}`} data-field="PatentNumber" onClick={props.getDetail}>
-                        {patent.PatentNumber}
-                    </div>
-                    <div data-claimid={`${item.ClaimID}`} data-field="ClaimFullText" data-patentnumber={patent.PatentNumber} onClick={props.expand} >
-                        <div>Claim {item.ClaimNumber}{item.expandClaim ? ': ' : ' (expand)'}</div>
-                        {item.expandClaim && (<div dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />)}
-                    </div>
-                    {["PotentialApplication", "WatchItems"].map(cell => {
-                        const activeValue = props.activeRows.find(claim => claim.claimID === `${item.ClaimID}` && claim.field === cell);
-                        return (<EditCell
-                            patentNumber={`${patent.PatentNumber}`}
-                            claimID={`${item.ClaimID}`}
-                            field={cell}
-                            editMode={activeValue}
-                            value={activeValue ? activeValue.value : item[cell]}
-                            clickSaveCancel={props.clickSaveCancel}
-                            activateEditMode={props.editMode}
-                        />)
-                    })}
-                </div>
-            )))}
-        </div>
-    );
-};
 
 render(<ClaimTable />, document.getElementById('claimTable'));
