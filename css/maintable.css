@@ -18,60 +18,9 @@ button {
   grid-template-rows: 2em (auto);
 }
 
-.ButtonArea {
-  display:flex;
-  justify-content: flex-end;
-}
-
-.ButtonArea button {
-  flex-grow: 1;
-}
-
-.ResultCount {
-  flex-grow:7;
-  font-size:large;
-  color:white;
-  background-color: rgba(51, 122, 183, 1);
-  padding: 0.4em 0.5em 0.4em 0.5em;
-}
-
-.TableHeading {
-  display:grid;
-  grid-template-columns: 1fr 1fr 5fr 2fr 2fr;
-  padding: 0.4em 0.5em 0.4em 0.5em;
-  font-size:large;
-  color:white;
-  background-color: rgba(51, 122, 183, 1);
-}
-
-.ValuesField {
-  border-radius: 2px;
-  color:lightgray;
-  border:none;
-  outline:none;
-  background-color: rgba(51, 122, 183, 0.8);
-  width:90%
-}
-.ColumnControl {
-  display:grid;
-  grid-template-columns: 4fr 1fr; 
-}
-
-.ColumnControl div {
-  display:flex;
-  justify-content:flex-end;
-  margin: 0 0.5em 0 0;
-  padding:0
-}
 
 .Selected {
   background-color: rgba(183, 130, 51, 0.8)
-}
-
-.ColumnControl div button {
-  border:1px solid rgba(41, 94, 141, 0.8);
-  padding: 1px;
-  background-color: rgba(51,122,183,0.5);
 }
 
 ::placeholder {
