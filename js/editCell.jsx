@@ -26,7 +26,14 @@ const EditCell = props => {
             height:'auto'
         }
     }
-    const markDownText = { __html: !props.value ? '' : marked(props.value) };
+    const markdownOptions = {
+        sanitize:true,
+        gfm:true,
+        breaks:true,
+        smartLists:true,
+        smartypants:true
+    }
+    const markdownText = { __html: !props.value ? '' : marked(props.value, markdownOptions) };
     return (props.editMode ? (
         <div style={styles.EditableBox}>
             <textarea
@@ -52,7 +59,7 @@ const EditCell = props => {
             <div style={styles.EditBoxContainer}>
                 <span
                     style={styles.ViewArea}
-                    dangerouslySetInnerHTML={markDownText}
+                    dangerouslySetInnerHTML={markdownText}
                     onClick={props.activateEditMode}
                     data-claimid={props.claimID}
                     data-field={props.field}

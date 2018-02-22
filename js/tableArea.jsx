@@ -10,9 +10,6 @@ const TableArea = props => {
         PatentNumber: {
             cursor: 'pointer'
         },
-        ExpandClaim: {
-            cursor: 'pointer'
-        },
         TableRow: {
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
@@ -36,12 +33,11 @@ const TableArea = props => {
                         data-claimid={`${item.ClaimID}`}
                         data-field="ClaimFullText"
                         data-patentnumber={patent.PatentNumber}
-                        onClick={props.expand}
                     >
-                        <div style={styles.ExpandClaim}>
-                            Claim {item.ClaimNumber}{item.expandClaim ? ': (collapse)' : ' (expand)'}
-                        </div>
-                        {item.expandClaim && (<div style={styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />)}
+                        <details open={props.expandAll}>
+                            <summary>Claim {item.ClaimNumber}</summary>
+                            <div style={styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />
+                        </details>
                     </div>
                     {["PotentialApplication", "WatchItems"].map(cell => {
                         const activeValue = props.activeRows.find(claim => claim.claimID === `${item.ClaimID}` && claim.field === cell);

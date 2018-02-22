@@ -6,6 +6,10 @@ p {
   margin: 0px
 }
 
+ul {
+  padding-left:1em
+}
+
 button {
   border-radius: 2px;
   background-color: #337ab7;

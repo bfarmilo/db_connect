@@ -53,8 +53,7 @@ const initialList = [
             ClaimNumber: 0,
             ClaimHtml: '',
             PotentialApplication: '',
-            WatchItems: '',
-            expandClaim: false
+            WatchItems: ''
         }]
     }
 ];
@@ -108,8 +107,7 @@ class ClaimTable extends Component {
     componentDidMount() {
         ipcRenderer.on('json_result', (event, data) => {
             if (data) {
-                // add the state variables to each claim of the query
-                const claimList = modifyClaim(data, 'clear', { field: 'expandClaim' });
+                const claimList = data
                 console.log('got new table data');
                 const resultCount = countResults(claimList);
                 this.setState({ claimList, resultCount, working: false });
@@ -193,18 +191,8 @@ class ClaimTable extends Component {
 
     // Shared Methods
     toggleExpand(event) {
-        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
-        const claimID = event.currentTarget.getAttribute('data-claimid');
-        console.log('expanding claim with ID', claimID);
-        let action = 'toggle';
-        if (claimID === 'all') {
-            // make sure 'all' will either hide or show all
-            action = this.state.expandAll ? 'clear' : 'set';
-        }
-        // update the claim list, and if it was an 'expand-all' call flip the state of expandAll
         this.setState({
-            claimList: modifyClaim(this.state.claimList, action, { claimID, field: 'expandClaim' }),
-            expandAll: claimID === 'all' && !this.state.expandAll
+            expandAll: !this.state.expandAll
         })
     }
 
@@ -314,8 +302,8 @@ class ClaimTable extends Component {
                             <TableArea
                                 claimList={this.state.claimList}
                                 activeRows={this.state.activeRows}
+                                expandAll={this.state.expandAll}
                                 getDetail={this.getPatentDetail}
-                                expand={this.toggleExpand}
                                 editContent={this.editContent}
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
