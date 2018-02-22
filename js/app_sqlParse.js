@@ -52,7 +52,7 @@ const parseQuery = query => {
     // for now, put in a placeholder ? to hold where the parameter index will go
     // Make sure compound components are surrounded in brackets
     return element[1].map((item, index) => ({
-      where: `${index === 0 && element[1].length > 1 ? '(':''}${parser.prefix}.${element[0]}${parser.suffix}@? ${element[2][index] || ') AND'}`,
+      where: `${index === 0 && element[1].length > 1 ? '(':''}${parser.prefix}${parser.table}.${element[0]}${parser.suffix}@? ${element[2][index] || ') AND'}`,
       param: `${parser.suffix === ' LIKE ' ? `%${item}%` : item}`,
     }));
   })).reduce((result, current, index) => {
@@ -74,18 +74,17 @@ const parseQuery = query => {
 }
 
 /** a simple function that creates a valid ORDER BY sql query
- * @param {Array<{fieldname:string, direction:string}>}
+ * @param {Array<{fieldname:string, ascending:boolean}>}
  * @returns {string} of the form 'table.Field ASC'
  */
 const parseOrder = orderBy => {
-  // each element is [{fieldname, direction}]
-  // lookup the prefix and suffix associated with fieldName
+  // each element is [{fieldname, ascending}]
+  // lookup the table associated with fieldName
   return orderBy.map(element => {
-    //hack, but with PatentNumber also add claim number
-    const parser = element.field !== 'PatentNumber' ? patentDB.fieldMap.filter(val => val.name === element.field)[0] : { prefix: 'patents' };
+    const table = patentDB.fieldMap.filter(val => val.name === element.field)[0].table;
     const direction = element.ascending ? 'ASC' : 'DESC';
-    return `${parser.prefix}.${element.field} ${direction}${element.field === 'PatentNumber' ? ', claims.ClaimNumber ASC' : ''}`;
-  });
+    return `${table}.${element.field} ${direction}`;
+  }).join(', ');
 }
 
 module.exports = {

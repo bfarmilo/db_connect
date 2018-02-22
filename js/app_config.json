@@ -20,16 +20,17 @@
         "u_FULLTEXT": "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
         "u_UPDATE": "UPDATE Claim SET ",
         "fieldMap": [
-                {"name": "PMCRef", "prefix":"patents", "suffix": " LIKE "},
-                {"name": "PatentNumber", "prefix":"RIGHT(CAST(patents", "suffix": " AS char(7)),3)="},
-                {"name": "IsInIPR", "prefix":"patents", "suffix":"="},
-                {"name": "ClaimNumber", "prefix":"claims", "suffix":"="},
-                {"name": "ClaimHtml", "prefix":"claims", "suffix":" LIKE "},
-                {"name": "IsDocumented", "prefix":"claims", "suffix":"="},
-                {"name": "IsIndependentClaim", "prefix":"claims", "suffix":"="},
-                {"name": "IsMethodClaim", "prefix":"claims", "suffix":"="},
-                {"name": "PotentialApplication", "prefix":"claims", "suffix":" LIKE "},
-                {"name": "WatchItems", "prefix":"claims", "suffix":" LIKE "}
+                {"name": "PMCRef", "table":"patents", "prefix":"", "suffix": " LIKE "},
+                {"name": "PatentNumber", "table": "patents", "prefix":"RIGHT(CAST(", "suffix": " AS char(7)),3)="},
+                {"name": "IsInIPR", "table":"patents", "prefix":"", "suffix":"="},
+                {"name": "ClaimNumber", "table":"claims", "prefix":"", "suffix":"="},
+                {"name": "ClaimHtml", "table":"claims", "prefix":"", "suffix":" LIKE "},
+                {"name": "IsDocumented", "table":"claims", "prefix":"", "suffix":"="},
+                {"name": "IsIndependentClaim", "table":"claims", "prefix":"", "suffix":"="},
+                {"name": "IsMethodClaim", "table":"claims", "prefix":"", "suffix":"="},
+                {"name": "PotentialApplication", "table":"claims", "prefix":"", "suffix":" LIKE "},
+                {"name": "WatchItems", "table":"claims", "prefix":"", "suffix":" LIKE "},
+                {"name": "Summary", "table":"PatentSummary", "prefix":"","suffix": "="}
             ]
     },
     "urlParams": {

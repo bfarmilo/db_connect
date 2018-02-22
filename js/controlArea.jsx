@@ -1,5 +1,5 @@
-const { ipcRenderer } = require('electron');
-const { h, render, Component } = require('preact');
+import { h } from 'preact';
+import { simpleHash } from './claimListMethods';
 // the main UI at the top of the table to run and filter queries
 
 const ControlArea = props => {
@@ -12,12 +12,12 @@ const ControlArea = props => {
             flexGrow: '7',
             fontSize: 'large',
             color: 'white',
-            backgroundColor: 'rgba(51, 122, 183, 1)',
+            backgroundColor: props.styles.themeColor,
             padding: '0.4em 0.5em 0.4em 0.5em',
         },
         FilterButton: {
             borderRadius: '2px',
-            backgroundColor: '#337ab7',
+            backgroundColor: props.styles.themeColor,
             color: 'lightgrey',
             fontWeight: 'bold',
             border: 'none',
@@ -30,7 +30,7 @@ const ControlArea = props => {
             padding: '0.4em 0.5em 0.4em 0.5em',
             fontSize: 'large',
             color: 'white',
-            backgroundColor: 'rgba(51, 122, 183, 1)'
+            backgroundColor: props.styles.themeColor
         },
         ColumnControl: {
             display: 'flex',
@@ -47,9 +47,9 @@ const ControlArea = props => {
         },
         QueryButton: {
             flexGrow: '1',
-            border: '1px solid rgba(41, 94, 141, 0.8)',
+            border: `1px solid ${props.styles.borderColor}`,
             padding: '1px',
-            backgroundColor: 'rgba(51, 122, 183, 0.5)',
+            backgroundColor: props.styles.themeColor,
         }
     }
     return (
@@ -62,11 +62,11 @@ const ControlArea = props => {
                         data-value={button.field}
                         data-setvalue={button.setValue}
                         onClick={props.toggleFilter}
-                        style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.selectedColor } : styles.FilterButton}
+                        style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     >{button.display}</button>
                 ))}
                 <button
-                    style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.selectedColor } : styles.FilterButton}
+                    style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     data-claimid='all'
                     onClick={props.toggleExpand}
                 >
@@ -80,10 +80,13 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {enabledColumns.map(column => (
+                {enabledColumns.map(column => {
+                    const sortDirection = props.sortOrder[simpleHash(column.field)];
+                    return (
                     <div key={column.field}>
-                        <div>{column.display}</div>
-                        <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.selectedColor } : styles.ColumnControl}>
+                        <div data-field={column.field} onClick={props.modifySortOrder}>
+                        {column.display}{!!sortDirection ? (sortDirection.ascending ? ' \u21D1' : ' \u21D3') : ''}</div>
+                        <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.styles.selectedColor } : styles.ColumnControl}>
                             <input
                                 style={styles.ValuesField}
                                 data-field={column.field}
@@ -95,7 +98,8 @@ const ControlArea = props => {
                             <button style={styles.QueryButton} onClick={props.runQuery}>Go</button>
                         </div>
                     </div>
-                ))}
+                )
+                })}
             </div>
         </div>
     )
