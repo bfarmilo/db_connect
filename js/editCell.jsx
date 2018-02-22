@@ -1,5 +1,5 @@
-const { ipcRenderer } = require('electron');
-const { h, render, Component } = require('preact');
+import { h } from 'preact';
+import marked from 'marked';
 // an editable cell
 
 const EditCell = props => {
@@ -16,33 +16,50 @@ const EditCell = props => {
             flexGrow: '1'
         },
         EditArea: {
-            display: 'inline-block',
-            backgroundColor: props.selectedColor
+            backgroundColor: props.selectedColor,
+            border: 'none',
+            fontFamily: 'Arial',
+            height: 'auto'
+        },
+        Hidden: {
+            display:'none',
+            height:'auto'
         }
     }
-    return (
-        <div style={props.editMode ? styles.EditableBox : styles.EditBoxContainer}>
-            <div
-                style={props.editMode ? styles.EditArea : styles.ViewArea}
+    const markDownText = { __html: !props.value ? '' : marked(props.value) };
+    return (props.editMode ? (
+        <div style={styles.EditableBox}>
+            <textarea
+                style={styles.EditArea}
                 data-claimid={props.claimID}
                 data-field={props.field}
                 data-patentnumber={props.patentNumber}
                 contentEditable={true}
-                onKeyUp={props.activateEditMode}
-            >
-                {props.value}
+                onChange={props.editContent}
+                value={props.value}
+                rows={10}
+            />
+            <div>
+                <SaveCancel
+                    handleClick={props.clickSaveCancel}
+                    claimID={props.claimID}
+                    field={props.field}
+                    patentNumber={props.patentNumber}
+                />
             </div>
-            {props.editMode ? (
-                <div>
-                    <SaveCancel
-                        handleClick={props.clickSaveCancel}
-                        claimID={props.claimID}
-                        field={props.field}
-                        patentNumber={props.patentNumber}
-                    />
-                </div>
-            ) : ("")}
         </div>
+    ) : (
+            <div style={styles.EditBoxContainer}>
+                <span
+                    style={styles.ViewArea}
+                    dangerouslySetInnerHTML={markDownText}
+                    onClick={props.activateEditMode}
+                    data-claimid={props.claimID}
+                    data-field={props.field}
+                    data-patentnumber={props.patentNumber}
+                />
+            </div>
+        )
     )
 }
 

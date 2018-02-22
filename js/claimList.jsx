@@ -3,11 +3,17 @@ import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
-import { getCurrent, modifyClaim, countResults, dropWorkingValue } from './jsx/claimListMethods';
+import { getCurrent, modifyClaim, countResults, dropWorkingValue, simpleHash } from './jsx/claimListMethods';
 import 'preact/devtools';
 
-const SET_ALL_CLAIMS = 'all';
-const SET_ALL_FLAGS = 'all';
+const TITLE_ROW_HEIGHT = 175;
+const RESIZE_THRESHOLD = 50;
+
+const styles = {
+    themeColor: 'rgba(51, 122, 183, 1)',
+    selectedColor: 'rgba(183, 130, 51, 0.8)',
+    borderColor: 'rgba(41, 94, 141, 0.8)'
+}
 
 const enabledButtons = [
     { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
@@ -66,10 +72,10 @@ const queryValues = {
     IsIndependentClaim: ''
 }
 
-const sortOrder = [{
-    field: 'PatentNumber',
-    ascending: true
-}];
+const sortOrder = {
+    [simpleHash('PatentNumber')]: { field: 'PatentNumber', ascending: true },
+    99999: { field: 'ClaimNumber', ascending: true }
+};
 
 /** */
 class ClaimTable extends Component {
@@ -94,6 +100,8 @@ class ClaimTable extends Component {
         this.editMode = this.editMode.bind(this);
         this.clickSaveCancel = this.clickSaveCancel.bind(this);
         this.changeDB = this.changeDB.bind(this);
+        this.modifySortOrder = this.modifySortOrder.bind(this);
+        this.editContent = this.editContent.bind(this);
     }
 
     // lifecycle Methods
@@ -111,17 +119,21 @@ class ClaimTable extends Component {
             }
         });
         ipcRenderer.on('resize', (event, newSize) => {
-            console.log('resize to %d x %d', newSize.width, newSize.height, newSize)
-            //TODO: Update window size and set new scollbar heights
-            this.setState({ windowHeight: newSize.height - 175 });
+            // debouncing
+            if (Math.abs(newSize.height - this.state.windowHeight) > RESIZE_THRESHOLD) {
+                console.log('resize to %d x %d', newSize.width, newSize.height)
+                this.setState({ windowHeight: newSize.height - TITLE_ROW_HEIGHT });
+            }
         })
-        setTimeout(() => this.runQuery(), 2000); //hack to wait for docker to get server
+        setTimeout(() => this.runQuery(), 2000); //hack to buy time for docker to get server
     }
     //Control Panel Methods
     runQuery(event) {
         this.setState({ working: true })
         console.log('sending new query');
-        ipcRenderer.send('json_query', this.state.queryValues)
+        // kind of hack, sort by the hash function, forces claim number to the end.
+        const sortOrder = Object.keys(this.state.sortOrder).sort().map(elem => this.state.sortOrder[elem]);
+        ipcRenderer.send('json_query', this.state.queryValues, sortOrder);
     }
 
     editQuery(event) {
@@ -155,7 +167,29 @@ class ClaimTable extends Component {
         this.runQuery();
     }
 
-    // TODO: Add sort by heading !
+    modifySortOrder(event) {
+        console.log('modifying sort order');
+        const field = event.currentTarget.getAttribute('data-field');
+        const alreadyInList = this.state.sortOrder[simpleHash(field)];
+        const sortOrder = { ...this.state.sortOrder };
+        // Logic is this: none -> Ascending -> Descending -> none
+        if (!alreadyInList) {
+            // none -> Ascending
+            console.log('adding key %s to sortOrder', `${simpleHash(field)}`)
+            sortOrder[simpleHash(field)] = { field, ascending: true };
+        } else {
+            if (alreadyInList.ascending) {
+                //Ascending -> Descending
+                sortOrder[simpleHash(field)] = { field, ascending: false };
+            } else {
+                //Descending -> none
+                console.log('removing key %s from sortOrder', `${simpleHash(field)}`)
+                delete sortOrder[simpleHash(field)];
+            }
+        }
+        this.setState({ sortOrder }, () => this.runQuery());
+
+    }
 
     // Shared Methods
     toggleExpand(event) {
@@ -185,27 +219,28 @@ class ClaimTable extends Component {
         const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
         const field = event.currentTarget.getAttribute('data-field');
-        const newValue = event.currentTarget.innerText;
-        const keyPressed = event.keyCode;
-        // catch the enter key, otherwise it creates a new div and messes everything up
-        if (keyPressed === 13) {
-            console.log('enter pressed')
-            event.preventDefault();
-        } else {
-            console.log('detected edit event in %s for claim ID %s, new value %s, key %d', field, claimID, newValue, keyPressed);
-            //intelligently load undo values into undo array using getCurrent
-            const undo = getCurrent(this.state.claimList, this.state.undo, patentNumber, claimID, field)
-            //load current record into active array, if needed (don't duplicate)
-            const activeRows = getCurrent(this.state.claimList, this.state.activeRows, patentNumber, claimID, field)
-            //Set the value for the activeRow corresponding to this field so it updates !
-            this.setState({
-                activeRows: activeRows.map(item => {
-                    if (item.claimID === claimID && item.field === field) return { ...item, value: newValue };
-                    return item;
-                }),
-                undo
-            });
-        }
+        console.log('detected edit event in %s for claim ID %s', field, claimID);
+        //intelligently load undo values into undo array using getCurrent
+        const undo = getCurrent(this.state.claimList, this.state.undo, patentNumber, claimID, field)
+        //load current record into active array, if needed (don't duplicate)
+        const activeRows = getCurrent(this.state.claimList, this.state.activeRows, patentNumber, claimID, field)
+        //update the state, ready to listen for keypresses
+        this.setState({ undo, activeRows });
+    }
+
+    editContent(event) {
+        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
+        const claimID = event.currentTarget.getAttribute('data-claimid');
+        const field = event.currentTarget.getAttribute('data-field');
+        const newValue = event.currentTarget.value;
+        // console.log('got content Change event for claim ID %s, new value %s', claimID, newValue);
+        //Set the value for the activeRow corresponding to this field so it updates !
+        this.setState({
+            activeRows: this.state.activeRows.map(item => {
+                if (item.claimID === claimID && item.field === field) return { ...item, value: newValue };
+                return item;
+            })
+        });
     }
 
 
@@ -242,21 +277,33 @@ class ClaimTable extends Component {
 
     render({ props }, { state }) {
         return (
-            <div class="FullTable">
+            <div class='FullTable'>
                 <ControlArea
                     enabledButtons={enabledButtons}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
+                    sortOrder={this.state.sortOrder}
                     expandAll={this.state.expandAll}
                     runQuery={this.runQuery}
                     editQuery={this.editQuery}
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
                     changeDB={this.changeDB}
-                    selectedColor={'rgba(183, 130, 51, 0.8)'}
+                    styles={styles}
+                    modifySortOrder={this.modifySortOrder}
                 />
                 {this.state.working ? (
-                    <div class="glyphicon-refresh-animate">|</div>
+                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: this.state.windowHeight }}>
+                        <svg version='1.1' x='0px' y='0px' width='40px' height='50px' viewBox='0 0 24 30'>
+                            {[0, 1, 2].map(x => (
+                                <rect key={x} x={x * 7} y='0' width='4' height='20' fill={styles.themeColor}>
+                                    <animate attributeName='opacity' attributeType='XML'
+                                        values='1; .2; 1'
+                                        begin={`${x * 0.2}s`} dur='0.6s' repeatCount='indefinite' />
+                                </rect>
+                            ))}
+                        </svg>
+                    </div>
                 ) : (
                         <Scrollbars
                             autoHide
@@ -269,9 +316,10 @@ class ClaimTable extends Component {
                                 activeRows={this.state.activeRows}
                                 getDetail={this.getPatentDetail}
                                 expand={this.toggleExpand}
+                                editContent={this.editContent}
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
-                                selectedColor={'rgba(183, 130, 51, 0.8)'}
+                                selectedColor={styles.selectedColor}
                             />
                         </Scrollbars>
                     )}

@@ -2,6 +2,10 @@ body {
   font-family:"Arial"
 }
 
+p {
+  margin: 0px
+}
+
 button {
   border-radius: 2px;
   background-color: #337ab7;
@@ -19,18 +23,10 @@ button {
 }
 
 
-.Selected {
-  background-color: rgba(183, 130, 51, 0.8)
-}
-
 ::placeholder {
   opacity:1;
   color:lightgray;
   font-style:italic;
-}
-
-.TableArea {
-
 }
 
 .TableRow {
@@ -40,32 +36,7 @@ button {
 }
 
 
-  
-/* Styling for the simple query return */
-
-/*Throbber for loading button*/
-.glyphicon-refresh-animate {
-  -animation: spin 1s infinite linear;
-  -webkit-animation: spin 1s infinite linear;
-  -moz-animation: spin 1s infinite linear;
-}
-
-@-webkit-keyframes spin {
-  from { -webkit-transform: rotate(0deg);}
-  to { -webkit-transform: rotate(360deg);}
-}
-
-@-moz-keyframes spin {
-  from { -moz-transform: rotate(0deg);}
-  to { -moz-transform: rotate(360deg);}
-}
-
-@keyframes spin {
-  from { transform: rotate(0deg);}
-  to { transform: rotate(360deg);}
-}
-
-/* style tags*/
+/* style tags for innerHTML set*/
 
 .claim-text {
 margin-left: 20px;
