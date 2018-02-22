@@ -105,9 +105,9 @@ class ClaimTable extends Component {
 
     // lifecycle Methods
     componentDidMount() {
-        ipcRenderer.on('json_result', (event, data) => {
-            if (data) {
-                const claimList = data
+        // new query results from Main
+        ipcRenderer.on('json_result', (event, claimList) => {
+            if (claimList) {
                 console.log('got new table data');
                 const resultCount = countResults(claimList);
                 this.setState({ claimList, resultCount, working: false });
@@ -116,8 +116,9 @@ class ClaimTable extends Component {
                 this.setState({ claimList: initialList, resultCount: 0, working: false })
             }
         });
+        // window size changed, needed to recalculate scrollbars
         ipcRenderer.on('resize', (event, newSize) => {
-            // debouncing
+            // debouncing, only update if |height change| > a threshold 
             if (Math.abs(newSize.height - this.state.windowHeight) > RESIZE_THRESHOLD) {
                 console.log('resize to %d x %d', newSize.width, newSize.height)
                 this.setState({ windowHeight: newSize.height - TITLE_ROW_HEIGHT });
@@ -126,7 +127,12 @@ class ClaimTable extends Component {
         setTimeout(() => this.runQuery(), 2000); //hack to buy time for docker to get server
     }
     //Control Panel Methods
-    runQuery(event) {
+
+    /** send out a query object and sort order to Main to get a new claimList
+     * @returns {undefined}
+     * 
+     */
+    runQuery() {
         this.setState({ working: true })
         console.log('sending new query');
         // kind of hack, sort by the hash function, forces claim number to the end.
@@ -134,6 +140,10 @@ class ClaimTable extends Component {
         ipcRenderer.send('json_query', this.state.queryValues, sortOrder);
     }
 
+    /** Handle typing in a filter cell
+     * 
+     * @param {*} event 
+     */
     editQuery(event) {
         const column = event.currentTarget;
         const queryValues = {
@@ -143,9 +153,13 @@ class ClaimTable extends Component {
         console.log('detected edit in query field', column.getAttribute('data-field'));
         // need to update this.state.queryValues[field]
         this.setState({ queryValues });
-        if (column.getAttribute('data-action') === 'clear' || event.keyCode === 13) this.runQuery(event);
+        if (column.getAttribute('data-action') === 'clear' || event.keyCode === 13) this.runQuery();
     }
 
+    /** update the query based on clicking Go/Clear in a filter field
+     * 
+     * @param {*} event 
+     */
     toggleFilter(event) {
         const field = event.currentTarget.getAttribute('data-value');
         const setValue = event.currentTarget.getAttribute('data-setvalue');
@@ -158,13 +172,20 @@ class ClaimTable extends Component {
         this.runQuery();
     }
 
-    changeDB(event) {
+    /** send a 'change_db' message to main, to switch DB's in the server
+     * 
+     */
+    changeDB() {
         console.log('changing database');
         ipcRenderer.send('change_db');
         this.setState({ claimList: initialList, queryValues, undo: [] });
         this.runQuery();
     }
 
+    /** respond to the clicking on a heading title to cycle through sort order options
+     * 
+     * @param {*} event 
+     */
     modifySortOrder(event) {
         console.log('modifying sort order');
         const field = event.currentTarget.getAttribute('data-field');
@@ -189,20 +210,29 @@ class ClaimTable extends Component {
 
     }
 
-    // Shared Methods
-    toggleExpand(event) {
-        this.setState({
-            expandAll: !this.state.expandAll
-        })
+    /** toggle between expand all claims and collapse all claims
+     * 
+     */
+    toggleExpand() {
+        this.setState({expandAll: !this.state.expandAll})
     }
 
     // Table Methods
+
+    /** send view_patentdetail to main to cause a new window to open with patent details
+     * 
+     * @param {Event} event 
+     */
     getPatentDetail(event) {
         const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         console.log('getting detail for patent', patentNumber);
         ipcRenderer.send('view_patentdetail', patentNumber);
     }
 
+    /** switch into Edit Mode for an editable field
+     * 
+     * @param {*} event 
+     */
     editMode(event) {
         const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
@@ -216,6 +246,10 @@ class ClaimTable extends Component {
         this.setState({ undo, activeRows });
     }
 
+    /** track changes to a field in edit mode
+     * 
+     * @param {*} event 
+     */
     editContent(event) {
         const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
@@ -231,7 +265,10 @@ class ClaimTable extends Component {
         });
     }
 
-
+    /** exit edit mode through a Save or Cancel button click
+     * 
+     * @param {*} event 
+     */
     clickSaveCancel(event) {
         const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
         const claimID = event.currentTarget.getAttribute('data-claimid');
