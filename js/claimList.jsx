@@ -53,7 +53,8 @@ const initialList = [
             ClaimNumber: 0,
             ClaimHtml: '',
             PotentialApplication: '',
-            WatchItems: ''
+            WatchItems: '',
+            IsIndependentClaim: true
         }]
     }
 ];
@@ -89,7 +90,10 @@ class ClaimTable extends Component {
             undo: [],
             working: true,
             activeRows: [],
-            sortOrder
+            sortOrder,
+            offset: 0,
+            scrollTop: 0,
+            // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
         this.runQuery = this.runQuery.bind(this);
@@ -101,16 +105,20 @@ class ClaimTable extends Component {
         this.changeDB = this.changeDB.bind(this);
         this.modifySortOrder = this.modifySortOrder.bind(this);
         this.editContent = this.editContent.bind(this);
+        this.handleScroll = this.handleScroll.bind(this);
     }
 
     // lifecycle Methods
     componentDidMount() {
         // new query results from Main
-        ipcRenderer.on('json_result', (event, claimList) => {
-            if (claimList) {
-                console.log('got new table data');
-                const resultCount = countResults(claimList);
-                this.setState({ claimList, resultCount, working: false });
+        ipcRenderer.on('json_result', (event, data, totalCount, newOffset, appendMode) => {
+            if (data) {
+                const resultCount = totalCount[0][0];
+                console.log('got new table data, count, offset, appendmode', resultCount, newOffset, appendMode);
+                const claimList = appendMode ? this.state.claimList.concat(data) : data;
+                this.setState({ claimList, resultCount, working: false, offset: newOffset }
+                    // ,() => appendMode ? this.state.scrollBar.scrollTop(this.state.scrollTop) : 0
+                );
             } else {
                 console.log('no results received');
                 this.setState({ claimList: initialList, resultCount: 0, working: false })
@@ -126,18 +134,24 @@ class ClaimTable extends Component {
         })
         setTimeout(() => this.runQuery(), 2000); //hack to buy time for docker to get server
     }
+
+    componentWillUnmount() {
+        // clean up window even listeners
+    }
+
     //Control Panel Methods
 
     /** send out a query object and sort order to Main to get a new claimList
      * @returns {undefined}
      * 
      */
-    runQuery() {
-        this.setState({ working: true })
+    runQuery(appendMode = false) {
+        const offset = appendMode ? this.state.offset : 0;
+        this.setState({ working: true, offset })
         console.log('sending new query');
         // kind of hack, sort by the hash function, forces claim number to the end.
         const sortOrder = Object.keys(this.state.sortOrder).sort().map(elem => this.state.sortOrder[elem]);
-        ipcRenderer.send('json_query', this.state.queryValues, sortOrder);
+        ipcRenderer.send('json_query', this.state.queryValues, sortOrder, this.state.offset, appendMode);
     }
 
     /** Handle typing in a filter cell
@@ -214,11 +228,23 @@ class ClaimTable extends Component {
      * 
      */
     toggleExpand() {
-        this.setState({expandAll: !this.state.expandAll})
+        this.setState({ expandAll: !this.state.expandAll })
     }
 
     // Table Methods
 
+    handleScroll(event) {
+        //TODO: clean way to leave the scroll position where it was
+        //console.log('distance to trigger %d -> %d', -event.target.scrollTop + event.target.scrollHeight, this.state.windowHeight);
+        if (this.state.resultCount > 200 && event.target.scrollHeight - event.target.scrollTop <= this.state.windowHeight) {
+            this.setState({
+                scrollTop: event.target.scrollTop,
+                //scrollBar: this.scrollBar 
+            });
+            this.runQuery(true);
+        }
+
+    }
     /** send view_patentdetail to main to cause a new window to open with patent details
      * 
      * @param {Event} event 
@@ -335,6 +361,8 @@ class ClaimTable extends Component {
                             autoHeight
                             autoHeightMax={this.state.windowHeight}
                             style={{ width: '100%' }}
+                            onScroll={this.handleScroll}
+                            ref={scrollBar => this.scrollBar = scrollBar}
                         >
                             <TableArea
                                 claimList={this.state.claimList}

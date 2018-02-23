@@ -77,14 +77,14 @@ const parseQuery = query => {
  * @param {Array<{fieldname:string, ascending:boolean}>}
  * @returns {string} of the form 'table.Field ASC'
  */
-const parseOrder = orderBy => {
+const parseOrder = (orderBy, offset, fetch) => {
   // each element is [{fieldname, ascending}]
   // lookup the table associated with fieldName
-  return orderBy.map(element => {
+  return 'ORDER BY '.concat(orderBy.map(element => {
     const table = patentDB.fieldMap.filter(val => val.name === element.field)[0].table;
     const direction = element.ascending ? 'ASC' : 'DESC';
     return `${table}.${element.field} ${direction}`;
-  }).join(', ');
+  }).join(', ')).concat(` OFFSET ${offset} ROWS FETCH NEXT ${fetch} ROWS ONLY`);
 }
 
 module.exports = {

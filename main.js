@@ -20,6 +20,9 @@ let detailWindow = null;
 let connectParams;
 let dropboxPath = ''; // keeps the path to the local dropbox
 let uriMode = process.env.USEDB === 'NextIdea'; // flag that indicates if claim HTML is uri-encoded or not
+let totalCount = 0;
+
+const ROWS_TO_RETURN = 200;
 
 connectDocker(patentDB.connection)
   .then(params => {
@@ -242,7 +245,35 @@ ipcMain.on('json_update', (event, oldItem, newItem) => {
 })
 
 // Listener for a call to update the main window
-ipcMain.on('json_query', (event, query, orderBy) => {
+ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
+
+  const runQuery = newOffset => {
+    queryDatabase(connectParams, 'p_SELECTJSON', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
+      if (err) {
+        console.error(err);
+      } else {
+        // query comes down as an array of chunks. So need to join the chunks,
+        const queryResult = result.length > 0 ? JSON.parse(result.join('')) : '';
+        // for testing !
+        // fse.writeJSON('./test/sampleResult.json', queryResult);
+        // Parse as JSON, but if uriMode decode the ClaimHtml first, then send to window
+        win.webContents.send('json_result', queryResult && uriMode ? queryResult.map(patent => ({
+          PMCRef: patent.PMCRef,
+          PatentNumber: patent.PatentNumber,
+          PatentPath: patent.PatentPath,
+          claims: patent.claims.map(claim => ({
+            ClaimID: claim.ClaimID,
+            ClaimNumber: claim.ClaimNumber,
+            PotentialApplication: claim.PotentialApplication,
+            WatchItems: claim.WatchItems,
+            ClaimHtml: decodeURIComponent(claim.ClaimHtml)
+          }))
+        })) : queryResult, totalCount, newOffset, appendMode);
+      }
+    })
+
+  }
+
   //remove duplicates and create an array of ({field, value}) objects
   const fieldList = Object.keys(query).filter(item => query[item] !== '').map(item => ({ field: item, value: query[item] }));
   console.log('reduced query to %s', JSON.stringify(fieldList));
@@ -252,27 +283,18 @@ ipcMain.on('json_query', (event, query, orderBy) => {
   }
   //in the case where a blank query is passed, default query is only show claim 1
   const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
-  queryDatabase(connectParams, 'p_SELECTJSON', `WHERE ${parsedQuery.where}`, parsedQuery.param, `ORDER BY ${parseOrder(orderBy)} FOR JSON AUTO`, (err, result) => {
-    if (err) {
-      console.error(err);
-    } else {
-      // query comes down as an array of chunks. So need to join the chunks,
-      const queryResult = result.length > 0 ? JSON.parse(result.join('')) : '';
-      // for testing !
-      fse.writeJSON('./test/sampleResult.json', queryResult);
-      // Parse as JSON, but if uriMode decode the ClaimHtml first, then send to window
-      win.webContents.send('json_result', queryResult && uriMode ? queryResult.map(patent => ({
-        PMCRef: patent.PMCRef,
-        PatentNumber: patent.PatentNumber,
-        PatentPath: patent.PatentPath,
-        claims: patent.claims.map(claim => ({
-          ClaimID: claim.ClaimID,
-          ClaimNumber: claim.ClaimNumber,
-          PotentialApplication: claim.PotentialApplication,
-          WatchItems: claim.WatchItems,
-          ClaimHtml: decodeURIComponent(claim.ClaimHtml)
-        }))
-      })) : queryResult);
-    }
-  })
+  if (!appendMode) {
+    queryDatabase(connectParams, 'p_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
+      if (err) {
+        console.error(err)
+      } else {
+        totalCount = count;
+        console.log(totalCount);
+        runQuery(ROWS_TO_RETURN);
+      }
+    })
+  } else {
+    // append mode, figure out the next offset
+    runQuery(offset + ROWS_TO_RETURN <= totalCount ? offset + ROWS_TO_RETURN : offset);
+  }
 });
