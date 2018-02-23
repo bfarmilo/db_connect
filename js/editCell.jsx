@@ -13,7 +13,8 @@ const EditCell = props => {
             gridTemplateRows: 'auto 1fr',
         },
         ViewArea: {
-            flexGrow: '1'
+            flexGrow: '1',
+            fontSize:'0.9em'
         },
         EditArea: {
             backgroundColor: props.selectedColor,

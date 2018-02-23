@@ -1,5 +1,5 @@
 body {
-  font-family:"Arial"
+  font-family: "Arial"
 }
 
 p {
@@ -7,52 +7,75 @@ p {
 }
 
 ul {
-  padding-left:1em
+  padding-left: 1em
+}
+
+h1 {
+  background-color: rgba(51, 122, 183, 0.5);
+  color: white;
+  font-size: 1em;
+  margin: 0 5px 0 0;
+  padding: 0 0 0 3px;
+}
+
+h2 {
+  background-color: rgba(51, 122, 183, 0.4);
+  color: white;
+  font-size: 0.9em;
+  margin: 0 5px 0 0;
+  font-style: italic;
+  padding: 0 0 0 3px;
 }
 
 button {
   border-radius: 2px;
   background-color: #337ab7;
-  color:lightgrey;
+  color: lightgrey;
   font-weight: bold;
-  border:none;
-  outline:none;
+  border: none;
+  outline: none;
   padding: 0.4em 0.5em 0.4em 0.5em;
 }
 
-
 .FullTable {
-  display:grid;
+  display: grid;
   grid-template-rows: 2em (auto);
 }
 
-
 ::placeholder {
-  opacity:1;
-  color:lightgray;
-  font-style:italic;
+  opacity: 1;
+  color: lightgray;
+  font-style: italic;
 }
 
 .TableRow {
-  display:grid;
+  display: grid;
   grid-template-columns: 1fr 1fr 5fr 2fr 2fr;
   padding: 0.4em 0.5em 0.4em 0.5em;
 }
 
-
 /* style tags for innerHTML set*/
 
 .claim-text {
-margin-left: 20px;
-text-indent: -20px;
-margin-bottom: 5px;
-} /*Comes from the database with this class applied*/
+  font-family: 'Calibri';
+  margin-left: 20px;
+  text-indent: -20px;
+  margin-bottom: 5px;
+  line-height: 1.2em;
+}
+
+/*Comes from the database with this class applied*/
 
 .claim-dependent {
-color: #A0A0A0;
-} /*make dependent claims grey in text*/
+  color: #A0A0A0;
+}
+
+/*make dependent claims grey in text*/
 
 /* style by tag */
+
 .claim-ref {
-font-weight: bold;
-} /*used by dependent claims to reference the independent they depend from */
+  font-weight: bold;
+}
+
+/*used by dependent claims to reference the independent they depend from */

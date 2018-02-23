@@ -14,6 +14,12 @@ const TableArea = props => {
             display: 'grid',
             gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
             padding: '0.4em 0.5em 0.4em 0.5em'
+        },
+        DependentClaim: {
+            color: 'rgba(0, 0, 0, 0.5)'
+        },
+        IndependentClaim: {
+            color: 'rgba(0, 0, 0, 1)'
         }
     }
     return (
@@ -35,7 +41,7 @@ const TableArea = props => {
                         data-patentnumber={patent.PatentNumber}
                     >
                         <details open={props.expandAll}>
-                            <summary>Claim {item.ClaimNumber}</summary>
+                            <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
                             <div style={styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />
                         </details>
                     </div>
