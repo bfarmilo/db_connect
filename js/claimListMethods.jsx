@@ -60,10 +60,6 @@ const modifyClaim = (claimTable, changeType, sliceRecord = {}) => {
     }));
 }
 
-const countResults = claimTable => {
-    return claimTable.map(item => item.claims).reduce((total, claims) => total += claims.length, 0)
-}
-
 
 /** Helper function to extract a single matching record from an working table
  * returns the table minus the matching record and the value of the extracted record
@@ -93,7 +89,6 @@ const simpleHash = paragraph => {
 module.exports = {
     getCurrent,
     modifyClaim,
-    countResults,
     dropWorkingValue,
     simpleHash
 }
