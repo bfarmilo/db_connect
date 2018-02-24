@@ -7,26 +7,16 @@
  * @param {string} field - the field to update
  * @returns {Array<workingrecords>}
  */
-const getCurrent = (claimTable, workingTable, patentNumber, claimID, field) => {
-    // get a reduced search set -- only those records with a matching patent number
-    // sometimes a patent gets returned multiple times
-    const matchingPatents = claimTable.reduce((accum, item, index) => {
-        if (parseInt(item.PatentNumber, 10) === parseInt(patentNumber, 10)) {
-            //look for a matching claim
-            const matchClaim = item.claims.find(claim => `${claim.ClaimID}` === claimID);
-            if (!!matchClaim) {
-                accum = {
-                    patentNumber,
-                    index,
-                    claimID,
-                    field,
-                    value: matchClaim[field] || ''
-                }
-            }
-        }
-        return accum;
-    }, {});
-    if (!workingTable.find(item => item.claimID === claimID && item.field === field)) return workingTable.concat(matchingPatents)
+const getCurrent = (claimTable, workingTable, claimID, field) => {
+    const claimIndex = claimTable.findIndex(claim => `${claim.ClaimID}` === claimID);
+    const matchClaim = (claimIndex > -1) ? {
+        patentNumber: claimTable[claimIndex].PatentNumber,
+        index: claimIndex,
+        claimID,
+        field,
+        value: claimTable[claimIndex][field] || ''
+    } : '';
+    if (!workingTable.find(item => item.claimID === claimID && item.field === field)) return workingTable.concat(matchClaim)
     return workingTable;
 }
 
@@ -43,21 +33,17 @@ const modifyClaim = (claimTable, changeType, sliceRecord = {}) => {
     // updating a record - slice the new record into the table
     if (changeType.includes('update')) {
         const recordToChange = Object.assign({}, claimTable[sliceRecord.index]);
-        const claimIndex = recordToChange.claims.findIndex(item => parseInt(item.ClaimID,10) === parseInt(sliceRecord.claimID,10));
-        recordToChange.claims[claimIndex][sliceRecord.field] = sliceRecord.value;
+        recordToChange[sliceRecord.field] = sliceRecord.value;
         const returnTable = Object.assign([], claimTable);
         returnTable.splice(sliceRecord.index, 1, recordToChange);
         return returnTable;
     }
 
     // else operate on the full dataset, all claims, or toggle one
-    return claimTable.map(item => ({
-        ...item,
-        claims: item.claims.map(claim => {
-            if (sliceRecord.claimID !== 'all' && claim.ClaimID === parseInt(sliceRecord.claimID, 10)) return { ...claim, [sliceRecord.field]: !claim[sliceRecord.field] }
-            return { ...claim, [sliceRecord.field]: setValue };
-        })
-    }));
+    return claimTable.map(item => {
+        if (sliceRecord.claimID !== 'all' && item.ClaimID === parseInt(sliceRecord.claimID, 10)) return { ...item, [sliceRecord.field]: !item[sliceRecord.field] }
+        return { ...item, [sliceRecord.field]: setValue };
+    });
 }
 
 

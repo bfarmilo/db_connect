@@ -48,14 +48,12 @@ const initialList = [
         PMCRef: '',
         PatentPath: '',
         PatentNumber: 0,
-        claims: [{
-            ClaimID: 0,
-            ClaimNumber: 0,
-            ClaimHtml: '',
-            PotentialApplication: '',
-            WatchItems: '',
-            IsIndependentClaim: true
-        }]
+        ClaimID: 0,
+        ClaimNumber: 0,
+        ClaimHtml: '',
+        PotentialApplication: '',
+        WatchItems: '',
+        IsIndependentClaim: true
     }
 ];
 
@@ -76,6 +74,8 @@ const sortOrder = {
     [simpleHash('PatentNumber')]: { field: 'PatentNumber', ascending: true },
     99999: { field: 'ClaimNumber', ascending: true }
 };
+
+//TODO: Convert claimTable, activeRows, sortOtder to maps and get rid of undo
 
 /** */
 class ClaimTable extends Component {
@@ -116,8 +116,14 @@ class ClaimTable extends Component {
                 const resultCount = totalCount[0][0];
                 console.log('got new table data, count, offset, appendmode', resultCount, newOffset, appendMode);
                 const claimList = appendMode ? this.state.claimList.concat(data) : data;
-                this.setState({ claimList, resultCount, working: false, offset: newOffset }
-                    // ,() => appendMode ? this.state.scrollBar.scrollTop(this.state.scrollTop) : 0
+                this.setState({
+                    claimList,
+                    resultCount,
+                    working: false,
+                    offset: newOffset,
+                    scrollTop: appendMode ? this.state.scrollTop : 0
+                }
+                    , () => this.scrollbar.scrollTop(this.state.scrollTop)
                 );
             } else {
                 console.log('no results received');
@@ -147,7 +153,7 @@ class ClaimTable extends Component {
      */
     runQuery(appendMode = false) {
         const offset = appendMode ? this.state.offset : 0;
-        this.setState({ working: true, offset })
+        this.setState({ working: !appendMode, offset })
         console.log('sending new query');
         // kind of hack, sort by the hash function, forces claim number to the end.
         const sortOrder = Object.keys(this.state.sortOrder).sort().map(elem => this.state.sortOrder[elem]);
@@ -265,9 +271,9 @@ class ClaimTable extends Component {
         const field = event.currentTarget.getAttribute('data-field');
         console.log('detected edit event in %s for claim ID %s', field, claimID);
         //intelligently load undo values into undo array using getCurrent
-        const undo = getCurrent(this.state.claimList, this.state.undo, patentNumber, claimID, field)
+        const undo = getCurrent(this.state.claimList, this.state.undo, claimID, field)
         //load current record into active array, if needed (don't duplicate)
-        const activeRows = getCurrent(this.state.claimList, this.state.activeRows, patentNumber, claimID, field)
+        const activeRows = getCurrent(this.state.claimList, this.state.activeRows, claimID, field)
         //update the state, ready to listen for keypresses
         this.setState({ undo, activeRows });
     }
@@ -362,7 +368,7 @@ class ClaimTable extends Component {
                             autoHeightMax={this.state.windowHeight}
                             style={{ width: '100%' }}
                             onScroll={this.handleScroll}
-                            ref={scrollBar => this.scrollBar = scrollBar}
+                            ref={s => this.scrollbar = s}
                         >
                             <TableArea
                                 claimList={this.state.claimList}

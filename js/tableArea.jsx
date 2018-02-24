@@ -24,21 +24,21 @@ const TableArea = props => {
     }
     return (
         <div class='TableArea'>
-            {props.claimList.map(patent => patent.claims.map(item => (
+            {props.claimList.map(item => (
                 <div key={item.ClaimID} style={styles.TableRow}>
-                    <div>{patent.PMCRef}</div>
+                    <div>{item.PMCRef}</div>
                     <div
                         style={styles.PatentNumber}
-                        data-patentnumber={`${patent.PatentNumber}`}
+                        data-patentnumber={`${item.PatentNumber}`}
                         data-field="PatentNumber"
                         onClick={props.getDetail}
                     >
-                        {patent.PatentNumber}
+                        {item.PatentNumber}
                     </div>
                     <div
                         data-claimid={`${item.ClaimID}`}
                         data-field="ClaimFullText"
-                        data-patentnumber={patent.PatentNumber}
+                        data-patentnumber={item.PatentNumber}
                     >
                         <details open={props.expandAll}>
                             <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
@@ -49,7 +49,7 @@ const TableArea = props => {
                         const activeValue = props.activeRows.find(claim => claim.claimID === `${item.ClaimID}` && claim.field === cell);
                         return (<EditCell
                             selectedColor={props.selectedColor}
-                            patentNumber={`${patent.PatentNumber}`}
+                            patentNumber={`${item.PatentNumber}`}
                             claimID={`${item.ClaimID}`}
                             field={cell}
                             editMode={activeValue}
@@ -60,7 +60,7 @@ const TableArea = props => {
                         />)
                     })}
                 </div>
-            )))}
+            ))}
         </div>
     );
 };

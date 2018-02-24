@@ -1,6 +1,6 @@
 // takes (field, searchstring, callback) as arguments and
 // returns a callback (error, where string, array of paramaters)
-const { urlParams, patentDB } = require('./app_config.json'); // stores the whereObj and regEx
+const { urlParams, patentDB } = require('../js/app_config.json'); // stores the whereObj and regEx
 const matchExp = new RegExp(urlParams.reg, 'g');
 
 /** expands a query item into a three element array
@@ -52,7 +52,7 @@ const parseQuery = query => {
     // for now, put in a placeholder ? to hold where the parameter index will go
     // Make sure compound components are surrounded in brackets
     return element[1].map((item, index) => ({
-      where: `${index === 0 && element[1].length > 1 ? '(':''}${parser.prefix}${parser.table}.${element[0]}${parser.suffix}@? ${element[2][index] || ') AND'}`,
+      where: `${index === 0 && element[1].length > 1 ? '(' : ''}${parser.prefix}${parser.table}.${element[0]}${parser.suffix}@? ${element[2][index] || ') AND'}`,
       param: `${parser.suffix === ' LIKE ' ? `%${item}%` : item}`,
     }));
   })).reduce((result, current, index) => {
@@ -87,7 +87,24 @@ const parseOrder = (orderBy, offset, fetch) => {
   }).join(', ')).concat(` OFFSET ${offset} ROWS FETCH NEXT ${fetch} ROWS ONLY`);
 }
 
+const parseOutput = (result, uriMode) => {
+  // first check to see if any results returned. If so,
+  // query comes down as an array of chunks. So need to join the chunks,
+  // Parse as JSON, then flatten into a an array of records one per claim 
+  // note if uriMode decode the ClaimHtml in the returned records
+  return result.length > 0 ? flatten(JSON.parse(result.join('')).map(patent => {
+    let item = Object.assign({}, patent)
+    delete item.claims;
+    return patent.claims.map(claim => ({
+      ...item,
+      ...claim,
+      ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml 
+    }))
+  })) : '';
+}
+
 module.exports = {
   parseQuery,
-  parseOrder
+  parseOrder,
+  parseOutput
 };

@@ -6,7 +6,7 @@ const { getDropBoxPath } = require('./js/getDropBoxPath');
 const { queryDatabase } = require('./js/app_DBconnect');
 const { connectDocker } = require('./js/connectDocker');
 const { getFullText } = require('./js/getFullText');
-const { parseQuery, parseOrder } = require('./js/app_sqlParse');
+const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 // configuration
 const changeLog = require('./changeLog.json');
 const { patentDB } = require('./js/app_config.json');
@@ -252,23 +252,8 @@ ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
       if (err) {
         console.error(err);
       } else {
-        // query comes down as an array of chunks. So need to join the chunks,
-        const queryResult = result.length > 0 ? JSON.parse(result.join('')) : '';
-        // for testing !
-        // fse.writeJSON('./test/sampleResult.json', queryResult);
-        // Parse as JSON, but if uriMode decode the ClaimHtml first, then send to window
-        win.webContents.send('json_result', queryResult && uriMode ? queryResult.map(patent => ({
-          PMCRef: patent.PMCRef,
-          PatentNumber: patent.PatentNumber,
-          PatentPath: patent.PatentPath,
-          claims: patent.claims.map(claim => ({
-            ClaimID: claim.ClaimID,
-            ClaimNumber: claim.ClaimNumber,
-            PotentialApplication: claim.PotentialApplication,
-            WatchItems: claim.WatchItems,
-            ClaimHtml: decodeURIComponent(claim.ClaimHtml)
-          }))
-        })) : queryResult, totalCount, newOffset, appendMode);
+        // send the result after parsing properly 
+        win.webContents.send('json_result', parseOutput(result, uriMode), totalCount, newOffset, appendMode);
       }
     })
 
