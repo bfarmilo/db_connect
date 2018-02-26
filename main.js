@@ -273,7 +273,7 @@ ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
       if (err) {
         console.error(err)
       } else {
-        totalCount = count;
+        totalCount = count[0][0];
         console.log(totalCount);
         runQuery(ROWS_TO_RETURN);
       }
