@@ -2,7 +2,16 @@ import { h } from 'preact';
 import { EditCell } from './editCell';
 
 const TableArea = props => {
-    // TODO Make PotentialApplication and WatchItems markdown windows !!
+    /** Takes props
+     * @param {Map} claimList a claimList map, one entry per claim, key=ClaimID
+     * @param {Map} activeRows a map of currently editing rows, key="ClaimID-field"
+     * @param {boolean} expandAll expand or collapse all claims
+     * @param {(Event, string)=>void} getDetail handler for getting patent detail
+     * @param {(Event, string, string)=>void} editContent handler for changing content
+     * @param {(Event, string, string)=>void} editMode handler for switching to edit mode
+     * @param {(Event, string, string)=>void} clickSaveCancel handler for clicking Save or Cancel
+     * @param {string} selectedColor style to set the color of a selected box
+     */
     const styles = {
         ClaimDiv: {
             padding: '0 5px 0 5px'
@@ -24,43 +33,35 @@ const TableArea = props => {
     }
     return (
         <div class='TableArea'>
-            {props.claimList.map(item => (
-                <div key={item.ClaimID} style={styles.TableRow}>
+            {[...props.claimList].map(record => {
+                const [claimID, item] = record;
+                return (
+                <div key={claimID} style={styles.TableRow}>
                     <div>{item.PMCRef}</div>
                     <div
                         style={styles.PatentNumber}
-                        data-patentnumber={`${item.PatentNumber}`}
-                        data-field="PatentNumber"
-                        onClick={props.getDetail}
+                        onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
                     >
                         {item.PatentNumber}
                     </div>
-                    <div
-                        data-claimid={`${item.ClaimID}`}
-                        data-field="ClaimFullText"
-                        data-patentnumber={item.PatentNumber}
-                    >
+                    <div>
                         <details open={props.expandAll}>
                             <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
                             <div style={styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />
                         </details>
                     </div>
-                    {["PotentialApplication", "WatchItems"].map(cell => {
-                        const activeValue = props.activeRows.find(claim => claim.claimID === `${item.ClaimID}` && claim.field === cell);
-                        return (<EditCell
+                    {["PotentialApplication", "WatchItems"].map(field => (
+                    <EditCell
                             selectedColor={props.selectedColor}
-                            patentNumber={`${item.PatentNumber}`}
-                            claimID={`${item.ClaimID}`}
-                            field={cell}
-                            editMode={activeValue}
-                            editContent={props.editContent}
-                            value={activeValue ? activeValue.value : item[cell]}
-                            clickSaveCancel={props.clickSaveCancel}
-                            activateEditMode={props.editMode} //pass arguments here instead of down a level
+                            editMode={props.activeRows.has(`${claimID}-${field}`)}
+                            editContent={(e) => props.editContent(e, claimID, field)}
+                            value={props.activeRows.get(`${claimID}-${field}`) || item[field]}
+                            clickSaveCancel={(e) => props.clickSaveCancel(e, claimID, field)}
+                            activateEditMode={(e) => props.editMode(e, claimID, field)}
                         />)
-                    })}
-                </div>
-            ))}
+                    )}
+                </div>)
+            })}
         </div>
     );
 };

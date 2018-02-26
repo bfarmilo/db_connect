@@ -1,7 +1,14 @@
 import { h } from 'preact';
 import marked from 'marked';
-// an editable cell
 
+/** A generic editable cell, using markdown. 
+ * @param {(Event, string, string)=>void} props.editContent handler for changing content
+ * @param {(Event, string, string)=>void} props.activateEditMode handler for switching to edit mode
+ * @param {(Event, string, string)=>void} props.clickSaveCancel handler for clicking Save or Cancel
+ * passes also a data-action = 'save' or 'cancel'
+ * @param {string} props.selectedColor style to set the color of a selected box
+ * @param {string} props.value content of the edit cell
+ */
 const EditCell = props => {
     const styles = {
         EditBoxContainer: {
@@ -14,7 +21,7 @@ const EditCell = props => {
         },
         ViewArea: {
             flexGrow: '1',
-            fontSize:'0.9em'
+            fontSize: '0.9em'
         },
         EditArea: {
             backgroundColor: props.selectedColor,
@@ -23,25 +30,22 @@ const EditCell = props => {
             height: 'auto'
         },
         Hidden: {
-            display:'none',
-            height:'auto'
+            display: 'none',
+            height: 'auto'
         }
     }
     const markdownOptions = {
-        sanitize:true,
-        gfm:true,
-        breaks:true,
-        smartLists:true,
-        smartypants:true
+        sanitize: true,
+        gfm: true,
+        breaks: true,
+        smartLists: true,
+        smartypants: true
     }
     const markdownText = { __html: !props.value ? '' : marked(props.value, markdownOptions) };
     return (props.editMode ? (
         <div style={styles.EditableBox}>
             <textarea
                 style={styles.EditArea}
-                data-claimid={props.claimID}
-                data-field={props.field}
-                data-patentnumber={props.patentNumber}
                 contentEditable={true}
                 onChange={props.editContent}
                 value={props.value}
@@ -50,9 +54,6 @@ const EditCell = props => {
             <div>
                 <SaveCancel
                     handleClick={props.clickSaveCancel}
-                    claimID={props.claimID}
-                    field={props.field}
-                    patentNumber={props.patentNumber}
                 />
             </div>
         </div>
@@ -62,15 +63,17 @@ const EditCell = props => {
                     style={styles.ViewArea}
                     dangerouslySetInnerHTML={markdownText}
                     onClick={props.activateEditMode}
-                    data-claimid={props.claimID}
-                    data-field={props.field}
-                    data-patentnumber={props.patentNumber}
                 />
             </div>
         )
     )
 }
 
+/** A private component that renders a Save and a Cancel button
+ * Takes props
+ * @param {()=>void} props.handleClick click handler for Save and Cancel button
+ * also has a data-action property 'save' or 'cancel', needs to be handled up top
+ */
 const SaveCancel = props => {
     const styles = {
         SaveCancel: {
@@ -97,9 +100,6 @@ const SaveCancel = props => {
             {enabledButtons.map(item => (
                 <button
                     style={styles.Button}
-                    data-claimid={props.claimID}
-                    data-field={props.field}
-                    data-patentnumber={props.patentNumber}
                     data-action={item.action}
                     onClick={props.handleClick}
                 >
