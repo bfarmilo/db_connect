@@ -81,11 +81,10 @@ const ControlArea = props => {
             </div>
             <div style={styles.TableHeading}>
                 {enabledColumns.map(column => {
-                    const sortDirection = props.sortOrder[simpleHash(column.field)];
                     return (
                     <div key={column.field}>
                         <div data-field={column.field} onClick={props.modifySortOrder}>
-                        {column.display}{!!sortDirection ? (sortDirection.ascending ? ' \u21D1' : ' \u21D3') : ''}</div>
+                        {column.display}{props.sortOrder.has(column.field) ? (props.sortOrder.get(column.field).ascending ? ' \u21D1' : ' \u21D3') : ''}</div>
                         <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.styles.selectedColor } : styles.ColumnControl}>
                             <input
                                 style={styles.ValuesField}

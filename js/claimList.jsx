@@ -3,7 +3,6 @@ import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
-import { getCurrent, modifyClaim, countResults, dropWorkingValue, simpleHash } from './jsx/claimListMethods';
 import 'preact/devtools';
 
 const TITLE_ROW_HEIGHT = 175;
@@ -70,10 +69,10 @@ const queryValues = {
     IsIndependentClaim: ''
 }
 
-const sortOrder = {
-    [simpleHash('PatentNumber')]: { field: 'PatentNumber', ascending: true },
-    99999: { field: 'ClaimNumber', ascending: true }
-};
+const sortOrder = new Map([
+    ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+    ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
+]);
 
 //TODO: Convert claimTable, activeRows, sortOtder to maps and get rid of undo
 
@@ -82,14 +81,13 @@ class ClaimTable extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            claimList: initialList,
+            claimList: new Map(),
             expandAll: false,
             queryValues,
             windowHeight: 625,
             resultCount: 0,
-            undo: [],
             working: true,
-            activeRows: [],
+            activeRows: new Map(),
             sortOrder,
             offset: 0,
             scrollTop: 0,
@@ -111,11 +109,14 @@ class ClaimTable extends Component {
     // lifecycle Methods
     componentDidMount() {
         // new query results from Main
-        ipcRenderer.on('json_result', (event, data, totalCount, newOffset, appendMode) => {
+        ipcRenderer.on('json_result', (event, data, resultCount, newOffset, appendMode) => {
             if (data) {
-                const resultCount = totalCount[0][0];
                 console.log('got new table data, count, offset, appendmode', resultCount, newOffset, appendMode);
-                const claimList = appendMode ? this.state.claimList.concat(data) : data;
+                const claimList = new Map(this.state.claimList);
+                if (!appendMode) {
+                    claimList.clear();
+                }
+                data.map(item => claimList.set(`${item.ClaimID}`, item));
                 this.setState({
                     claimList,
                     resultCount,
@@ -127,7 +128,7 @@ class ClaimTable extends Component {
                 );
             } else {
                 console.log('no results received');
-                this.setState({ claimList: initialList, resultCount: 0, working: false })
+                this.setState({ claimList: new Map(), resultCount: 0, working: false })
             }
         });
         // window size changed, needed to recalculate scrollbars
@@ -155,8 +156,8 @@ class ClaimTable extends Component {
         const offset = appendMode ? this.state.offset : 0;
         this.setState({ working: !appendMode, offset })
         console.log('sending new query');
-        // kind of hack, sort by the hash function, forces claim number to the end.
-        const sortOrder = Object.keys(this.state.sortOrder).sort().map(elem => this.state.sortOrder[elem]);
+        // send plain JSON, not maps
+        const sortOrder = [...this.state.sortOrder].map(record => record[1]);
         ipcRenderer.send('json_query', this.state.queryValues, sortOrder, this.state.offset, appendMode);
     }
 
@@ -198,7 +199,7 @@ class ClaimTable extends Component {
     changeDB() {
         console.log('changing database');
         ipcRenderer.send('change_db');
-        this.setState({ claimList: initialList, queryValues, undo: [] });
+        this.setState({ claimList: new Map(), queryValues });
         this.runQuery();
     }
 
@@ -209,23 +210,25 @@ class ClaimTable extends Component {
     modifySortOrder(event) {
         console.log('modifying sort order');
         const field = event.currentTarget.getAttribute('data-field');
-        const alreadyInList = this.state.sortOrder[simpleHash(field)];
-        const sortOrder = { ...this.state.sortOrder };
+        const sortOrder = new Map(this.state.sortOrder);
+        // since maps order by key entry, remove the 'claimNumber' key then add at the end
+        sortOrder.delete('ClaimNumber');
         // Logic is this: none -> Ascending -> Descending -> none
-        if (!alreadyInList) {
+        if (!sortOrder.has(field)) {
             // none -> Ascending
-            console.log('adding key %s to sortOrder', `${simpleHash(field)}`)
-            sortOrder[simpleHash(field)] = { field, ascending: true };
+            console.log('adding key %s to sortOrder', field)
+            sortOrder.set(field, {field, ascending:true});
         } else {
-            if (alreadyInList.ascending) {
+            if (sortOrder.get(field).ascending) {
                 //Ascending -> Descending
-                sortOrder[simpleHash(field)] = { field, ascending: false };
+                sortOrder.set(field, { field, ascending: false });
             } else {
                 //Descending -> none
-                console.log('removing key %s from sortOrder', `${simpleHash(field)}`)
-                delete sortOrder[simpleHash(field)];
+                console.log('removing key %s from sortOrder', field);
+                sortOrder.delete(field);
             }
         }
+        sortOrder.set('ClaimNumber', {field:'ClaimNumber', ascending:true});
         this.setState({ sortOrder }, () => this.runQuery());
 
     }
@@ -255,8 +258,7 @@ class ClaimTable extends Component {
      * 
      * @param {Event} event 
      */
-    getPatentDetail(event) {
-        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
+    getPatentDetail(event, patentNumber) {
         console.log('getting detail for patent', patentNumber);
         ipcRenderer.send('view_patentdetail', patentNumber);
     }
@@ -265,71 +267,52 @@ class ClaimTable extends Component {
      * 
      * @param {*} event 
      */
-    editMode(event) {
-        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
-        const claimID = event.currentTarget.getAttribute('data-claimid');
-        const field = event.currentTarget.getAttribute('data-field');
+    editMode(event, claimID, field) {
         console.log('detected edit event in %s for claim ID %s', field, claimID);
-        //intelligently load undo values into undo array using getCurrent
-        const undo = getCurrent(this.state.claimList, this.state.undo, claimID, field)
         //load current record into active array, if needed (don't duplicate)
-        const activeRows = getCurrent(this.state.claimList, this.state.activeRows, claimID, field)
+        const activeRows = new Map(this.state.activeRows);
+        activeRows.set(`${claimID}-${field}`, this.state.claimList.get(claimID)[field]);
         //update the state, ready to listen for keypresses
-        this.setState({ undo, activeRows });
+        this.setState({ activeRows });
     }
 
     /** track changes to a field in edit mode
      * 
      * @param {*} event 
      */
-    editContent(event) {
-        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
-        const claimID = event.currentTarget.getAttribute('data-claimid');
-        const field = event.currentTarget.getAttribute('data-field');
+    editContent(event, claimID, field) {
         const newValue = event.currentTarget.value;
         // console.log('got content Change event for claim ID %s, new value %s', claimID, newValue);
         //Set the value for the activeRow corresponding to this field so it updates !
-        this.setState({
-            activeRows: this.state.activeRows.map(item => {
-                if (item.claimID === claimID && item.field === field) return { ...item, value: newValue };
-                return item;
-            })
-        });
+        const activeRows = new Map(this.state.activeRows);
+        activeRows.set(`${claimID}-${field}`, newValue);
+        this.setState({ activeRows })
     }
 
     /** exit edit mode through a Save or Cancel button click
      * 
      * @param {*} event 
      */
-    clickSaveCancel(event) {
-        const patentNumber = event.currentTarget.getAttribute('data-patentnumber');
-        const claimID = event.currentTarget.getAttribute('data-claimid');
-        const field = event.currentTarget.getAttribute('data-field');
+    clickSaveCancel(event, claimID, field) {
         const action = event.currentTarget.getAttribute('data-action');
         console.log('detected %s event in %s for claim ID %s', action, field, claimID);
-        // with either save or cancel, we need to know the activeData.table and activeData.value
-        const activeData = dropWorkingValue(this.state.activeRows, claimID, field);
-        // likewise we need the remaining undo.table and value we undid undo.value
-        const undoData = dropWorkingValue(this.state.undo, claimID, field);
-        // load the original value into oldValue from the undo array, and create a newValue placeholder
+        const activeRows = new Map(this.state.activeRows);
         if (action === 'save') {
             // send off an updateQuery to the database
+            console.log(this.state.claimList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`));
             ipcRenderer.send(
                 'json_update',
-                undoData.value,
-                activeData.value
+                { field, claimID, value: this.state.claimList.get(claimID)[field] },
+                { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`) }
             )
             // splice in the record and update the main table
-            this.setState({
-                claimList: modifyClaim(this.state.claimList, 'update', activeData.value)
-            })
+            const claimList = new Map(this.state.claimList);
+            claimList.set(claimID, { ...claimList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`) })
+            this.setState({ claimList })
         }
-        // clear out and update undo and activeRows
-        this.setState({
-            undo: undoData.table,
-            activeRows: activeData.table
-        })
-
+        // clear out and update activeRows
+        activeRows.delete(`${claimID}-${field}`);
+        this.setState({ activeRows })
     }
 
     render({ props }, { state }) {
