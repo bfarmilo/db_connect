@@ -7,6 +7,18 @@
   "plugins": [
     "transform-class-properties",
     "transform-decorators",
-    ["transform-react-jsx", {"pragma":"h"}]
+    [
+      "transform-react-jsx",
+      {
+        "pragma": "h"
+      }
+    ],
+    [
+      "transform-runtime",
+      {
+        "polyfill": false,
+        "regenerator": true
+      }
+    ]
   ]
 }
