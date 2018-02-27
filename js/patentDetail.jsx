@@ -62,8 +62,7 @@ class PatentDetail extends Component {
         this.setState({ activeSummary });
     }
 
-    clickSaveCancel(event, summaryID) {
-        const action = event.currentTarget.getAttribute('data-action');
+    clickSaveCancel(event, summaryID, action) {
         console.log(action, 'event detected for', summaryID);
         const activeSummary = new Map(this.state.activeSummary);
         if (action === 'save') {
@@ -146,7 +145,7 @@ const Result = (props) => {
                     editMode={props.activeSummary.has(summaryID)}
                     editContent={(e) => props.editContent(e, summaryID)}
                     value={props.activeSummary.get(summaryID) || summaryText.PatentSummaryText}
-                    clickSaveCancel={(e) => props.clickSaveCancel(e, summaryID)}
+                    clickSaveCancel={(e, action) => props.clickSaveCancel(e, summaryID, action)}
                     activateEditMode={(e) => props.activateEditMode(e, summaryID)}
                 />) : (
                     <input

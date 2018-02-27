@@ -56,7 +56,7 @@ const TableArea = props => {
                             editMode={props.activeRows.has(`${claimID}-${field}`)}
                             editContent={(e) => props.editContent(e, claimID, field)}
                             value={props.activeRows.get(`${claimID}-${field}`) || item[field]}
-                            clickSaveCancel={(e) => props.clickSaveCancel(e, claimID, field)}
+                            clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
                             activateEditMode={(e) => props.editMode(e, claimID, field)}
                         />)
                     )}

@@ -53,7 +53,7 @@ const EditCell = props => {
             />
             <div>
                 <SaveCancel
-                    handleClick={props.clickSaveCancel}
+                    handleClick={(e, action) => props.clickSaveCancel(e, action)}
                 />
             </div>
         </div>
@@ -100,8 +100,7 @@ const SaveCancel = props => {
             {enabledButtons.map(item => (
                 <button
                     style={styles.Button}
-                    data-action={item.action}
-                    onClick={props.handleClick}
+                    onClick={(e) => props.handleClick(e, item.action)}
                 >
                     {item.display}
                 </button>

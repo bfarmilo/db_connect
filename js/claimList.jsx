@@ -293,8 +293,7 @@ class ClaimTable extends Component {
      * 
      * @param {*} event 
      */
-    clickSaveCancel(event, claimID, field) {
-        const action = event.currentTarget.getAttribute('data-action');
+    clickSaveCancel(event, claimID, field, action) {
         console.log('detected %s event in %s for claim ID %s', action, field, claimID);
         const activeRows = new Map(this.state.activeRows);
         if (action === 'save') {
