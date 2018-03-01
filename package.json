@@ -6,8 +6,9 @@
   "scripts": {
     "test": "mocha",
     "transpile": "babel ./js/ -x .jsx --out-dir ./jsx/",
+    "transpile-main": "babel ./main.es6 -o main.js",
     "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
-    "start": "docker start sqlserver && npm run transpile && electron .",
+    "start": "docker start sqlserver && npm run transpile && npm run transpile-main && electron .",
     "insertNew": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
     "updateExisting": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
     "getPatents": "docker start sqlserver && set USEDB=NextIdea& set DEBUG=nightmare& node ./test/4_getpatents.test.js"
