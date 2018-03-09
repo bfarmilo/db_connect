@@ -104,6 +104,7 @@ class ClaimTable extends Component {
         this.modifySortOrder = this.modifySortOrder.bind(this);
         this.editContent = this.editContent.bind(this);
         this.handleScroll = this.handleScroll.bind(this);
+        this.getNewPatents = this.getNewPatents.bind(this);
     }
 
     // lifecycle Methods
@@ -139,6 +140,11 @@ class ClaimTable extends Component {
                 this.setState({ windowHeight: newSize.height - TITLE_ROW_HEIGHT });
             }
         })
+        // new patents added to the db
+        ipcRenderer.on('new_patents_ready', (e, list) => {
+            console.log('got new patents, rerunning query', list);
+            this.runQuery();
+        })
         setTimeout(() => this.runQuery(), 2000); //hack to buy time for docker to get server
     }
 
@@ -159,6 +165,10 @@ class ClaimTable extends Component {
         // send plain JSON, not maps
         const sortOrder = [...this.state.sortOrder].map(record => record[1]);
         ipcRenderer.send('json_query', this.state.queryValues, sortOrder, this.state.offset, appendMode);
+    }
+
+    getNewPatents(event) {
+        ipcRenderer.send('new_patent_retrieval');
     }
 
     /** Handle typing in a filter cell
@@ -330,6 +340,7 @@ class ClaimTable extends Component {
                     changeDB={this.changeDB}
                     styles={styles}
                     modifySortOrder={this.modifySortOrder}
+                    getNewPatents={this.getNewPatents}
                 />
                 {this.state.working ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: this.state.windowHeight }}>

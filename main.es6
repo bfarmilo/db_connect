@@ -7,7 +7,7 @@ const { queryDatabase } = require('./js/app_DBconnect');
 const { connectDocker } = require('./js/connectDocker');
 const { getFullText } = require('./js/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
-const { downloadPatents } = require('./jsx/getPatents.js');
+const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
 // configuration
 const changeLog = require('./changeLog.json');
 const { patentDB } = require('./js/app_config.json');
@@ -21,6 +21,7 @@ let win;
 let markmanwin;
 let detailWindow = null;
 let getPatentWindow;
+let newPatentWindow;
 
 // globals
 let totalCount = 0;
@@ -28,6 +29,7 @@ let dropboxPath = ''; // keeps the path to the local dropbox
 
 // global constants
 const ROWS_TO_RETURN = 200;
+const SLICE_SIZE = 3;
 const databases = {
   PMCDB: { uriMode: false, next: "NextIdea" },
   NextIdea: { uriMode: true, next: "GeneralResearch" },
@@ -36,16 +38,16 @@ const databases = {
 
 // database parameters
 let connectParams;
-let uriMode = databases[connectParams.options.database].uriMode; // flag that indicates if claim HTML is uri-encoded or not, default to false
+let uriMode; // flag that indicates if claim HTML is uri-encoded or not, default to false
 
 // connect to the sql server
 connectDocker(patentDB.connection)
   .then(params => {
     connectParams = params;
+    uriMode = databases[connectParams.options.database].uriMode
     console.log('new connection parameters set: %j', connectParams);
   })
   .catch(err => console.error(err));
-
 
 /** openPDF will try to open a pdf file using the shell
  * 
@@ -95,98 +97,172 @@ const createWindow = () => {
     // when you should delete the corresponding element.
     if (detailWindow) detailWindow.close();
     if (markmanwin) markmanwin.close();
+    if (newPatentWindow) newPatentWindow.close();
     win = null;
   });
 }
 
-/** getNewPatent sets up the patent retrieval window
- * @param {number} patentNumber
- * @param {string} PMCRef
- * @param {string} outputPath
- * @param {boolean} uriMode
- * @returns {Object} ready for insertion into the DB
- */
-const getNewPatent = (patentNumber, PMCRef, outputPath, uriMode) => {
-
-  const activeWin = getPatentWindow.get(patentNumber);
-  /** @private parseScript parses JS code into a string
-   * @returns {string}
-   */
-  const parseScript = () => {
-    return `
-    require('electron').ipcRenderer.send('result_ready', {
-      PatentPath: document.querySelector('.knowledge-card-action-bar a').href,
-      Number: document.querySelector('.applist .approw .appno b').innerHTML,
-      Title: document.querySelector('#title').innerHTML,
-      downloadLink: document.querySelector('a.style-scope.patent-result').href,
-      PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
-      Claims: Array.from(document.querySelector('#claims #text .claims').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
-    });
-    `
-  };
-
-  activeWin.loadURL(`https://patents.google.com/patent/US${patentNumber}/en`);
-  activeWin.on('closed', () => {
-    getPatentWindow.delete(patentNumber);
-  });
-  activeWin.on('ready-to-show', () => {
-    activeWin.webContents.openDevTools();
-    console.log('window ready, executing in-page JS');
-    //getPatentWindow.show();
-    activeWin.webContents.executeJavaScript(parseScript(), false)
-  })
-
-  // content event listeners
-  return new Promise(resolve => {
-    ipcMain.once('result_ready', (e, result) => {
-      console.log('received result event')
-      activeWin.close();
-      // Number: formatted as USAABBBCC, reformat to AA/BBB,CCC
-      // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
-      // Title: trim whitespace
-      // Claims: condition claims to exclude JSON-ineligible characters 
-      // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent 
-      return resolve(
-        {
-          ...result,
-          Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
-          PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
-          Title: result.Title.trim().split('\n')[0],
-          Claims: result.Claims.filter(y => y.localName !== 'claim-statement')
-            .map(x => ({
-              ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-              ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-              IsMethodClaim: x.innerText.includes('method'),
-              IsDocumented: false,
-              IsIndependentClaim: !x.className.includes('claim-dependent'),
-              PatentID: 0
-            })),
-          IndependentClaimsCount: result.Claims.filter(y => y.localName !== 'claim-statement' && !y.className.includes('claim-dependent')).length,
-          ClaimsCount: result.Claims.length,
-          PatentNumber: patentNumber,
-          PMCRef,
-          IsInIPR: false,
-          TechnologySpaceID: 1,
-          TechnologySubSpaceID: 1,
-          CoreSubjectMatterID: 1,
-          PatentPath: `${outputPath}US${patentNumber}.pdf`,
-        }
-      );
-    });
-  });
-}
-
 /** getAllPatents retrieves data and creates an array of results
+ * uses global uriMode
  * @param {Object<number>} patentList an array of patents to retrieve, in XXXXXXX form
  * @param {String} patentRef the PMC Reference to associate with each patent TODO NEEDS WORK
  * @param {String} basePath the path from the dropbox to the folder where the full PDF's of the patent are stored
  * @returns {Array{Object}} an array of objects ready for sending to TODO downloads, disk, insert or update.
  */
-const getAllPatents = (patentList, patentRef, basePath) => {
-  getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
-  return Promise.all(
-    [...getPatentWindow.keys()].map(patentNumber => getNewPatent(patentNumber, patentRef, basePath, uriMode))
-  );
+const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
+  // create a map of hidden browser windows indexed by a patent number
+  const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
+
+  const scrapeCode = `require('electron').ipcRenderer.send('result_ready', {
+    PatentPath: document.querySelector('.knowledge-card-action-bar a').href,
+    Number: document.querySelector('.applist .approw .appno b').innerHTML,
+    Title: document.querySelector('#title').innerHTML,
+    downloadLink: document.querySelector('a.style-scope.patent-result').href,
+    PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
+    Claims: Array.from(document.querySelector('#claims #text .claims').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
+  });`;
+
+  /** @private getNewPatent sets up the (hidden) patent retrieval window
+   * pushes in Javascript, and returns a patent Record
+   * @param {number} patentNumber
+   * @param {string} PMCRef
+   * @param {boolean} uriMode
+   * @returns {Object} ready for insertion into the DB
+   */
+  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode) => {
+
+    //const activeWin = {...getPatentWindow.get(patentNumber)};
+
+    activeWin.loadURL(`https://patents.google.com/patent/US${patentNumber}/en`);
+    activeWin.on('closed', () => {
+      getPatentWindow.delete(patentNumber);
+    });
+    activeWin.on('ready-to-show', () => {
+      //activeWin.webContents.openDevTools();
+      console.log('window ready, executing in-page JS for patent', patentNumber);
+      //getPatentWindow.show();
+      activeWin.webContents.executeJavaScript(scrapeCode, false)
+    })
+
+    // content event listeners
+    return new Promise(resolve => {
+      ipcMain.once('result_ready', (e, result) => {
+        console.log('received result event')
+        activeWin.close();
+        // Number: formatted as USAABBBCC, reformat to AA/BBB,CCC
+        // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
+        // Title: trim whitespace
+        // Claims: condition claims to exclude JSON-ineligible characters 
+        // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent 
+        return resolve(
+          {
+            ...result,
+            Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
+            PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
+            Title: result.Title.trim().split('\n')[0],
+            Claims: result.Claims.filter(y => y.localName !== 'claim-statement')
+              .map(x => ({
+                ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
+                ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+                IsMethodClaim: x.innerText.includes('method'),
+                IsDocumented: false,
+                IsIndependentClaim: !x.className.includes('claim-dependent'),
+                PatentID: 0
+              })),
+            IndependentClaimsCount: result.Claims.filter(y => y.localName !== 'claim-statement' && !y.className.includes('claim-dependent')).length,
+            ClaimsCount: result.Claims.length,
+            PatentNumber: patentNumber,
+            PMCRef,
+            IsInIPR: false,
+            TechnologySpaceID: 1,
+            TechnologySubSpaceID: 1,
+            CoreSubjectMatterID: 1,
+            PatentPath: `${outputPath}\\US${patentNumber}.pdf`,
+          }
+        );
+      });
+    });
+  }
+
+  /** @private stepThroughPatents old-school sequential screen scraping
+   * @returns {Array<patentRecord>}
+   */
+  const stepThroughPatents = async () => {
+    let patentRecords = [];
+    let index = 0;
+    for (let [patentNumber, browserWin] of getPatentWindow.entries()) {
+      patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
+      index++;
+      update(patentNumber, 'scraped');
+    };
+    return patentRecords;
+  }
+
+  return Promise.resolve(stepThroughPatents());
+}
+
+/** Calls functions to write patent record to the DB and [optionally] download PDF's to the Dropbox
+ * Uses globals dropBoxPath and connectParams
+ * 
+ * @param {Array<PatentRecords>} patentList -> a list of patent records returned from the internet
+ * @param {String} reference -> PMCRef to apply to the new collection
+ * @param {String} storagePath -> Mount point on the dropbox to store PDF's
+ * @param {boolean} downloadPats [opt] -> True if patents need to be downloaded
+ */
+const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount) => {
+  let addedList = [];
+  const filterOptions = new Map([
+    ['independent', { field: 'IsIndependentClaim', value: /true/g }],
+    ['dependent', { field: 'IsIndependentClaim', value: /false/g }],
+    ['claim1', { field: 'ClaimNumber', value: /^1$/g }],
+    ['allbut1', { field: 'ClaimNumber', value: /(^[1].+|^[^1]$)/g }],
+    ['all', false]
+  ]);
+  const claimFilter = filterOptions.get(filterClaims);
+
+  const sendUpdate = (patentNumber, status) => {
+    // send to the window to update status
+    newPatentWindow.webContents.send('new_patents_ready', [patentNumber, status]);
+  };
+
+  const getNextSlice = async newStart => {
+    if (newStart > patentList.length) {
+      return;
+    }
+    try {
+      const currentSlice = patentList.slice(newStart, newStart + SLICE_SIZE);
+      const result = await getAllPatents(currentSlice, reference, storagePath, startCount + newStart, sendUpdate);
+      console.log(result.map(patent => `${patent.PatentNumber} (${patent.PMCRef})`));
+      if (downloadPats) downloadPatents(result, dropboxPath, sendUpdate);
+      addedList.push(await createPatentQuery(connectParams, result, sendUpdate, claimFilter));
+      return getNextSlice(newStart + SLICE_SIZE);
+    } catch (err) {
+      return Promise.reject(err)
+    }
+  }
+
+  try {
+    console.log('downloading data for patents', patentList);
+    await getNextSlice(0);
+    win.webContents.send('new_patents_ready', addedList);
+  } catch (err) {
+    console.error(err);
+  }
+};
+
+
+/** getNewPatentUI sets up the interface to accept new patents */
+const getNewPatentUI = () => {
+  if (!newPatentWindow) {
+    newPatentWindow = new BrowserWindow();
+    newPatentWindow.loadURL(`file://${__dirname}/getNewPatentUI.html`);
+    // newPatentWindow.webContents.openDevTools();
+    newPatentWindow.on('closed', () => {
+      newPatentWindow = null;
+    });
+  } else {
+    newPatentWindow.webContents.focus();
+  }
 }
 
 // Electron listeners
@@ -208,17 +284,24 @@ app.on('activate', () => {
   }
 });
 
-//Listener for getting a patent
-ipcMain.on('get_new_patents', (event, patentList) => {
-  console.log('downloading data for patents', patentList);
-  // coerce patentList into an array if it isn't already
-  getAllPatents([].concat(patentList), 'NEW', '\\Bills Swap\\')
-    .then(result => {
-      console.log(JSON.stringify(result, null, 1))
-      // TODO: insert Patents and claims, see code for 3_insertPatents.js
-      return downloadPatents(result, dropBoxPath)
-    }).catch(error => console.error(error));
-});
+//Listener for getting a patent and loading the DB, optionally downloading it
+ipcMain.on('get_new_patents', (event, ...args) => writeNewPatents(...args));
+
+// Listener for selecting a new browse point for saving new patents
+ipcMain.on('browse', (e, startFolder) => {
+  console.log(`${dropboxPath}${startFolder}`);
+  dialog.showOpenDialog(newPatentWindow,
+    {
+      defaultPath: `${dropboxPath}${startFolder}`,
+      properties: ['openDirectory']
+    }, folder => {
+      console.log(folder);
+      newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
+    })
+})
+
+// Listener for launching new Patent retrieval UI
+ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
 
 //Listener for launching patent details
 ipcMain.on('view_patentdetail', (event, patentNumber) => {
@@ -338,10 +421,10 @@ ipcMain.on('add_claimconstructions', () => {
 
 // Listener for changing to the other Databases
 ipcMain.on('change_db', event => {
-  const newDB = databases(connectParams.options.database).next;
+  const newDB = databases[connectParams.options.database].next;
   console.log('changing database to', newDB);
   connectParams.options.database = newDB;
-  uriMode = databases(newDB).uriMode;
+  uriMode = databases[newDB].uriMode;
 })
 
 // Listener for a call to update PotentialApplication or WatchItems
