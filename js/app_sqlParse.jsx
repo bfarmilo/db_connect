@@ -106,5 +106,6 @@ const parseOutput = (result, uriMode) => {
 module.exports = {
   parseQuery,
   parseOrder,
-  parseOutput
+  parseOutput,
+  flatten
 };
