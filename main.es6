@@ -102,7 +102,7 @@ const createWindow = () => {
   });
 }
 
-/** getAllPatents retrieves data and creates an array of results
+/** getAllPatents retrieves data using a BrowserWindow and creates an array of results
  * uses global uriMode
  * @param {Object<number>} patentList an array of patents to retrieve, in XXXXXXX form
  * @param {String} patentRef the PMC Reference to associate with each patent TODO NEEDS WORK
@@ -119,6 +119,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
     Title: document.querySelector('#title').innerHTML,
     downloadLink: document.querySelector('a.style-scope.patent-result').href,
     PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
+    FirstInventor: document.querySelector('.important-people dd').innerText,
     Claims: Array.from(document.querySelector('#claims #text .claims').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
   });`;
 
