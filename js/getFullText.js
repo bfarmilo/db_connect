@@ -20,7 +20,7 @@ const cleanHTML = (text) => {
  * @returns {Array<string>} One element per paragraph, otherwise completely clean of HTML formatting
  */
 const getFullText = async (patentNumber) => {
-    // form the url get string. The patentNumber shows up as TERM1
+    // form the url GET string. The patentNumber shows up as TERM1
     let usptoURL = `${uspto.url}?TERM1=${patentNumber}&${Object.keys(uspto.queryParams).map(key => `${key}=${encodeURIComponent(uspto.queryParams[key])}`).join('&')}`;
     // the landing page redirects with new query parameters
     const redirectURL = await (await fetch(usptoURL)).text();
