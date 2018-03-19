@@ -119,7 +119,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
     Title: document.querySelector('#title').innerHTML,
     downloadLink: document.querySelector('a.style-scope.patent-result').href,
     PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
-    FirstInventor: document.querySelector('.important-people dd').innerText,
+    InventorLastName: document.querySelector('.important-people dd').innerText,
     Claims: Array.from(document.querySelector('#claims #text .claims').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
   });`;
 
@@ -154,13 +154,15 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
         // Claims: condition claims to exclude JSON-ineligible characters 
-        // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent 
+        // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
+        // InventorLastName: split name on ' ' and take the last element of the array
         return resolve(
           {
             ...result,
             Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
             PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
             Title: result.Title.trim().split('\n')[0],
+            InventorLastName: result.InventorLastName.split(' ')[result.InventorLastName.split(' ').length - 1],
             Claims: result.Claims.filter(y => y.localName !== 'claim-statement')
               .map(x => ({
                 ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
