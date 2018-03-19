@@ -36,7 +36,6 @@ const flatten = list => list.reduce(
 */
 const parseQuery = query => {
 
-  //TODO: Handle NOT operator !
   // create an expanded query, to deal with | and & in any query values
   const expandQuery = query.reduce((result, item) => {
     const expandedItem = expandValues(item);
@@ -51,10 +50,19 @@ const parseQuery = query => {
     // now parse the param list to create a where array and a param array
     // for now, put in a placeholder ? to hold where the parameter index will go
     // Make sure compound components are surrounded in brackets
-    return element[1].map((item, index) => ({
-      where: `${index === 0 && element[1].length > 1 ? '(' : ''}${parser.prefix}${parser.table}.${element[0]}${parser.suffix}@? ${element[2][index] || ') AND'}`,
-      param: `${parser.suffix === ' LIKE ' ? `%${item}%` : item}`,
-    }));
+    return element[1].map((item, index) => {
+      const negate = item.includes('!');
+      const parsedItem = negate ? item.replace('!', '') : item;
+      // note: don't need an opening bracket if there is only a single parameter
+      // if negated, use notSuffix instead of suffix
+      // put the operator associated with this index afterwards, and if the last
+      // element, put in an 'AND'. If it turns out this is the last item we will
+      // remove the extra 'AND' later
+      return {
+        where: `${index === 0 && element[1].length > 1 ? '(' : ''}${parser.prefix}${parser.table}.${element[0]}${negate ? parser.notSuffix : parser.suffix}@? ${element[2][index] || ') AND'}`,
+        param: `${parser.suffix === ' LIKE ' ? `%${parsedItem}%` : parsedItem}`,
+      }
+    });
   })).reduce((result, current, index) => {
     // now that the array is flat, replace the ? placeholder
     // with the associated parameter index and push the param array
@@ -98,7 +106,7 @@ const parseOutput = (result, uriMode) => {
     return patent.claims.map(claim => ({
       ...item,
       ...claim,
-      ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml 
+      ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml
     }))
   })) : '';
 }
