@@ -1,5 +1,5 @@
 const fetch = require('node-fetch');
-const uspto = require('./app_config.json').uspto;
+const uspto = require('../app_config.json').uspto;
 
 
 const cleanHTML = (text) => {

@@ -2,17 +2,17 @@ const electron = require('electron');
 const fse = require('fs-extra');
 const spawn = require('child_process').spawn;
 // local modules
-const { getDropBoxPath } = require('./js/getDropBoxPath');
-const { queryDatabase } = require('./js/app_DBconnect');
-const { connectDocker } = require('./js/connectDocker');
-const { getFullText } = require('./js/getFullText');
+const { getDropBoxPath } = require('./jsx/getDropBoxPath');
+const { queryDatabase } = require('./jsx/app_DBconnect');
+const { connectDocker } = require('./jsx/connectDocker');
+const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
 // configuration
 const changeLog = require('./changeLog.json');
-const { patentDB } = require('./js/app_config.json');
+const { patentDB } = require('./app_config.json');
 // developer
-const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
+// const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
 const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 
@@ -41,13 +41,16 @@ let connectParams;
 let uriMode; // flag that indicates if claim HTML is uri-encoded or not, default to false
 
 // connect to the sql server
-connectDocker(patentDB.connection)
-  .then(params => {
-    connectParams = params;
-    uriMode = databases[connectParams.options.database].uriMode
+const connectToDB = async () => {
+  try {
+    connectParams = await connectDocker(patentDB.connection);
+    uriMode = databases[connectParams.options.database].uriMode;
     console.log('new connection parameters set: %j', connectParams);
-  })
-  .catch(err => console.error(err));
+    return connectParams.server;
+  } catch (err) {
+    return err;
+  }
+};
 
 /** openPDF will try to open a pdf file using the shell
  * 
@@ -79,13 +82,13 @@ const createWindow = () => {
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
   // Open the DevTools.
-  installExtension(REACT_DEVELOPER_TOOLS).then(name => {
-    console.log(`Added Extension:  ${name}`);
-    win.webContents.openDevTools();
-  })
-    .catch(err => {
-      console.error('An error occurred: ', err);
-    });
+  /*   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
+      console.log(`Added Extension:  ${name}`);
+      win.webContents.openDevTools();
+    })
+      .catch(err => {
+        console.error('An error occurred: ', err);
+      }); */
   win.on('resize', () => {
     console.log('window size changed, sending new size');
     win.webContents.send('resize', { width: win.getSize()[0], height: win.getSize()[1] });
@@ -193,6 +196,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
   const stepThroughPatents = async () => {
     let patentRecords = [];
     let index = 0;
+    //TODO: Option to use inventor last name instead of patentRef
     for (let [patentNumber, browserWin] of getPatentWindow.entries()) {
       patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
       index++;
@@ -270,7 +274,14 @@ const getNewPatentUI = () => {
 
 // Electron listeners
 // initialization and is ready to create browser windows.
-app.on('ready', createWindow);
+app.on('ready', async () => {
+  try {
+    await connectToDB();
+    createWindow();
+  } catch (err) {
+    console.error(err)
+  }
+});
 // Quit when all windows are closed.
 app.on('window-all-closed', () => {
   // On macOS it is common for applications and their menu bar

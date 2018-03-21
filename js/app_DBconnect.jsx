@@ -1,7 +1,7 @@
 // takes arguments (WHEREstring, VALUESarray, callback),
 // returns callback(error, array containing query results)
 const { Connection, Request, TYPES } = require('tedious');
-const DB = require('./app_config.json').patentDB;
+const DB = require('../app_config.json').patentDB;
 // the main query code
 const queryDatabase = (connectParams, qryType, whereString, values, suffix, callback) => {
   const sqlString = `${DB[qryType]}${whereString} ${suffix}`;

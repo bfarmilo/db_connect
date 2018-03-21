@@ -1,12 +1,20 @@
 'use strict';
 
-var _toConsumableArray2 = require('babel-runtime/helpers/toConsumableArray');
+var _slicedToArray2 = require('babel-runtime/helpers/slicedToArray');
 
-var _toConsumableArray3 = _interopRequireDefault(_toConsumableArray2);
+var _slicedToArray3 = _interopRequireDefault(_slicedToArray2);
 
 var _extends2 = require('babel-runtime/helpers/extends');
 
 var _extends3 = _interopRequireDefault(_extends2);
+
+var _regenerator = require('babel-runtime/regenerator');
+
+var _regenerator2 = _interopRequireDefault(_regenerator);
+
+var _asyncToGenerator2 = require('babel-runtime/helpers/asyncToGenerator');
+
+var _asyncToGenerator3 = _interopRequireDefault(_asyncToGenerator2);
 
 function _interopRequireDefault(obj) { return obj && obj.__esModule ? obj : { default: obj }; }
 
@@ -15,16 +23,16 @@ var fse = require('fs-extra');
 var spawn = require('child_process').spawn;
 // local modules
 
-var _require = require('./js/getDropBoxPath'),
+var _require = require('./jsx/getDropBoxPath'),
     getDropBoxPath = _require.getDropBoxPath;
 
-var _require2 = require('./js/app_DBconnect'),
+var _require2 = require('./jsx/app_DBconnect'),
     queryDatabase = _require2.queryDatabase;
 
-var _require3 = require('./js/connectDocker'),
+var _require3 = require('./jsx/connectDocker'),
     connectDocker = _require3.connectDocker;
 
-var _require4 = require('./js/getFullText'),
+var _require4 = require('./jsx/getFullText'),
     getFullText = _require4.getFullText;
 
 var _require5 = require('./jsx/app_sqlParse'),
@@ -33,20 +41,17 @@ var _require5 = require('./jsx/app_sqlParse'),
     parseOutput = _require5.parseOutput;
 
 var _require6 = require('./jsx/getPatents.js'),
+    createPatentQuery = _require6.createPatentQuery,
     downloadPatents = _require6.downloadPatents;
 // configuration
 
 
 var changeLog = require('./changeLog.json');
 
-var _require7 = require('./js/app_config.json'),
+var _require7 = require('./app_config.json'),
     patentDB = _require7.patentDB;
 // developer
-
-
-var _require8 = require('electron-devtools-installer'),
-    installExtension = _require8.default,
-    REACT_DEVELOPER_TOOLS = _require8.REACT_DEVELOPER_TOOLS;
+// const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
 
 
@@ -56,24 +61,66 @@ var app = electron.app,
     ipcMain = electron.ipcMain,
     dialog = electron.dialog;
 
+// windows we may decide to open
+
 var win = void 0;
 var markmanwin = void 0;
 var detailWindow = null;
-var connectParams = void 0;
-var dropboxPath = ''; // keeps the path to the local dropbox
-var uriMode = process.env.USEDB === 'NextIdea'; // flag that indicates if claim HTML is uri-encoded or not
+var getPatentWindow = void 0;
+var newPatentWindow = void 0;
+
+// globals
 var totalCount = 0;
+var dropboxPath = ''; // keeps the path to the local dropbox
 
+// global constants
 var ROWS_TO_RETURN = 200;
+var SLICE_SIZE = 3;
+var databases = {
+  PMCDB: { uriMode: false, next: "NextIdea" },
+  NextIdea: { uriMode: true, next: "GeneralResearch" },
+  GeneralResearch: { uriMode: true, next: "PMCDB" }
+};
 
-connectDocker(patentDB.connection).then(function (params) {
-  connectParams = params;
-  console.log('new connection parameters set: %j', connectParams);
-}).catch(function (err) {
-  return console.error(err);
-});
+// database parameters
+var connectParams = void 0;
+var uriMode = void 0; // flag that indicates if claim HTML is uri-encoded or not, default to false
 
-// This method will be called when Electron has finished
+// connect to the sql server
+var connectToDB = function () {
+  var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {
+    return _regenerator2.default.wrap(function _callee$(_context) {
+      while (1) {
+        switch (_context.prev = _context.next) {
+          case 0:
+            _context.prev = 0;
+            _context.next = 3;
+            return connectDocker(patentDB.connection);
+
+          case 3:
+            connectParams = _context.sent;
+
+            uriMode = databases[connectParams.options.database].uriMode;
+            console.log('new connection parameters set: %j', connectParams);
+            return _context.abrupt('return', connectParams.server);
+
+          case 9:
+            _context.prev = 9;
+            _context.t0 = _context['catch'](0);
+            return _context.abrupt('return', _context.t0);
+
+          case 12:
+          case 'end':
+            return _context.stop();
+        }
+      }
+    }, _callee, undefined, [[0, 9]]);
+  }));
+
+  return function connectToDB() {
+    return _ref.apply(this, arguments);
+  };
+}();
 
 /** openPDF will try to open a pdf file using the shell
  * 
@@ -105,12 +152,13 @@ var createWindow = function createWindow() {
   // and load the index.html of the app.
   win.loadURL('file://' + __dirname + '/claimtable.html');
   // Open the DevTools.
-  installExtension(REACT_DEVELOPER_TOOLS).then(function (name) {
-    console.log('Added Extension:  ' + name);
-    win.webContents.openDevTools();
-  }).catch(function (err) {
-    console.error('An error occurred: ', err);
-  });
+  /*   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
+      console.log(`Added Extension:  ${name}`);
+      win.webContents.openDevTools();
+    })
+      .catch(err => {
+        console.error('An error occurred: ', err);
+      }); */
   win.on('resize', function () {
     console.log('window size changed, sending new size');
     win.webContents.send('resize', { width: win.getSize()[0], height: win.getSize()[1] });
@@ -122,99 +170,347 @@ var createWindow = function createWindow() {
     // when you should delete the corresponding element.
     if (detailWindow) detailWindow.close();
     if (markmanwin) markmanwin.close();
+    if (newPatentWindow) newPatentWindow.close();
     win = null;
   });
 };
 
-var getPatentWindow = void 0;
-/** getNewPatent sets up the patent retrieval window
- * @param {number} patentNumber
- * @param {string} PMCRef
- * @param {string} outputPath
- * @param {boolean} uriMode
- * @returns {Object} ready for insertion into the DB
- */
-var getNewPatent = function getNewPatent(patentNumber, PMCRef, outputPath, uriMode) {
-
-  var activeWin = getPatentWindow.get(patentNumber);
-  /** @private parseScript parses JS code into a string
-   * @returns {string}
-   */
-  var parseScript = function parseScript() {
-    return '\n    require(\'electron\').ipcRenderer.send(\'result_ready\', {\n      PatentPath: document.querySelector(\'.knowledge-card-action-bar a\').href,\n      Number: document.querySelector(\'.applist .approw .appno b\').innerHTML,\n      Title: document.querySelector(\'#title\').innerHTML,\n      downloadLink: document.querySelector(\'a.style-scope.patent-result\').href,\n      PatentUri: document.querySelector(\'.knowledge-card h2\').innerHTML,\n      Claims: Array.from(document.querySelector(\'#claims #text .claims\').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))\n    });\n    ';
-  };
-
-  activeWin.loadURL('https://patents.google.com/patent/US' + patentNumber + '/en');
-  activeWin.on('closed', function () {
-    getPatentWindow.delete(patentNumber);
-  });
-  activeWin.on('ready-to-show', function () {
-    activeWin.webContents.openDevTools();
-    console.log('window ready, executing in-page JS');
-    //getPatentWindow.show();
-    activeWin.webContents.executeJavaScript(parseScript(), false);
-  });
-
-  // content event listeners
-  return new Promise(function (resolve) {
-    ipcMain.once('result_ready', function (e, result) {
-      console.log('received result event');
-      activeWin.close();
-      // Number: formatted as USAABBBCC, reformat to AA/BBB,CCC
-      // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
-      // Title: trim whitespace
-      // Claims: condition claims to exclude JSON-ineligible characters 
-      // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent 
-      return resolve((0, _extends3.default)({}, result, {
-        Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
-        PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
-        Title: result.Title.trim().split('\n')[0],
-        Claims: result.Claims.filter(function (y) {
-          return y.localName !== 'claim-statement';
-        }).map(function (x) {
-          return {
-            ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-            ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-            IsMethodClaim: x.innerText.includes('method'),
-            IsDocumented: false,
-            IsIndependentClaim: !x.className.includes('claim-dependent'),
-            PatentID: 0
-          };
-        }),
-        IndependentClaimsCount: result.Claims.filter(function (y) {
-          return y.localName !== 'claim-statement' && !y.className.includes('claim-dependent');
-        }).length,
-        ClaimsCount: result.Claims.length,
-        PatentNumber: patentNumber,
-        PMCRef: PMCRef,
-        IsInIPR: false,
-        TechnologySpaceID: 1,
-        TechnologySubSpaceID: 1,
-        CoreSubjectMatterID: 1,
-        PatentPath: outputPath + 'US' + patentNumber + '.pdf'
-      }));
-    });
-  });
-};
-
-/** getAllPatents retrieves data and creates an array of results
+/** getAllPatents retrieves data using a BrowserWindow and creates an array of results
+ * uses global uriMode
  * @param {Object<number>} patentList an array of patents to retrieve, in XXXXXXX form
  * @param {String} patentRef the PMC Reference to associate with each patent TODO NEEDS WORK
  * @param {String} basePath the path from the dropbox to the folder where the full PDF's of the patent are stored
  * @returns {Array{Object}} an array of objects ready for sending to TODO downloads, disk, insert or update.
  */
-var getAllPatents = function getAllPatents(patentList, patentRef, basePath) {
-  getPatentWindow = new Map(patentList.map(function (patent) {
+var getAllPatents = function getAllPatents(patentList, patentRef, outputPath, startIdx, update) {
+  // create a map of hidden browser windows indexed by a patent number
+  var getPatentWindow = new Map(patentList.map(function (patent) {
     return [patent, new BrowserWindow({ show: false })];
   }));
-  return Promise.all([].concat((0, _toConsumableArray3.default)(getPatentWindow.keys())).map(function (patentNumber) {
-    return getNewPatent(patentNumber, patentRef, basePath, uriMode);
+
+  var scrapeCode = 'require(\'electron\').ipcRenderer.send(\'result_ready\', {\n    PatentPath: document.querySelector(\'.knowledge-card-action-bar a\').href,\n    Number: document.querySelector(\'.applist .approw .appno b\').innerHTML,\n    Title: document.querySelector(\'#title\').innerHTML,\n    downloadLink: document.querySelector(\'a.style-scope.patent-result\').href,\n    PatentUri: document.querySelector(\'.knowledge-card h2\').innerHTML,\n    InventorLastName: document.querySelector(\'.important-people dd\').innerText,\n    Claims: Array.from(document.querySelector(\'#claims #text .claims\').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))\n  });';
+
+  /** @private getNewPatent sets up the (hidden) patent retrieval window
+   * pushes in Javascript, and returns a patent Record
+   * @param {number} patentNumber
+   * @param {string} PMCRef
+   * @param {boolean} uriMode
+   * @returns {Object} ready for insertion into the DB
+   */
+  var getNewPatent = function getNewPatent(patentNumber, activeWin, PMCRef, uriMode) {
+
+    //const activeWin = {...getPatentWindow.get(patentNumber)};
+
+    activeWin.loadURL('https://patents.google.com/patent/US' + patentNumber + '/en');
+    activeWin.on('closed', function () {
+      getPatentWindow.delete(patentNumber);
+    });
+    activeWin.on('ready-to-show', function () {
+      //activeWin.webContents.openDevTools();
+      console.log('window ready, executing in-page JS for patent', patentNumber);
+      //getPatentWindow.show();
+      activeWin.webContents.executeJavaScript(scrapeCode, false);
+    });
+
+    // content event listeners
+    return new Promise(function (resolve) {
+      ipcMain.once('result_ready', function (e, result) {
+        console.log('received result event');
+        activeWin.close();
+        // Number: formatted as USAABBBCC, reformat to AA/BBB,CCC
+        // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
+        // Title: trim whitespace
+        // Claims: condition claims to exclude JSON-ineligible characters 
+        // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
+        // InventorLastName: split name on ' ' and take the last element of the array
+        return resolve((0, _extends3.default)({}, result, {
+          Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
+          PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
+          Title: result.Title.trim().split('\n')[0],
+          InventorLastName: result.InventorLastName.split(' ')[result.InventorLastName.split(' ').length - 1],
+          Claims: result.Claims.filter(function (y) {
+            return y.localName !== 'claim-statement';
+          }).map(function (x) {
+            return {
+              ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
+              ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+              IsMethodClaim: x.innerText.includes('method'),
+              IsDocumented: false,
+              IsIndependentClaim: !x.className.includes('claim-dependent'),
+              PatentID: 0
+            };
+          }),
+          IndependentClaimsCount: result.Claims.filter(function (y) {
+            return y.localName !== 'claim-statement' && !y.className.includes('claim-dependent');
+          }).length,
+          ClaimsCount: result.Claims.length,
+          PatentNumber: patentNumber,
+          PMCRef: PMCRef,
+          IsInIPR: false,
+          TechnologySpaceID: 1,
+          TechnologySubSpaceID: 1,
+          CoreSubjectMatterID: 1,
+          PatentPath: outputPath + '\\US' + patentNumber + '.pdf'
+        }));
+      });
+    });
+  };
+
+  /** @private stepThroughPatents old-school sequential screen scraping
+   * @returns {Array<patentRecord>}
+   */
+  var stepThroughPatents = function () {
+    var _ref2 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee2() {
+      var patentRecords, index, _iteratorNormalCompletion, _didIteratorError, _iteratorError, _iterator, _step, _ref3, _ref4, patentNumber, browserWin;
+
+      return _regenerator2.default.wrap(function _callee2$(_context2) {
+        while (1) {
+          switch (_context2.prev = _context2.next) {
+            case 0:
+              patentRecords = [];
+              index = 0;
+              //TODO: Option to use inventor last name instead of patentRef
+
+              _iteratorNormalCompletion = true;
+              _didIteratorError = false;
+              _iteratorError = undefined;
+              _context2.prev = 5;
+              _iterator = getPatentWindow.entries()[Symbol.iterator]();
+
+            case 7:
+              if (_iteratorNormalCompletion = (_step = _iterator.next()).done) {
+                _context2.next = 22;
+                break;
+              }
+
+              _ref3 = _step.value;
+              _ref4 = (0, _slicedToArray3.default)(_ref3, 2);
+              patentNumber = _ref4[0];
+              browserWin = _ref4[1];
+              _context2.t0 = patentRecords;
+              _context2.next = 15;
+              return getNewPatent(patentNumber, browserWin, patentRef + ' ' + (startIdx + index), uriMode);
+
+            case 15:
+              _context2.t1 = _context2.sent;
+
+              _context2.t0.push.call(_context2.t0, _context2.t1);
+
+              index++;
+              update(patentNumber, 'scraped');
+
+            case 19:
+              _iteratorNormalCompletion = true;
+              _context2.next = 7;
+              break;
+
+            case 22:
+              _context2.next = 28;
+              break;
+
+            case 24:
+              _context2.prev = 24;
+              _context2.t2 = _context2['catch'](5);
+              _didIteratorError = true;
+              _iteratorError = _context2.t2;
+
+            case 28:
+              _context2.prev = 28;
+              _context2.prev = 29;
+
+              if (!_iteratorNormalCompletion && _iterator.return) {
+                _iterator.return();
+              }
+
+            case 31:
+              _context2.prev = 31;
+
+              if (!_didIteratorError) {
+                _context2.next = 34;
+                break;
+              }
+
+              throw _iteratorError;
+
+            case 34:
+              return _context2.finish(31);
+
+            case 35:
+              return _context2.finish(28);
+
+            case 36:
+              ;
+              return _context2.abrupt('return', patentRecords);
+
+            case 38:
+            case 'end':
+              return _context2.stop();
+          }
+        }
+      }, _callee2, undefined, [[5, 24, 28, 36], [29,, 31, 35]]);
+    }));
+
+    return function stepThroughPatents() {
+      return _ref2.apply(this, arguments);
+    };
+  }();
+
+  return Promise.resolve(stepThroughPatents());
+};
+
+/** Calls functions to write patent record to the DB and [optionally] download PDF's to the Dropbox
+ * Uses globals dropBoxPath and connectParams
+ * 
+ * @param {Array<PatentRecords>} patentList -> a list of patent records returned from the internet
+ * @param {String} reference -> PMCRef to apply to the new collection
+ * @param {String} storagePath -> Mount point on the dropbox to store PDF's
+ * @param {boolean} downloadPats [opt] -> True if patents need to be downloaded
+ */
+var writeNewPatents = function () {
+  var _ref5 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee4(patentList, reference, storagePath, downloadPats, filterClaims, startCount) {
+    var addedList, filterOptions, claimFilter, sendUpdate, getNextSlice;
+    return _regenerator2.default.wrap(function _callee4$(_context4) {
+      while (1) {
+        switch (_context4.prev = _context4.next) {
+          case 0:
+            addedList = [];
+            filterOptions = new Map([['independent', { field: 'IsIndependentClaim', value: /true/g }], ['dependent', { field: 'IsIndependentClaim', value: /false/g }], ['claim1', { field: 'ClaimNumber', value: /^1$/g }], ['allbut1', { field: 'ClaimNumber', value: /(^[1].+|^[^1]$)/g }], ['all', false]]);
+            claimFilter = filterOptions.get(filterClaims);
+
+            sendUpdate = function sendUpdate(patentNumber, status) {
+              // send to the window to update status
+              newPatentWindow.webContents.send('new_patents_ready', [patentNumber, status]);
+            };
+
+            getNextSlice = function () {
+              var _ref6 = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee3(newStart) {
+                var currentSlice, result;
+                return _regenerator2.default.wrap(function _callee3$(_context3) {
+                  while (1) {
+                    switch (_context3.prev = _context3.next) {
+                      case 0:
+                        if (!(newStart > patentList.length)) {
+                          _context3.next = 2;
+                          break;
+                        }
+
+                        return _context3.abrupt('return');
+
+                      case 2:
+                        _context3.prev = 2;
+                        currentSlice = patentList.slice(newStart, newStart + SLICE_SIZE);
+                        _context3.next = 6;
+                        return getAllPatents(currentSlice, reference, storagePath, startCount + newStart, sendUpdate);
+
+                      case 6:
+                        result = _context3.sent;
+
+                        console.log(result.map(function (patent) {
+                          return patent.PatentNumber + ' (' + patent.PMCRef + ')';
+                        }));
+                        if (downloadPats) downloadPatents(result, dropboxPath, sendUpdate);
+                        _context3.t0 = addedList;
+                        _context3.next = 12;
+                        return createPatentQuery(connectParams, result, sendUpdate, claimFilter);
+
+                      case 12:
+                        _context3.t1 = _context3.sent;
+
+                        _context3.t0.push.call(_context3.t0, _context3.t1);
+
+                        return _context3.abrupt('return', getNextSlice(newStart + SLICE_SIZE));
+
+                      case 17:
+                        _context3.prev = 17;
+                        _context3.t2 = _context3['catch'](2);
+                        return _context3.abrupt('return', Promise.reject(_context3.t2));
+
+                      case 20:
+                      case 'end':
+                        return _context3.stop();
+                    }
+                  }
+                }, _callee3, undefined, [[2, 17]]);
+              }));
+
+              return function getNextSlice(_x7) {
+                return _ref6.apply(this, arguments);
+              };
+            }();
+
+            _context4.prev = 5;
+
+            console.log('downloading data for patents', patentList);
+            _context4.next = 9;
+            return getNextSlice(0);
+
+          case 9:
+            win.webContents.send('new_patents_ready', addedList);
+            _context4.next = 15;
+            break;
+
+          case 12:
+            _context4.prev = 12;
+            _context4.t0 = _context4['catch'](5);
+
+            console.error(_context4.t0);
+
+          case 15:
+          case 'end':
+            return _context4.stop();
+        }
+      }
+    }, _callee4, undefined, [[5, 12]]);
   }));
+
+  return function writeNewPatents(_x, _x2, _x3, _x4, _x5, _x6) {
+    return _ref5.apply(this, arguments);
+  };
+}();
+
+/** getNewPatentUI sets up the interface to accept new patents */
+var getNewPatentUI = function getNewPatentUI() {
+  if (!newPatentWindow) {
+    newPatentWindow = new BrowserWindow();
+    newPatentWindow.loadURL('file://' + __dirname + '/getNewPatentUI.html');
+    // newPatentWindow.webContents.openDevTools();
+    newPatentWindow.on('closed', function () {
+      newPatentWindow = null;
+    });
+  } else {
+    newPatentWindow.webContents.focus();
+  }
 };
 
 // Electron listeners
 // initialization and is ready to create browser windows.
-app.on('ready', createWindow);
+app.on('ready', (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee5() {
+  return _regenerator2.default.wrap(function _callee5$(_context5) {
+    while (1) {
+      switch (_context5.prev = _context5.next) {
+        case 0:
+          _context5.prev = 0;
+          _context5.next = 3;
+          return connectToDB();
+
+        case 3:
+          createWindow();
+          _context5.next = 9;
+          break;
+
+        case 6:
+          _context5.prev = 6;
+          _context5.t0 = _context5['catch'](0);
+
+          console.error(_context5.t0);
+
+        case 9:
+        case 'end':
+          return _context5.stop();
+      }
+    }
+  }, _callee5, undefined, [[0, 6]]);
+})));
 // Quit when all windows are closed.
 app.on('window-all-closed', function () {
   // On macOS it is common for applications and their menu bar
@@ -231,15 +527,30 @@ app.on('activate', function () {
   }
 });
 
-//Listener for getting a patent
-ipcMain.on('get_new_patents', function (event, patentList) {
-  console.log('downloading data for patents', patentList);
-  // coerce patentList into an array if it isn't already
-  getAllPatents([].concat(patentList), 'NEW', '\\Bills Swap\\').then(function (result) {
-    return console.log(JSON.stringify(result, null, 1));
-  }).catch(function (error) {
-    return console.error(error);
+//Listener for getting a patent and loading the DB, optionally downloading it
+ipcMain.on('get_new_patents', function (event) {
+  for (var _len = arguments.length, args = Array(_len > 1 ? _len - 1 : 0), _key = 1; _key < _len; _key++) {
+    args[_key - 1] = arguments[_key];
+  }
+
+  return writeNewPatents.apply(undefined, args);
+});
+
+// Listener for selecting a new browse point for saving new patents
+ipcMain.on('browse', function (e, startFolder) {
+  console.log('' + dropboxPath + startFolder);
+  dialog.showOpenDialog(newPatentWindow, {
+    defaultPath: '' + dropboxPath + startFolder,
+    properties: ['openDirectory']
+  }, function (folder) {
+    console.log(folder);
+    newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
   });
+});
+
+// Listener for launching new Patent retrieval UI
+ipcMain.on('new_patent_retrieval', function (e) {
+  return getNewPatentUI();
 });
 
 //Listener for launching patent details
@@ -360,17 +671,12 @@ ipcMain.on('add_claimconstructions', function () {
   // close window
 });
 
-// Listener for changing to the other Database
+// Listener for changing to the other Databases
 ipcMain.on('change_db', function (event) {
-  var databases = {
-    PMCDB: { uriMode: false, next: "NextIdea" },
-    NextIdea: { uriMode: true, next: "GeneralResearch" },
-    GeneralResearch: { uriMode: true, next: "PMCDB" }
-  };
-  var newDB = databases(connectParams.options.database).next;
+  var newDB = databases[connectParams.options.database].next;
   console.log('changing database to', newDB);
   connectParams.options.database = newDB;
-  uriMode = databases(newDB).uriMode;
+  uriMode = databases[newDB].uriMode;
 });
 
 // Listener for a call to update PotentialApplication or WatchItems

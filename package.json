@@ -7,8 +7,8 @@
     "test": "mocha",
     "transpile": "babel ./js/ -x .jsx --out-dir ./jsx/",
     "transpile-main": "babel ./main.es6 -o main.js",
-    "package": "electron-packager . --platform=win32 --arch=x64 --overwrite",
-    "start": "docker start sqlserver && npm run transpile && npm run transpile-main && electron .",
+    "package": "electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-reports --ignore=es6$",
+    "start": "npm run transpile && npm run transpile-main && electron .",
     "insertNew": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
     "updateExisting": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
     "getPatents": "docker start sqlserver && set USEDB=NextIdea& set DEBUG=nightmare& node ./test/4_getpatents.test.js"
@@ -19,11 +19,12 @@
     "node": ">9.0.0"
   },
   "dependencies": {
-    "fs-extra": "^4.0.3",
-    "marked": "^0.3.16",
+    "fs-extra": "^5.0.0",
+    "marked": "^0.3.17",
+    "node-fetch": "^2.1.1",
     "preact": "^8.2.7",
     "preact-custom-scrollbars": "^4.0.4",
-    "tedious": "^2.1.1",
+    "tedious": "^2.3.1",
     "tedious-promises": "^0.4.1"
   },
   "devDependencies": {
@@ -33,15 +34,14 @@
     "babel-preset-preact": "^1.1.0",
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^1.8.0",
+    "electron": "^1.8.4",
     "electron-devtools-installer": "^2.2.3",
-    "electron-packager": "^10.1.0",
-    "jsdom": "^9.8.3",
+    "electron-packager": "^11.1.0",
+    "jsdom": "^11.6.2",
     "mocha": "*",
     "mochawesome": "^1.5.3",
     "nightmare": "^2.10.0",
     "nightmare-inline-download": "^0.2.2",
-    "node-fetch": "^1.7.3",
     "shell": "^0.3.2"
   }
 }

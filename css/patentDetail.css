@@ -25,6 +25,8 @@ body {
     border-radius: 5px;
   }
   .PatentNumber {
+    font-weight: bold;
+    padding-left: 4px;
   }
   .CloseWindow {
     text-align: right;
@@ -60,6 +62,20 @@ body {
   .PatentParagraph {
     margin: 3px;
     padding: 3px;
+  }
+
+  .Highlight {
+    margin: 3px;
+    padding: 3px;
+    background-color:rgb(185, 185, 111);
+  }
+
+  .Search {
+    display:flex;
+  }
+
+  .HighlightWord {
+    background-color:green;
   }
 
   .PatentHeader {

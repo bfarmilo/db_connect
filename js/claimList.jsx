@@ -3,7 +3,7 @@ import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
-import 'preact/devtools';
+// import 'preact/devtools';
 
 const TITLE_ROW_HEIGHT = 175;
 const RESIZE_THRESHOLD = 50;

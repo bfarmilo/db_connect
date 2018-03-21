@@ -1,6 +1,6 @@
 // takes (field, searchstring, callback) as arguments and
 // returns a callback (error, where string, array of paramaters)
-const { urlParams, patentDB } = require('../js/app_config.json'); // stores the whereObj and regEx
+const { urlParams, patentDB } = require('../app_config.json'); // stores the whereObj and regEx
 const matchExp = new RegExp(urlParams.reg, 'g');
 
 /** expands a query item into a three element array

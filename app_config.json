@@ -30,7 +30,8 @@
                 {"name": "IsMethodClaim", "table":"claims", "prefix":"", "suffix":"=", "notSuffix":"!="},
                 {"name": "PotentialApplication", "table":"claims", "prefix":"", "suffix":" LIKE ", "notSuffix": " NOT LIKE "},
                 {"name": "WatchItems", "table":"claims", "prefix":"", "suffix":" LIKE ", "notSuffix": " NOT LIKE "},
-                {"name": "Summary", "table":"PatentSummary", "prefix":"","suffix": "=", "notSuffix":"!="}
+                {"name": "Summary", "table":"PatentSummary", "prefix":"","suffix": "=", "notSuffix":"!="},
+                {"name": "InventorLastName", "table":"patents", "prefix":"", "suffix": " LIKE ", "notSuffix": " NOT LIKE "}
             ]
     },
     "urlParams": {

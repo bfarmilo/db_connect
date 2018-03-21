@@ -16,16 +16,20 @@ class PatentDetail extends Component {
                 IndependentClaimsCount: 0,
                 ClaimsCount: 0,
                 PatentHtml: '[""]',
+                InventorLastName: '',
                 EstimatedExpiryDate
             },
             patentSummaries: new Map(),
-            activeSummary: new Map()
+            activeSummary: new Map(),
+            searchTerm: '',
+            highlightList: []
         };
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
         this.editContent = this.editContent.bind(this);
         this.activateEditMode = this.activateEditMode.bind(this);
         this.clickSaveCancel = this.clickSaveCancel.bind(this);
+        this.changeSearchTerm = this.changeSearchTerm.bind(this);
     }
 
     componentDidMount() {
@@ -90,6 +94,15 @@ class PatentDetail extends Component {
         this.setState({ activeSummary }, () => ipcRenderer.send('view_patentdetail', this.state.result.PatentNumber));
     }
 
+    //TODO: Implement RegExp search of fullText
+    changeSearchTerm(event) {
+        const searchTerm = new RegExp(event.target.value, 'g');
+        // highlightList stores an array of paragraph indexes where the regex is found
+        const highlightList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
+        console.log(highlightList, searchTerm);
+        this.setState({ searchTerm: event.currentTarget.value, highlightList });
+    }
+
     render({ }, { result }) {
         console.log('calling render with state', this.state.result, this.state.patentSummaries)
         return (
@@ -105,9 +118,12 @@ class PatentDetail extends Component {
                         editContent={this.editContent}
                         activateEditMode={this.activateEditMode}
                         clickSaveCancel={this.clickSaveCancel}
+                        changeSearchTerm={this.changeSearchTerm}
+                        highlightList={this.state.highlightList}
                     />
                     <FullText
-                        patentHtml={JSON.parse(result.PatentHtml)}
+                        patentHtml={JSON.parse(this.state.result.PatentHtml)}
+                        highlightList={this.state.highlightList}
                     />
                 </div>
             </div>
@@ -123,19 +139,20 @@ const Result = (props) => {
     const styles = {
         NewSummary: {
             backgroundColor: 'rgba(0,0,0,0)',
-            border:'none',
-            fontStyle:'italic',
-            width:'100%',
-            padding:'2px'
+            border: 'none',
+            fontStyle: 'italic',
+            width: '100%',
+            padding: '2px'
         },
         EditCell: {
             gridColumn: '1/5'
-        }
+        },
+        SearchBox: {}
     }
     return (
         <div class="PatentDetail">
             <div class="PMCRef">{props.result.PMCRef}</div>
-            <div class="PatentNumber">{props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} </div>
+            <div class="PatentNumber">{props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} {props.result.InventorLastName ? `(${props.result.InventorLastName})` : ''} </div>
             <div class="Date">{hasDate ? `Expiry ~${props.result.EstimatedExpiryDate}` : 'Expiry Unknown'}</div>
             <div class="CloseWindow"><button onClick={props.goBackClickHandler}>X</button></div>
             <div class="Title">"{props.result.Title}"</div>
@@ -156,21 +173,30 @@ const Result = (props) => {
                 )}
             </div>
             <div class="ClaimsCount">Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
+            <div class="Search"><input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)}></input><span class="PatentParagraph">{props.highlightList.length}</span></div>
             <div class="OpenPDF"><button onClick={props.openClickHandler}>Open PDF</button></div>
         </div>
     )
 };
 
 const FullText = (props) => {
+    const styles = {
+        MatchIndex: {
+            fontStyle: 'italic',
+            backgroundColor: 'rgba(111,145,185,1)'
+        }
+    }
     return (
         <div class="FullText">
-            {props.patentHtml.filter(item => item.length > 2).map(paragraph => {
+            {props.patentHtml.map((paragraph, index) => {
                 const header = paragraph.toUpperCase() === paragraph;
-                return (
-                    <div class={header ? "PatentParagraph PatentHeader" : "PatentParagraph"} key={[].reduce.call(paragraph, (p, c, i, a) => (p << 5) - p + a.charCodeAt(i), 0)}>
-                        {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}
+                const highlight = props.highlightList.length > 0 && props.highlightList.includes(index);
+                return paragraph.length > 2 ? (
+                    <div class={header ? "PatentParagraph PatentHeader" : highlight ? "Highlight" : "PatentParagraph"} key={index}>
+                        {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` :
+                            highlight ? <span><span style={styles.MatchIndex}>[Match {props.highlightList.indexOf(index) + 1}/{props.highlightList.length}]</span> {paragraph}</span> : paragraph}
                     </div>
-                )
+                ) : ''
             })}
         </div>
     )

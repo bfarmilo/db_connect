@@ -37,9 +37,11 @@ const EditCell = props => {
     const markdownOptions = {
         sanitize: true,
         gfm: true,
+        tables: true,
         breaks: true,
         smartLists: true,
-        smartypants: true
+        smartypants: true,
+        tasklist: true
     }
     const markdownText = { __html: !props.value ? '' : marked(props.value, markdownOptions) };
     return (props.editMode ? (
