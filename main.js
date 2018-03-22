@@ -86,6 +86,14 @@ var databases = {
 var connectParams = void 0;
 var uriMode = void 0; // flag that indicates if claim HTML is uri-encoded or not, default to false
 
+// master error handler
+process.on('uncaughtException', function (e) {
+  console.error(e);
+  console.error('fatal error, exiting app');
+  if (win) win.close();
+  if (app) app.close();
+});
+
 // connect to the sql server
 var connectToDB = function () {
   var _ref = (0, _asyncToGenerator3.default)( /*#__PURE__*/_regenerator2.default.mark(function _callee() {

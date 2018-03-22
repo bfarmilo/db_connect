@@ -40,6 +40,14 @@ const databases = {
 let connectParams;
 let uriMode; // flag that indicates if claim HTML is uri-encoded or not, default to false
 
+// master error handler
+process.on('uncaughtException', e => {
+  console.error(e);
+  console.error('fatal error, exiting app');
+  if (win) win.close();
+  if (app) app.close();
+});
+
 // connect to the sql server
 const connectToDB = async () => {
   try {
