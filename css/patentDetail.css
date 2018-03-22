@@ -58,6 +58,7 @@ body {
     box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
     height: 600px;
     overflow-y: auto;
+    scroll-behavior: smooth;
   }
   .PatentParagraph {
     margin: 3px;

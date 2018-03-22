@@ -22,7 +22,9 @@ class PatentDetail extends Component {
             patentSummaries: new Map(),
             activeSummary: new Map(),
             searchTerm: '',
-            highlightList: []
+            highlightList: new Map(),
+            scrollNavigation: new Map(),
+            currentScroll: 0
         };
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
@@ -30,15 +32,17 @@ class PatentDetail extends Component {
         this.activateEditMode = this.activateEditMode.bind(this);
         this.clickSaveCancel = this.clickSaveCancel.bind(this);
         this.changeSearchTerm = this.changeSearchTerm.bind(this);
+        this.addNewRef = this.addNewRef.bind(this);
+        this.scrollToNext = this.scrollToNext.bind(this);
     }
 
     componentDidMount() {
         ipcRenderer.on('state', (event, data) => {
             console.log('received data', data);
-            console.log('summaries', JSON.stringify(data.summaries));
+            // console.log('summaries', JSON.stringify(data.summaries));
             const { summaries, ...result } = { ...data.summaries, ...data };
             const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
-            console.log('summary in Map form:', patentSummaries, patentSummaries.size);
+            // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
             this.setState({ result, patentSummaries });
         });
     }
@@ -94,13 +98,47 @@ class PatentDetail extends Component {
         this.setState({ activeSummary }, () => ipcRenderer.send('view_patentdetail', this.state.result.PatentNumber));
     }
 
-    //TODO: Implement RegExp search of fullText
+    //TODO: Highlight the word in the paragraph
     changeSearchTerm(event) {
         const searchTerm = new RegExp(event.target.value, 'g');
-        // highlightList stores an array of paragraph indexes where the regex is found
-        const highlightList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
-        console.log(highlightList, searchTerm);
-        this.setState({ searchTerm: event.currentTarget.value, highlightList });
+        // paraList stores an array of paragraph indexes where the regex is found
+        const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
+        // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
+        const highlightList = new Map([...paraList.map(index => [index, {}])]);
+        console.log('searching for', searchTerm);
+        console.log('set initial highlightList', highlightList);
+        const currentScroll = paraList[0];
+        const scrollNavigation = new Map([...paraList.map((val, idx) => {
+            const nav = {
+                next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
+                prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
+            };
+            return [val, nav]
+        })]);
+        console.log('set navigation', scrollNavigation)
+        console.log('set currentScroll', currentScroll)
+        this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+    }
+
+    addNewRef(paraIndex, node) {
+        // callback from full text each time a new highlightList reference is set
+        const highlightList = new Map(this.state.highlightList);
+        // need to skip an update on null or if already set or else we end up in an infinite loop
+        // React sets the refs to null first after a render before resetting their value
+        if (highlightList.get(paraIndex) !== node && node !== null) {
+            console.log('adding ref to %d', paraIndex, node);
+            highlightList.set(paraIndex, node);
+            // updates the highlightList state
+            console.log('updated highlightList state', highlightList);
+            this.setState({ highlightList });
+        }
+    }
+
+    scrollToNext(event) {
+        const currentScroll = this.state.scrollNavigation.get(this.state.currentScroll).next;
+        console.log('scrolling to para', currentScroll);
+        this.state.highlightList.get(currentScroll).scrollIntoView({ behavior: 'smooth' });
+        this.setState({ currentScroll });
     }
 
     render({ }, { result }) {
@@ -120,10 +158,12 @@ class PatentDetail extends Component {
                         clickSaveCancel={this.clickSaveCancel}
                         changeSearchTerm={this.changeSearchTerm}
                         highlightList={this.state.highlightList}
+                        scrollToNext={this.scrollToNext}
                     />
                     <FullText
                         patentHtml={JSON.parse(this.state.result.PatentHtml)}
                         highlightList={this.state.highlightList}
+                        addNewRef={this.addNewRef}
                     />
                 </div>
             </div>
@@ -135,7 +175,7 @@ const Result = (props) => {
     const hasDate = !!props.result.EstimatedExpiryDate;
     //TODO: Make date editable
     const [summaryID, summaryText] = props.summaries.size ? props.summaries.entries().next().value : ['new', { PatentSummaryText: '' }];
-    console.log('set summaryID and text', summaryID, summaryText);
+    // console.log('set summaryID and text', summaryID, summaryText);
     const styles = {
         NewSummary: {
             backgroundColor: 'rgba(0,0,0,0)',
@@ -173,7 +213,7 @@ const Result = (props) => {
                 )}
             </div>
             <div class="ClaimsCount">Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
-            <div class="Search"><input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)}></input><span class="PatentParagraph">{props.highlightList.length}</span></div>
+            <div class="Search"><input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)}></input><span class="PatentParagraph" onClick={props.scrollToNext}>{props.highlightList.size}</span></div>
             <div class="OpenPDF"><button onClick={props.openClickHandler}>Open PDF</button></div>
         </div>
     )
@@ -186,17 +226,24 @@ const FullText = (props) => {
             backgroundColor: 'rgba(111,145,185,1)'
         }
     }
+
     return (
-        <div class="FullText">
+        <div class='FullText'>
             {props.patentHtml.map((paragraph, index) => {
                 const header = paragraph.toUpperCase() === paragraph;
-                const highlight = props.highlightList.length > 0 && props.highlightList.includes(index);
+                const highlight = props.highlightList.has(index);
                 return paragraph.length > 2 ? (
-                    <div class={header ? "PatentParagraph PatentHeader" : highlight ? "Highlight" : "PatentParagraph"} key={index}>
-                        {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` :
-                            highlight ? <span><span style={styles.MatchIndex}>[Match {props.highlightList.indexOf(index) + 1}/{props.highlightList.length}]</span> {paragraph}</span> : paragraph}
+                    <div key={index}>
+                        {highlight ?
+                            <div class='Highlight' ref={elem => props.addNewRef(index, elem)}>
+                                <span style={styles.MatchIndex}>[Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}]</span> {paragraph}
+                            </div>
+                            : <div class={header ? 'PatentParagraph PatentHeader' : 'PatentParagraph'}>
+                                {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}
+                            </div>
+                        }
                     </div>
-                ) : ''
+                ) : '';
             })}
         </div>
     )
