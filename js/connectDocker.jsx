@@ -1,6 +1,6 @@
 const exec = require('child_process').exec;
 
-const connectDocker = async (connectParams) => {
+const connectDocker = connectParams => {
     const dockerParams = Object.assign(connectParams);
 
     return new Promise((resolve, reject) => {
