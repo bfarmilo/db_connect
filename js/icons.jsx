@@ -11,7 +11,7 @@ const Icon = ({ name, width, height, style, handleClick }) => {
         ['triUp', <path d="M4 0l-4 4h8l-4-4z" transform="translate(0 2)" />]
     ]);
     return (
-        <div onClick={handleClick}>
+        <div onClick={handleClick} style={style.display === 'flex' ? {display:'flex'} : ''}>
             <svg width={width} height={height} viewBox={`0 0 8 8`} xmlns="http://www.w3.org/2000/svg" style={style}>
                 {iconMap.get(name)}
             </svg>

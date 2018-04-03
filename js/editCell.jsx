@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import marked from 'marked';
+import { Icon } from './icons.js';
 
 /** A generic editable cell, using markdown. 
  * @param {(Event, string, string)=>void} props.editContent handler for changing content
@@ -91,6 +92,10 @@ const SaveCancel = props => {
             border: 'none',
             outline: 'none',
             padding: '0.4em 0.5em 0.4em 0.5em'
+        },
+        Icon: {
+            fill:'white',
+            strokeWidth: '1px'
         }
     };
     const enabledButtons = [
@@ -104,7 +109,7 @@ const SaveCancel = props => {
                     style={styles.Button}
                     onClick={(e) => props.handleClick(e, item.action)}
                 >
-                    {item.display}
+                        <Icon name={item.action === 'save' ?'circleCheck' : 'circleX'} width='1em' height='1em' style={styles.Icon} />
                 </button>
             ))}
         </div>

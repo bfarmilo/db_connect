@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { simpleHash } from './claimListMethods';
+import { Icon } from './icons';
 // the main UI at the top of the table to run and filter queries
 
 const ControlArea = props => {
@@ -47,9 +48,13 @@ const ControlArea = props => {
         },
         QueryButton: {
             flexGrow: '1',
-            border: `1px solid ${props.styles.borderColor}`,
+            //border: `1px solid ${props.styles.borderColor}`,
             padding: '1px',
             backgroundColor: props.styles.themeColor,
+        },
+        Icon: {
+            fill: 'white',
+            display:'flex'
         }
     }
     return (
@@ -85,8 +90,8 @@ const ControlArea = props => {
                 {enabledColumns.map(column => {
                     return (
                         <div key={column.field}>
-                            <div data-field={column.field} onClick={props.modifySortOrder}>
-                                {column.display}{props.sortOrder.has(column.field) ? (props.sortOrder.get(column.field).ascending ? ' \u21D1' : ' \u21D3') : ''}</div>
+                            <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>
+                                <div style={{display:'flex'}}>{column.display} </div>{props.sortOrder.has(column.field) ? <Icon name={props.sortOrder.get(column.field).ascending ? 'sortAscending' : 'sortDescending'} width='1em' height='1em' style={styles.Icon} /> : ''}</div>
                             <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.styles.selectedColor } : styles.ColumnControl}>
                                 <input
                                     style={styles.ValuesField}
@@ -95,8 +100,8 @@ const ControlArea = props => {
                                     placeholder='Filter by ...'
                                     value={props.queryValues[column.field]} />
                                 {!!props.queryValues[column.field] &&
-                                    <button style={styles.QueryButton} onClick={props.editQuery} data-field={column.field} data-action='clear'>X</button>}
-                                <button style={styles.QueryButton} onClick={props.runQuery}>Go</button>
+                                    <button style={styles.QueryButton} onClick={props.editQuery} data-field={column.field} data-action='clear'><Icon name='circleX' width='1em' height='1em' style={styles.Icon} /></button>}
+                                <button style={styles.QueryButton} onClick={props.runQuery}><Icon name='circleCheck' width='1em' height='1em' style={styles.Icon} /></button>
                             </div>
                         </div>
                     )
