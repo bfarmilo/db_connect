@@ -1,6 +1,7 @@
 import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { EditCell } from './jsx/editCell';
+import { Icon } from './jsx/icons';
 /** @jsx h */
 
 class PatentDetail extends Component {
@@ -43,7 +44,7 @@ class PatentDetail extends Component {
             const { summaries, ...result } = { ...data.summaries, ...data };
             const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
             // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
-            this.setState({ result, patentSummaries });
+            this.setState({ result, patentSummaries, highlightList: new Map(), searchTerm: '', currentScroll: 0, scrollNavigation: new Map() });
         });
     }
 
@@ -134,8 +135,8 @@ class PatentDetail extends Component {
         }
     }
 
-    scrollToNext(event) {
-        const currentScroll = this.state.scrollNavigation.get(this.state.currentScroll).next;
+    scrollToNext(event, direction) {
+        const currentScroll = direction === 'down' ? this.state.scrollNavigation.get(this.state.currentScroll).next : this.state.scrollNavigation.get(this.state.currentScroll).prev;
         console.log('scrolling to para', currentScroll);
         this.state.highlightList.get(currentScroll).scrollIntoView({ behavior: 'smooth' });
         this.setState({ currentScroll });
@@ -187,14 +188,18 @@ const Result = (props) => {
         EditCell: {
             gridColumn: '1/5'
         },
-        SearchBox: {}
+        SearchBox: {},
+        Icon: {
+            fill: 'white',
+            strokeWidth: '0px'
+        }
     }
     return (
         <div class="PatentDetail">
             <div class="PMCRef">{props.result.PMCRef}</div>
             <div class="PatentNumber">{props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} {props.result.InventorLastName ? `(${props.result.InventorLastName})` : ''} </div>
             <div class="Date">{hasDate ? `Expiry ~${props.result.EstimatedExpiryDate}` : 'Expiry Unknown'}</div>
-            <div class="CloseWindow"><button onClick={props.goBackClickHandler}>X</button></div>
+            <div class="CloseWindow"><button onClick={props.goBackClickHandler}><Icon name='x' width='1em' height='1em' style={styles.Icon} /></button></div>
             <div class="Title">"{props.result.Title}"</div>
             <div class="Summary">{props.summaries.size || props.activeSummary.size ? (
                 <EditCell
@@ -213,8 +218,14 @@ const Result = (props) => {
                 )}
             </div>
             <div class="ClaimsCount">Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
-            <div class="Search"><input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)}></input><span class="PatentParagraph" onClick={props.scrollToNext}>{props.highlightList.size}</span></div>
-            <div class="OpenPDF"><button onClick={props.openClickHandler}>Open PDF</button></div>
+            <div class="Search">
+                <input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)} />
+                {props.highlightList.size > 0 ? (<div style={{ backgroundColor: 'rgba(51, 122, 183, 1)' }} >
+                    <Icon name='triUp' width='1em' height='0.5em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'up')} />
+                    <Icon name='triDown' width='1em' height='0.5em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
+                </div>) : ''}
+            </div>
+            <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button></div>
         </div>
     )
 };
@@ -223,7 +234,7 @@ const FullText = (props) => {
     const styles = {
         MatchIndex: {
             fontStyle: 'italic',
-            backgroundColor: 'rgba(111,145,185,1)'
+            color: 'rgba(51, 122, 183, 1)'
         }
     }
 
@@ -236,7 +247,7 @@ const FullText = (props) => {
                     <div key={index}>
                         {highlight ?
                             <div class='Highlight' ref={elem => props.addNewRef(index, elem)}>
-                                <span style={styles.MatchIndex}>[Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}]</span> {paragraph}
+                                <button>Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}</button> {paragraph}
                             </div>
                             : <div class={header ? 'PatentParagraph PatentHeader' : 'PatentParagraph'}>
                                 {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}

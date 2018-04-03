@@ -18,6 +18,7 @@ Currently very much a work-in-progress.
 
 ### Known TODOs:
 
+1. Finish implementation of SVG button icons
 1. Interface to allow addition and linking of markman terms to patents and constructions
 1. Better reporting for shortlisting, claim export
 1. Write back-end for Patent Summary updating
@@ -25,6 +26,12 @@ Currently very much a work-in-progress.
 1. Option to show titles for General Analysis DB
 1. DB migration to cloud
 1. DB authentication and user tracking
-1. Add first inventor to DB, and Patent Detail view
+1. Support for US Applications
+1. Option to enable general PDF linking
+1. Idea to store full text (or documents) in a new table by SHA. That way if a document already exists don't need to add it again
 
 ### Build Notes:
+1. Docker code to start container:
+``` 
+docker run --name='sqlserver' -d -p 1433:1433 -e sa_password=8ill5Sql -e ACCEPT_EULA=Y -v C:/temp/:C:/temp/ -e attach_dbs="[{'dbName':'PMCDB','dbFiles':['C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf','C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.ldf']},{'dbName':'NextIdea','dbFiles':['C:\\PMC-Project\\Server\\bin\\NextIdea_Primary.mdf','C:\\PMC-Project\\Server\\bin\\NextIdea_Primary.ldf']},{'dbName':'GeneralResearch','dbFiles':['C:\\PMC-Project\\Server\\bin\\GeneralResearch.mdf','C:\\PMC-Project\\Server\\bin\\GeneralResearch.ldf']}]" microsoft/mssql-server-windows-express
+```
