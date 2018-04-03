@@ -1,5 +1,6 @@
 import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
+import { Icon } from './jsx/icons';
 
 class GetPatentList extends Component {
     constructor(props) {
@@ -170,10 +171,10 @@ class GetPatentList extends Component {
                         <input style={this.styles.checkBoxStyle} type='checkbox' checked={this.state.downloadPats} id='downloadPats' onClick={e => this.handleInput(e, 'downloadPats')} />
                         <label style={this.styles.labelStyle} htmlFor='downloadPats'>Download Patents</label>
                     </div>
-                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows:'1fr 1fr 1fr', fontFamily:'Arial', fontSize:'smaller' }}>
+                    <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr 1fr', fontFamily: 'Arial', fontSize: 'smaller' }}>
                         {['independent', 'dependent', 'claim1', 'allbut1', 'all'].map(item => (
                             <div key={item}>
-                                <input type='radio' id={item} name='claims' onClick={this.handleFilterOptions} value={item} checked={this.state.filterOptions===item}/>
+                                <input type='radio' id={item} name='claims' onClick={this.handleFilterOptions} value={item} checked={this.state.filterOptions === item} />
                                 <label for={item}>{item.includes('all') ? `${item}` : `${item} Only`}</label>
                             </div>
                         ))}
@@ -183,7 +184,7 @@ class GetPatentList extends Component {
                     <button style={this.styles.buttonStyle} onClick={this.handlePatentButton}>Get Patents</button>
                 </div>
                 {this.state.updateStatus.size > 0 ? (<div>Status:
-                    <table style={{textAlign:'center'}}>
+                    <table style={{ textAlign: 'center' }}>
                         <tr>
                             <th />
                             <th>Request Sent</th>

@@ -91,6 +91,7 @@ class ClaimTable extends Component {
             sortOrder,
             offset: 0,
             scrollTop: 0,
+            modalContent: { inventor: '', title: '', claimID:'' }
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -105,6 +106,7 @@ class ClaimTable extends Component {
         this.editContent = this.editContent.bind(this);
         this.handleScroll = this.handleScroll.bind(this);
         this.getNewPatents = this.getNewPatents.bind(this);
+        this.showInventor = this.showInventor.bind(this);
     }
 
     // lifecycle Methods
@@ -227,7 +229,7 @@ class ClaimTable extends Component {
         if (!sortOrder.has(field)) {
             // none -> Ascending
             console.log('adding key %s to sortOrder', field)
-            sortOrder.set(field, {field, ascending:true});
+            sortOrder.set(field, { field, ascending: true });
         } else {
             if (sortOrder.get(field).ascending) {
                 //Ascending -> Descending
@@ -238,7 +240,7 @@ class ClaimTable extends Component {
                 sortOrder.delete(field);
             }
         }
-        sortOrder.set('ClaimNumber', {field:'ClaimNumber', ascending:true});
+        sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
         this.setState({ sortOrder }, () => this.runQuery());
 
     }
@@ -324,6 +326,17 @@ class ClaimTable extends Component {
         this.setState({ activeRows })
     }
 
+    showInventor(e, claimID) {
+        if (claimID !== '') {
+            const { InventorLastName, Title } = this.state.claimList.get(claimID);
+            const modalContent = { inventor: InventorLastName || '', title: Title, claimID };
+            console.log('hovering over patent', modalContent);
+            this.setState({ modalContent });
+        } else {
+            this.setState({ modalContent: { title: '', inventor: '', claimID:'' } })
+        }
+    }
+
     render({ props }, { state }) {
         return (
             <div class='FullTable'>
@@ -367,11 +380,13 @@ class ClaimTable extends Component {
                                 claimList={this.state.claimList}
                                 activeRows={this.state.activeRows}
                                 expandAll={this.state.expandAll}
+                                modalContent={this.state.modalContent}
                                 getDetail={this.getPatentDetail}
                                 editContent={this.editContent}
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
                                 selectedColor={styles.selectedColor}
+                                showInventor={this.showInventor}
                             />
                         </Scrollbars>
                     )}
