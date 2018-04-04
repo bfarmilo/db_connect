@@ -7,6 +7,8 @@ import { TableArea } from './jsx/tableArea';
 
 const TITLE_ROW_HEIGHT = 175;
 const RESIZE_THRESHOLD = 50;
+const NEW = false;
+const APPEND = true;
 
 const styles = {
     themeColor: 'rgba(51, 122, 183, 1)',
@@ -145,9 +147,9 @@ class ClaimTable extends Component {
         // new patents added to the db
         ipcRenderer.on('new_patents_ready', (e, list) => {
             console.log('got new patents, rerunning query', list);
-            this.runQuery();
+            this.runQuery(null, NEW);
         })
-        setTimeout(() => this.runQuery(), 2000); //hack to buy time for docker to get server
+        setTimeout(() => this.runQuery(null, NEW), 2000); //hack to buy time for docker to get server
     }
 
     componentWillUnmount() {
@@ -160,13 +162,13 @@ class ClaimTable extends Component {
      * @returns {undefined}
      * 
      */
-    runQuery(appendMode = false) {
+    runQuery(event, appendMode) {
         const offset = appendMode ? this.state.offset : 0;
         this.setState({ working: !appendMode, offset })
-        console.log('sending new query');
+        console.log('sending new query with appendMode, offset', appendMode, offset);
         // send plain JSON, not maps
         const sortOrder = [...this.state.sortOrder].map(record => record[1]);
-        ipcRenderer.send('json_query', this.state.queryValues, sortOrder, this.state.offset, appendMode);
+        ipcRenderer.send('json_query', this.state.queryValues, sortOrder, offset, appendMode);
     }
 
     getNewPatents(event) {
@@ -186,7 +188,7 @@ class ClaimTable extends Component {
         console.log('detected edit in query field', column.getAttribute('data-field'));
         // need to update this.state.queryValues[field]
         this.setState({ queryValues });
-        if (column.getAttribute('data-action') === 'clear' || event.keyCode === 13) this.runQuery();
+        if (column.getAttribute('data-action') === 'clear' || event.keyCode === 13) this.runQuery(null, NEW);
     }
 
     /** update the query based on clicking Go/Clear in a filter field
@@ -202,7 +204,7 @@ class ClaimTable extends Component {
             [field]: this.state.queryValues[field] === setValue ? '' : setValue
         }
         this.setState({ queryValues })
-        this.runQuery();
+        this.runQuery(null, NEW);
     }
 
     /** send a 'change_db' message to main, to switch DB's in the server
@@ -212,7 +214,7 @@ class ClaimTable extends Component {
         console.log('changing database');
         ipcRenderer.send('change_db');
         this.setState({ claimList: new Map(), queryValues });
-        this.runQuery();
+        this.runQuery(null, NEW);
     }
 
     /** respond to the clicking on a heading title to cycle through sort order options
@@ -241,7 +243,7 @@ class ClaimTable extends Component {
             }
         }
         sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
-        this.setState({ sortOrder }, () => this.runQuery());
+        this.setState({ sortOrder }, () => this.runQuery(null, NEW));
 
     }
 
@@ -262,7 +264,7 @@ class ClaimTable extends Component {
                 scrollTop: event.target.scrollTop,
                 //scrollBar: this.scrollBar 
             });
-            this.runQuery(true);
+            this.runQuery(null, APPEND);
         }
 
     }
