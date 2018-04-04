@@ -11,6 +11,7 @@ const TableArea = props => {
      * @param {(Event, string, string)=>void} editMode handler for switching to edit mode
      * @param {(Event, string, string)=>void} clickSaveCancel handler for clicking Save or Cancel
      * @param {string} selectedColor style to set the color of a selected box
+     * @param {string} themeColor style to set the theme color
      */
     const styles = {
         ClaimDiv: {
@@ -33,6 +34,11 @@ const TableArea = props => {
         },
         IndependentClaim: {
             color: 'rgba(0, 0, 0, 1)'
+        },
+        Summary: {
+            backgroundColor: props.themeColor,
+            color: 'white',
+            padding: '2px'
         }
     }
     return (
@@ -62,19 +68,21 @@ const TableArea = props => {
                             </div>
                         ) : (
                                 <div
+                                    onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
                                     onMouseLeave={e => props.showInventor(e, '')}
-                                    style={{backgroundColor: props.selectedColor}}
+                                    style={styles.Summary}
                                 >{!!props.modalContent.inventor ? `${props.modalContent.inventor}: ` : ''}{props.modalContent.title}
                                 </div>
                             )}
                         {["PotentialApplication", "WatchItems"].map(field => (
                             <EditCell
-                                selectedColor={props.selectedColor}
                                 editMode={props.activeRows.has(`${claimID}-${field}`)}
-                                editContent={(e) => props.editContent(e, claimID, field)}
                                 value={props.activeRows.get(`${claimID}-${field}`) || item[field]}
+                                editContent={(e) => props.editContent(e, claimID, field)}
                                 clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
                                 activateEditMode={(e) => props.editMode(e, claimID, field)}
+                                themeColor={props.themeColor}
+                                selectedColor={props.selectedColor}
                             />)
                         )}
                     </div>)

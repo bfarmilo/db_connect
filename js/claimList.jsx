@@ -387,8 +387,9 @@ class ClaimTable extends Component {
                                 editContent={this.editContent}
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
-                                selectedColor={styles.selectedColor}
                                 showInventor={this.showInventor}
+                                selectedColor={styles.selectedColor}
+                                themeColor={styles.themeColor}
                             />
                         </Scrollbars>
                     )}

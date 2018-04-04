@@ -108,7 +108,8 @@ class PatentDetail extends Component {
         const highlightList = new Map([...paraList.map(index => [index, {}])]);
         console.log('searching for', searchTerm);
         console.log('set initial highlightList', highlightList);
-        const currentScroll = paraList[0];
+        // hack so the first click of 'down' goes to the first instance
+        const currentScroll = paraList[paraList.length-1];
         const scrollNavigation = new Map([...paraList.map((val, idx) => {
             const nav = {
                 next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
@@ -136,7 +137,12 @@ class PatentDetail extends Component {
     }
 
     scrollToNext(event, direction) {
-        const currentScroll = direction === 'down' ? this.state.scrollNavigation.get(this.state.currentScroll).next : this.state.scrollNavigation.get(this.state.currentScroll).prev;
+        const scrollTo = new Map([
+            ['first', this.state.currentScroll],
+            ['down', this.state.scrollNavigation.get(this.state.currentScroll).next],
+            ['up', this.state.scrollNavigation.get(this.state.currentScroll).prev ]
+        ])
+        const currentScroll = scrollTo.get(direction);
         console.log('scrolling to para', currentScroll);
         this.state.highlightList.get(currentScroll).scrollIntoView({ behavior: 'smooth' });
         this.setState({ currentScroll });
@@ -174,7 +180,7 @@ class PatentDetail extends Component {
 
 const Result = (props) => {
     const hasDate = !!props.result.EstimatedExpiryDate;
-    //TODO: Make date editable
+    //TODO: Make date, inventor, PMCRef editable
     const [summaryID, summaryText] = props.summaries.size ? props.summaries.entries().next().value : ['new', { PatentSummaryText: '' }];
     // console.log('set summaryID and text', summaryID, summaryText);
     const styles = {

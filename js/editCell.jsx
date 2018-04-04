@@ -7,6 +7,7 @@ import { Icon } from './icons.js';
  * @param {(Event, string, string)=>void} props.activateEditMode handler for switching to edit mode
  * @param {(Event, string, string)=>void} props.clickSaveCancel handler for clicking Save or Cancel
  * passes also a data-action = 'save' or 'cancel'
+ * @param {string} props.themeColor style to set for buttons and other highlighting
  * @param {string} props.selectedColor style to set the color of a selected box
  * @param {string} props.value content of the edit cell
  */
@@ -57,6 +58,7 @@ const EditCell = props => {
             <div>
                 <SaveCancel
                     handleClick={(e, action) => props.clickSaveCancel(e, action)}
+                    themeColor={props.themeColor}
                 />
             </div>
         </div>
@@ -82,11 +84,11 @@ const SaveCancel = props => {
         SaveCancel: {
             gridRowStart: '2',
             display: 'flex',
-            justifyContent: 'space-between'
+            justifyContent: 'flex-end'
         },
         Button: {
             borderRadius: '2px',
-            backgroundColor: '#337ab7',
+            backgroundColor: props.themeColor,
             color: 'lightgrey',
             fontWeight: 'bold',
             border: 'none',
@@ -99,8 +101,8 @@ const SaveCancel = props => {
         }
     };
     const enabledButtons = [
-        { action: 'save', display: 'Save Changes' },
-        { action: 'cancel', display: 'Cancel' }
+        { action: 'cancel', display: 'Cancel' },
+        { action: 'save', display: 'Save Changes' }
     ];
     return (
         <div style={styles.SaveCancel}>
