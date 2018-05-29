@@ -127,7 +127,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
   const scrapeCode = `require('electron').ipcRenderer.send('result_ready', {
     PatentPath: document.querySelector('.knowledge-card-action-bar a').href,
     Number: document.querySelector('.applist .approw .appno b').innerHTML,
-    Title: document.querySelector('#title').innerHTML,
+    Title: document.querySelector('#title').innerText,
     downloadLink: document.querySelector('a.style-scope.patent-result').href,
     PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
     InventorLastName: document.querySelector('.important-people dd').innerText,
