@@ -4,7 +4,7 @@ const path = require('path');
 const expect = chai.expect;
 const { getAllImages } = require('../jsx/getImages.js')
 
-const docID = '04359631';
+const patentNo = '7769344';
 
 // A simple test to verify a visible window is opened with a title
 chai.use(chaiAsPromised);
@@ -29,11 +29,11 @@ describe('it can get a page number from a section', () => {
         return expect(testPages.size).to.equal(6);
     }); */
     it('can put it all together and do it automatically', async () => {
-        imageMap = new Map(await getAllImages(docID));
-        expect(imageMap.size).to.equal(6);
-        expect(imageMap.has(7)).to.be.true;
-        expect(imageMap.has(8)).to.be.false;
-        return console.log(imageMap);
+        imageMap = new Map(await getAllImages(patentNo));
+        expect(imageMap.size).to.equal(22);
+        expect(imageMap.has(52)).to.be.true;
+        expect(imageMap.has(53)).to.be.false;
+        return console.log(imageMap.get(50));
     })
 
 })

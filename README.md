@@ -18,8 +18,9 @@ Currently very much a work-in-progress.
 
 ### Known TODOs:
 
-1. Finish implementation of SVG button icons
 1. Interface to allow addition and linking of markman terms to patents and constructions
+1. Update back-end to write patent image data to DB
+1. Write front-end for patent image viewing (see https://github.com/wojtekmaj/react-pdf)
 1. Better reporting for shortlisting, claim export
 1. Write back-end for Patent Summary updating
 1. Enable Expiry date estimation writing
