@@ -1,6 +1,6 @@
 {
   "name": "dbviewer",
-  "version": "0.4.1",
+  "version": "1.0.0",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
