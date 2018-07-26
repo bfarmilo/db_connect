@@ -109,7 +109,7 @@ class PatentDetail extends Component {
         console.log('searching for', searchTerm);
         console.log('set initial highlightList', highlightList);
         // hack so the first click of 'down' goes to the first instance
-        const currentScroll = paraList[paraList.length-1];
+        const currentScroll = paraList[paraList.length - 1];
         const scrollNavigation = new Map([...paraList.map((val, idx) => {
             const nav = {
                 next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
@@ -140,7 +140,7 @@ class PatentDetail extends Component {
         const scrollTo = new Map([
             ['first', this.state.currentScroll],
             ['down', this.state.scrollNavigation.get(this.state.currentScroll).next],
-            ['up', this.state.scrollNavigation.get(this.state.currentScroll).prev ]
+            ['up', this.state.scrollNavigation.get(this.state.currentScroll).prev]
         ])
         const currentScroll = scrollTo.get(direction);
         console.log('scrolling to para', currentScroll);
@@ -180,6 +180,10 @@ class PatentDetail extends Component {
 
 const Result = (props) => {
     const hasDate = !!props.result.EstimatedExpiryDate;
+    const formattedNumber = props.result.PatentNumber < 10000000 ?
+        props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3') :
+        props.result.PatentNumber.toString().replace(/(\d{4})(.*)/g, '$1/$2');
+    // TODO - deal with patent numbers above 9,999,999
     //TODO: Make date, inventor, PMCRef editable
     const [summaryID, summaryText] = props.summaries.size ? props.summaries.entries().next().value : ['new', { PatentSummaryText: '' }];
     // console.log('set summaryID and text', summaryID, summaryText);
@@ -200,10 +204,11 @@ const Result = (props) => {
             strokeWidth: '0px'
         }
     }
+
     return (
         <div class="PatentDetail">
             <div class="PMCRef">{props.result.PMCRef}</div>
-            <div class="PatentNumber">{props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3')} {props.result.InventorLastName ? `(${props.result.InventorLastName})` : ''} </div>
+            <div class="PatentNumber">{formattedNumber} {props.result.InventorLastName ? `(${props.result.InventorLastName})` : ''} </div>
             <div class="Date">{hasDate ? `Expiry ~${props.result.EstimatedExpiryDate}` : 'Expiry Unknown'}</div>
             <div class="CloseWindow"><button onClick={props.goBackClickHandler}><Icon name='x' width='1em' height='1em' style={styles.Icon} /></button></div>
             <div class="Title">"{props.result.Title}"</div>

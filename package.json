@@ -1,13 +1,13 @@
 {
   "name": "dbviewer",
-  "version": "1.0.0",
+  "version": "1.1.0",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
     "test": "mocha",
     "transpile": "babel ./js/ --out-dir ./jsx/",
     "transpile-main": "babel ./main.es6 -o main.js",
-    "package-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-report --ignore=es6$",
+    "package-win": "npx electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-report --ignore=es6$",
     "package": "npm run transpile && npm run transpile-main && npm run package-win",
     "start": "npm run transpile && npm run transpile-main && electron .",
     "openTestReport": "C:\\Progra~1\\Mozill~1\\firefox.exe ./mochawesome-report/mochawesome.html"
@@ -34,8 +34,9 @@
     "babel-preset-preact": "^1.1.0",
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^1.8.7",
+    "electron": "^3.0.0-beta.3",
     "electron-devtools-installer": "^2.2.4",
+    "electron-packager": "^12.1.0",
     "jsdom": "^11.11.0",
     "mocha": "^5.2.0",
     "mochawesome": "^3.0.3",
