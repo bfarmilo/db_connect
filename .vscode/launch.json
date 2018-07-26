@@ -15,8 +15,12 @@
                 "--timeout",
                 "999999",
                 "--colors",
-                "${workspaceFolder}//test//11_getImages.test.js"
+                "--reporter",
+                "mochawesome",
+                "${workspaceFolder}//test//?(7_*|11_*)"
             ],
+            "preLaunchTask": "npm: transpile",
+            "postDebugTask": "npm: openTestReport",
             "internalConsoleOptions": "openOnSessionStart"
         },
     {
@@ -34,6 +38,12 @@
         "type": "node",
         "request": "launch",
         "name": "Test Tedious",
+        "program": "${workspaceFolder}\\js\\tedioustest"
+    },
+    {
+        "type": "node",
+        "request": "launch",
+        "name": "Test ",
         "program": "${workspaceFolder}\\js\\tedioustest"
     },
         {

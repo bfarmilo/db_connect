@@ -9,6 +9,21 @@
             "problemMatcher": [
                 "$eslint-compact"
             ]
+        },
+        {
+            "type": "npm",
+            "script": "transpile",
+            "problemMatcher": [
+                "$eslint-compact"
+            ]
+        },
+        {
+            "type": "npm",
+            "script": "openTestReport",
+            "problemMatcher": [
+                "$eslint-compact"
+            ]
         }
+
     ]
 }

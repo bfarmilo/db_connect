@@ -5,14 +5,12 @@
   "main": "main.js",
   "scripts": {
     "test": "mocha",
-    "transpile": "babel ./js/ -x .jsx --out-dir ./jsx/",
+    "transpile": "babel ./js/ --out-dir ./jsx/",
     "transpile-main": "babel ./main.es6 -o main.js",
     "package-win": "electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-reports --ignore=es6$",
     "package": "npm run transpile && npm run transpile-main && npm run package-win",
     "start": "npm run transpile && npm run transpile-main && electron .",
-    "insertNew": "docker start sqlserver && set USEDB=NextIdea& node ./test/3_insertPatents.js",
-    "updateExisting": "docker start sqlserver && set USEDB=NextIdea& node ./test/5_updatePatents.test.js",
-    "getPatents": "docker start sqlserver && set USEDB=NextIdea& set DEBUG=nightmare& node ./test/4_getpatents.test.js"
+    "openTestReport": "C:\\Progra~1\\Mozill~1\\firefox.exe ./mochawesome-report/mochawesome.html"
   },
   "author": "Bill Farmilo",
   "license": "ISC",
@@ -21,11 +19,11 @@
   },
   "dependencies": {
     "fs-extra": "^5.0.0",
-    "marked": "^0.3.17",
-    "node-fetch": "^2.1.1",
-    "preact": "^8.2.7",
+    "marked": "^0.3.19",
+    "node-fetch": "^2.2.0",
+    "preact": "^8.2.9",
     "preact-custom-scrollbars": "^4.0.4",
-    "tedious": "^2.3.1",
+    "tedious": "^2.6.3",
     "tedious-promises": "^0.4.1"
   },
   "devDependencies": {
@@ -36,13 +34,11 @@
     "babel-preset-preact": "^1.1.0",
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^1.8.4",
-    "electron-devtools-installer": "^2.2.3",
-    "jsdom": "^11.6.2",
-    "mocha": "*",
-    "mochawesome": "^1.5.3",
-    "nightmare": "^2.10.0",
-    "nightmare-inline-download": "^0.2.2",
+    "electron": "^1.8.7",
+    "electron-devtools-installer": "^2.2.4",
+    "jsdom": "^11.11.0",
+    "mocha": "^5.2.0",
+    "mochawesome": "^3.0.3",
     "shell": "^0.3.2"
   }
 }
