@@ -1,6 +1,7 @@
 {
     "patentDB": {
         "connection": {
+            "container": "sqlserver",
             "userName": "sa",
             "password": "8ill5Sql",
             "options": {
@@ -20,19 +21,147 @@
         "u_UPDATE": "UPDATE Claim SET ",
         "p_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
         "fieldMap": [
-                {"name": "PMCRef", "table":"patents", "prefix":"", "suffix": " LIKE ", "notSuffix": " NOT LIKE "},
-                {"name": "PatentNumber", "table": "patents", "prefix":"RIGHT(CAST(", "suffix": " AS char(7)),3)=", "notSuffix": " AS char(7)),3)!="},
-                {"name": "IsInIPR", "table":"patents", "prefix":"", "suffix":"=", "notSuffix":"!="},
-                {"name": "ClaimNumber", "table":"claims", "prefix":"", "suffix":"=", "notSuffix":"!="},
-                {"name": "ClaimHtml", "table":"claims", "prefix":"", "suffix":" LIKE ", "notSuffix": " NOT LIKE "},
-                {"name": "IsDocumented", "table":"claims", "prefix":"", "suffix":"=", "notSuffix":"!="},
-                {"name": "IsIndependentClaim", "table":"claims", "prefix":"", "suffix":"=", "notSuffix":"!="},
-                {"name": "IsMethodClaim", "table":"claims", "prefix":"", "suffix":"=", "notSuffix":"!="},
-                {"name": "PotentialApplication", "table":"claims", "prefix":"", "suffix":" LIKE ", "notSuffix": " NOT LIKE "},
-                {"name": "WatchItems", "table":"claims", "prefix":"", "suffix":" LIKE ", "notSuffix": " NOT LIKE "},
-                {"name": "Summary", "table":"PatentSummary", "prefix":"","suffix": "=", "notSuffix":"!="},
-                {"name": "InventorLastName", "table":"patents", "prefix":"", "suffix": " LIKE ", "notSuffix": " NOT LIKE "}
-            ]
+            {
+                "name": "PMCRef",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "PatentNumber",
+                "table": "patents",
+                "prefix": "RIGHT(CAST(",
+                "suffix": " AS char(7)),3)=",
+                "notSuffix": " AS char(7)),3)!="
+            },
+            {
+                "name": "IsInIPR",
+                "table": "patents",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "ClaimNumber",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "ClaimHtml",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "IsDocumented",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "IsIndependentClaim",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "IsMethodClaim",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "PotentialApplication",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "WatchItems",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Summary",
+                "table": "PatentSummary",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "InventorLastName",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "ClaimTerm",
+                "table": "MarkmanTerms",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Construction",
+                "table": "MarkmanConstructions",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "MarkmanPage",
+                "table": "MarkmanConstructions",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Court",
+                "table": "MarkmanConstructions",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Agreed",
+                "table": "MarkmanConstructions",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "DocumentPath",
+                "table": "Document",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "FileName",
+                "table": "Document",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "ClientName",
+                "table": "Client",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            }
+        ]
     },
     "urlParams": {
         "whereObj": {
@@ -66,16 +195,43 @@
     "outputFileName": "output.html",
     "patentURL": "http://patents.google.com/patent/",
     "uspto": {
-        "url": "http://patft.uspto.gov/netacgi/nph-Parser",
-        "queryParams": {
-            "Sect1": "PTO1",
-            "Sect2": "HITOFF",
-            "d": "PALL",
-            "p": "1",
-            "u": "/netahtml/PTO/srchnum.htm",
-            "r": 0,
-            "f": "S",
-            "l": 50
+        "patent": {
+            "url": "http://patft.uspto.gov/netacgi/nph-Parser",
+            "redirectPattern":"\\?(.*)(?=\"\\>)",
+            "images": {
+                "url": "http://pdfpiw.uspto.gov/.piw?docid=",
+                "matchPattern": "(\\d{3})(\\d{3})(\\d{2})",
+                "replacePattern": "/$3/$2/$1/"
+            },
+            "queryParams": {
+                "Sect1": "PTO1",
+                "Sect2": "HITOFF",
+                "d": "PALL",
+                "p": "1",
+                "u": "/netahtml/PTO/srchnum.htm",
+                "r": 0,
+                "f": "S",
+                "l": 50
+            }
+        },
+        "application": {
+            "url": "http://appft.uspto.gov/netacgi/nph-Parser",
+            "redirectPattern":"HREF=(\/netac.*)(?=\\>\\d)",
+            "images": {
+                "url": "http://pdfaiw.uspto.gov/.aiw?docid=",
+                "matchPattern": "(\\d{4})(\\d{3})(\\d{2})(\\d{2})",
+                "replacePattern": "/$4/$1/$3/$2"
+            },
+            "queryParams": {
+                "Sect1": "PTO1",
+                "Sect2": "HITOFF",
+                "d": "PG01",
+                "p": 1,
+                "u": "/netahtml/PTO/srchnum.html",
+                "r": 0,
+                "f": "S",
+                "l": 50
+            }
         },
         "startMatch": "<i>Description",
         "endMatch": "\\* \\* \\* \\* \\*",

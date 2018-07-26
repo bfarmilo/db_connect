@@ -1,15 +1,15 @@
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
-const path = require('path');
 const expect = chai.expect;
 const { getAllImages } = require('../jsx/getImages.js')
 
 const patentNo = '7769344';
+const applicationNo = '20090083813';
 
 // A simple test to verify a visible window is opened with a title
 chai.use(chaiAsPromised);
 
-describe('it can get a page number from a section', () => {
+describe('it can get a pdf image data from the USPTO', () => {
 /*     it('finds section 3', async () => {
         sectionTwoEnd = await findEndPage(docID, 3) - 1;
         console.log(sectionTwoEnd);
@@ -28,12 +28,30 @@ describe('it can get a page number from a section', () => {
         console.log(...testPages.keys());
         return expect(testPages.size).to.equal(6);
     }); */
-    it('can put it all together and do it automatically', async () => {
-        imageMap = new Map(await getAllImages(patentNo));
+    it('can put it all together and do it automatically for a patent', async () => {
+        const imageMap = new Map(await getAllImages(patentNo));
         expect(imageMap.size).to.equal(22);
         expect(imageMap.has(52)).to.be.true;
         expect(imageMap.has(53)).to.be.false;
         return console.log(imageMap.get(50));
-    })
+    });
+    it('can put it all together and do it automatically for an application', async () => {
+        const imageMap = new Map(await getAllImages(applicationNo));
+        expect(imageMap.size).to.equal(13);
+        expect(imageMap.has(14)).to.be.true;
+        expect(imageMap.has(15)).to.be.false;
+        return console.log(imageMap.get(11));
+    });
+});
 
-})
+describe('it can write image data to the DB', () => {
+
+});
+describe('it can serve image data to the front-end', () => {
+
+});
+describe('it can read a PDF buffer and render on-screen', () => {
+    // needs pdf.js
+    // PDFJS.getDocument({data: arrayBufferOfPdfData})
+
+});

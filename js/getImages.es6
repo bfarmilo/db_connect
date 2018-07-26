@@ -1,16 +1,21 @@
 import fetch from 'node-fetch';
+import { uspto } from '../app_config.json';
 
 // sample url from USPTO
 /* The 'Images' section (section 2)
-http://pdfpiw.uspto.gov/.piw?docid=04359631&SectionNum=2&IDKey=165AC4AD915E&HomeUrl=http://patft.uspto.gov/netacgi/nph-Parser?Sect1=PTO1%2526Sect2=HITOFF%2526d=PALL%2526p=1%2526u=%25252Fnetahtml%25252FPTO%25252Fsrchnum.htm%2526r=1%2526f=G%2526l=50%2526s1=4359631.PN.%2526OS=PN/4359631%2526RS=PN/4359631
+http://pdfpiw.uspto.gov/.piw?docid=04359631&SectionNum=2 (patent)
+http://pdfaiw.uspto.gov/.aiw?docid=20090083813&SectionNum=2 (application)
+
 
 generates an embed 
-http://pdfpiw.uspto.gov/31/596/043/1.pdf
+http://pdfpiw.uspto.gov/31/596/043/1.pdf (patent)
+http://pdfaiw.uspto.gov/13/2009/38/008/1.pdf (application) from 20090083813
 
 So to get the page corresponding to the drawings, need to go to SectionNum=3, get the PageNum parameter, subtract 1
 
 note this parses to
-fetch(`http://pdfpiw.uspto.gov${docID.replace(/(\d{3})(\d{3})(\d{2})/g, "/$3/$2/$1/")}7.pdf`).then(result => console.log(result))
+`http://pdfpiw.uspto.gov${docID.replace(/(\d{3})(\d{3})(\d{2})/g, "/$3/$2/$1/")}/${pageNum}.pdf` (patent)
+`http://pdfaiw.uspto.gov${patentNumber.replace(/(\d{4})(\d{3})(\d{2})(\d{2})/g, "/$4/$1/$3/$2")}/${pageNum}.pdf` (application)
 
 TODO: Write a front-end (new window for Image display)
 
@@ -24,33 +29,36 @@ TODO: Write a front-end (new window for Image display)
  */
 const getAllImages = async patentNumber => {
 
+    const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
+    const docNumber = (docType === 'application') ? `${patentNumber}` : (patentNumber < 10000000) ? `0${patentNumber}` : `${patentNumber}`;
+
     /** Helper function to get the page number associated with the start of a section
      * Section 3 is usually used, since section 2 is the image section
      * @param {number} section
      * @returns {number} -> the page number of the end of the prior section, or 0 if not present
      */
     const findEndPage = async section => {
-        const sectionPage = await (await fetch(`http://pdfpiw.uspto.gov/.piw?docid=0${patentNumber}&SectionNum=${section}`)).text();
-        return parseInt(sectionPage.match(/PageNum=(\d+)/i)[1],10) || 0;
+        const sectionPage = await (await fetch(`${uspto[docType].images.url}${docNumber}&SectionNum=${section}`)).text();
+        return parseInt(sectionPage.match(/PageNum=(\d+)/i)[1], 10) || 0;
     }
-    
+
     /** Helper function to retrieve the pdf blob for a given page
      * 
      * @param {*} pageNum
      * @returns {[number, {url:string, pageData:Uint8Array}]} -> an array of [page number, {online link, local data}] for the single page
      */
     const getImage = async pageNum => {
-        const url = `http://pdfpiw.uspto.gov${patentNumber.replace(/(\d{2})(\d{3})(\d{2})/g, "/$3/$2/0$1/")}${pageNum}.pdf`;
+        const matchPattern = new RegExp(uspto[docType].images.matchPattern, 'g');
+        const url = `${uspto[docType].images.url}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${pageNum}.pdf`;
         const pageData = await (await fetch(url)).buffer();
-        return [pageNum, {url, pageData}];
+        return [pageNum, { url, pageData }];
     }
 
     // the main function. Create an array of page numbers eg. [2, 3, 4, 5] corresponding to the image pages
     const imageStart = await findEndPage(2);
     const imageEnd = await findEndPage(3);
-    const pageNumbers = (new Array(imageEnd-imageStart)).fill(0).map((item,idx) => idx+imageStart);
+    const pageNumbers = (new Array(imageEnd - imageStart)).fill(0).map((item, idx) => idx + imageStart);
     // then run getImage over that array
-    console.log(pageNumbers);
     return [...await Promise.all(pageNumbers.map(getImage))];
 }
 

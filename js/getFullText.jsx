@@ -20,12 +20,20 @@ const cleanHTML = (text) => {
  * @returns {Array<string>} One element per paragraph, otherwise completely clean of HTML formatting
  */
 const getFullText = async (patentNumber) => {
-    // form the url GET string. The patentNumber shows up as TERM1
-    let usptoURL = `${uspto.url}?TERM1=${patentNumber}&${Object.keys(uspto.queryParams).map(key => `${key}=${encodeURIComponent(uspto.queryParams[key])}`).join('&')}`;
-    // the landing page redirects with new query parameters
-    const redirectURL = await (await fetch(usptoURL)).text();
-    // extract the query parameters from the landing page and fetch the redirected page, and return the cleaned result
-    return cleanHTML(await (await fetch(`${usptoURL}${redirectURL.match(/\?(.*)(?="\>)/i)[1]}`)).text());;
+    try {
+        const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
+        let usptoURL;
+        const { url, queryParams, redirectPattern } = uspto[docType];
+        // form the url GET string. The patentNumber shows up as TERM1
+        usptoURL = `${url}?TERM1=${patentNumber}&${Object.keys(queryParams).map(key => `${key}=${encodeURIComponent(queryParams[key])}`).join('&')}`;
+        // the landing page redirects with new query parameters
+        const redirectURL = await (await fetch(usptoURL)).text();
+        const redirPattern = new RegExp(redirectPattern, 'i');
+        // extract the query parameters from the landing page and fetch the redirected page, and return the cleaned result
+        return cleanHTML(await (await fetch(`${usptoURL}${redirectURL.match(redirPattern)[1]}`)).text());
+    } catch (err) {
+        return Promise.reject(err)
+    }
 }
 
 module.exports = {
