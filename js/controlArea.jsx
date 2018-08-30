@@ -70,7 +70,7 @@ const ControlArea = props => {
                         style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     >{button.display}</button>
                 ))}
-                <button
+                {props.displayMode === 'claims' ? <span><button
                     style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     data-claimid='all'
                     onClick={props.toggleExpand}
@@ -78,7 +78,7 @@ const ControlArea = props => {
                     {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
                 </button>
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
-                    Download New Patents</button>
+                    Download New Patents</button></span> : <span></span>}
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}
@@ -87,7 +87,7 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {enabledColumns.map(column => {
+                {props.enabledColumns.map(column => {
                     return (
                         <div key={column.field}>
                             <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>

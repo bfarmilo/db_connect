@@ -27,7 +27,7 @@ const enabledButtons = [
 const enabledColumns = [
     { display: 'Reference', field: 'PMCRef' },
     { display: 'Patent', field: 'PatentNumber' },
-    { display: 'Claim Full Text', field: 'ClaimHtml' },
+    { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
     { display: 'Notes', field: 'PotentialApplication' },
     { display: 'Watch', field: 'WatchItems' }
 ]
@@ -93,7 +93,8 @@ class ClaimTable extends Component {
             sortOrder,
             offset: 0,
             scrollTop: 0,
-            modalContent: { inventor: '', title: '', claimID:'' }
+            modalContent: { inventor: '', title: '', claimID: '' },
+            displayMode:'claims'
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -335,7 +336,7 @@ class ClaimTable extends Component {
             console.log('hovering over patent', modalContent);
             this.setState({ modalContent });
         } else {
-            this.setState({ modalContent: { title: '', inventor: '', claimID:'' } })
+            this.setState({ modalContent: { title: '', inventor: '', claimID: '' } })
         }
     }
 
@@ -344,6 +345,8 @@ class ClaimTable extends Component {
             <div class='FullTable'>
                 <ControlArea
                     enabledButtons={enabledButtons}
+                    enabledColumns={enabledColumns}
+                    displayMode={this.state.displayMode}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
                     sortOrder={this.state.sortOrder}
@@ -379,6 +382,7 @@ class ClaimTable extends Component {
                             ref={s => this.scrollbar = s}
                         >
                             <TableArea
+                                enabledColumns={enabledColumns}
                                 claimList={this.state.claimList}
                                 activeRows={this.state.activeRows}
                                 expandAll={this.state.expandAll}
