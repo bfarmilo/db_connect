@@ -21,6 +21,7 @@
     "fs-extra": "^5.0.0",
     "marked": "^0.3.19",
     "node-fetch": "^2.2.0",
+    "pdfjs-dist": "^2.0.489",
     "preact": "^8.2.9",
     "preact-custom-scrollbars": "^4.0.4",
     "tedious": "^2.6.3",

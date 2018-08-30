@@ -45,7 +45,7 @@ process.on('uncaughtException', e => {
   console.error(e);
   console.error('fatal error, exiting app');
   if (win) win.close();
-  if (app) app.close();
+  if (app) app.quit();
 });
 
 // connect to the sql server
@@ -271,7 +271,7 @@ const getNewPatentUI = () => {
   if (!newPatentWindow) {
     newPatentWindow = new BrowserWindow();
     newPatentWindow.loadURL(`file://${__dirname}/getNewPatentUI.html`);
-    // newPatentWindow.webContents.openDevTools();
+    if (process.env.DEVTOOLS === 'show') newPatentWindow.webContents.openDevTools();
     newPatentWindow.on('closed', () => {
       newPatentWindow = null;
     });
@@ -343,7 +343,7 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
    */
   const getPatentHtml = () => {
     console.log('got call for patent detail view with patent number', patentNumber);
-    queryDatabase(connectParams, 'p_PATENT', `WHERE PatentNumber=@0`, [patentNumber], ' FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER', (err, data) => {
+    queryDatabase(connectParams, 'p_PATENT', `WHERE PatentNumber=@0`, [patentNumber], ' FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER', async (err, data) => {
       if (err) {
         console.error(err)
       } else {
@@ -351,6 +351,11 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
         // otherwise, go fetch it, serve it up, and meanwhile update the DB with it !
         // data returns the row in multiple columns of an array (if large)
         const state = JSON.parse(data.reduce((accum, item) => accum.concat(item), ''));
+        ///TEST
+        const pageData = await fse.readFile('./test/page50');
+        const url = 'testUrl';
+        state.images = [[50, { url, pageData }]];
+        // END TEST
         if (!state.PatentHtml) {
           console.log('no PatentHtml found, querying USPTO for patent Full Text');
           getFullText(patentNumber)
@@ -388,8 +393,13 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
     });
     detailWindow.on('ready-to-show', () => {
       console.log('window ready, calling getPatentHtml');
+      detailWindow.webContents.send('resize', { width: 800, height: 1000 });
       getPatentHtml();
     })
+    detailWindow.on('resize', () => {
+      console.log('window size changed, sending new size');
+      detailWindow.webContents.send('resize', { width: detailWindow.getSize()[0], height: detailWindow.getSize()[1] });
+    });
   } else {
     getPatentHtml();
   }
