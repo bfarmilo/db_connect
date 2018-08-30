@@ -38,7 +38,7 @@ const getAllImages = async patentNumber => {
      * @returns {number} -> the page number of the end of the prior section, or 0 if not present
      */
     const findEndPage = async section => {
-        const sectionPage = await (await fetch(`${uspto[docType].images.url}${docNumber}&SectionNum=${section}`)).text();
+        const sectionPage = await (await fetch(`${uspto[docType].images.baseUrl}${uspto[docType].images.url}${docNumber}&SectionNum=${section}`)).text();
         return parseInt(sectionPage.match(/PageNum=(\d+)/i)[1], 10) || 0;
     }
 
@@ -49,8 +49,8 @@ const getAllImages = async patentNumber => {
      */
     const getImage = async pageNum => {
         const matchPattern = new RegExp(uspto[docType].images.matchPattern, 'g');
-        const url = `${uspto[docType].images.url}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${pageNum}.pdf`;
-        const pageData = await (await fetch(url)).buffer();
+        const url = `${uspto[docType].images.baseUrl}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${pageNum}.pdf`;
+        const pageData = (await (await fetch(url)).buffer()).toString('base64');
         return [pageNum, { url, pageData }];
     }
 

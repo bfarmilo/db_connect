@@ -2,6 +2,7 @@ import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { EditCell } from './jsx/editCell';
 import { Icon } from './jsx/icons';
+import { PatentImage } from './jsx/PatentImageView';
 /** @jsx h */
 
 class PatentDetail extends Component {
@@ -18,14 +19,18 @@ class PatentDetail extends Component {
                 ClaimsCount: 0,
                 PatentHtml: '[""]',
                 InventorLastName: '',
-                EstimatedExpiryDate
+                EstimatedExpiryDate,
+                images: null,
             },
             patentSummaries: new Map(),
             activeSummary: new Map(),
             searchTerm: '',
             highlightList: new Map(),
             scrollNavigation: new Map(),
-            currentScroll: 0
+            patentImages: new Map(),
+            currentScroll: 0,
+            currentImage: 0,
+            windowSize: { width: 0, height: 0 }
         };
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
@@ -41,11 +46,25 @@ class PatentDetail extends Component {
         ipcRenderer.on('state', (event, data) => {
             console.log('received data', data);
             // console.log('summaries', JSON.stringify(data.summaries));
-            const { summaries, ...result } = { ...data.summaries, ...data };
+            const { summaries, images, ...result } = { ...data.summaries, ...data.images, ...data };
             const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
             // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
-            this.setState({ result, patentSummaries, highlightList: new Map(), searchTerm: '', currentScroll: 0, scrollNavigation: new Map() });
+            console.log(new Map(images), images[0][0]);
+            this.setState({
+                result,
+                patentSummaries,
+                highlightList: new Map(),
+                searchTerm: '',
+                currentScroll: 0,
+                scrollNavigation: new Map(),
+                patentImages: images && new Map(images),
+                currentImage: images && images[0][0]
+            });
         });
+        ipcRenderer.on('resize', (event, { width, height }) => {
+            console.log(`got new window size width:${width} height:${height}`);
+            this.setState({ windowSize: { width, height } })
+        })
     }
 
     openClickHandler(event) {
@@ -172,6 +191,12 @@ class PatentDetail extends Component {
                         highlightList={this.state.highlightList}
                         addNewRef={this.addNewRef}
                     />
+                    {this.state.currentImage ? < PatentImage
+                        imageData={this.state.patentImages}
+                        showPage={this.state.currentImage}
+                        rotation={90}
+                        width={this.state.windowSize.width}
+                    /> : <div />}
                 </div>
             </div>
         );
