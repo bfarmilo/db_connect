@@ -1,4 +1,4 @@
-const { getFullText } = require('../js/getFullText.jsx');
+const { getFullText } = require('../jsx/getFullText.js');
 const chai = require('chai');
 const chaiAsPromised = require('chai-as-promised');
 const expect = chai.expect;
