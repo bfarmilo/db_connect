@@ -79,6 +79,8 @@ const ControlArea = props => {
                 </button> : <div />}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
+                    <button style={styles.FilterButton} onClick={props.changeMode}>
+                    Switch Mode</button>
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}

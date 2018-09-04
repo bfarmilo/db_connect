@@ -344,6 +344,10 @@ class ClaimTable extends Component {
         this.setState({ activeRows })
     }
 
+    changeMode = e => {
+        this.setState({displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims'});
+    }
+
     showInventor(e, claimID) {
         if (claimID !== '') {
             const { InventorLastName, Title } = this.state.resultList.get(claimID);
@@ -374,6 +378,7 @@ class ClaimTable extends Component {
                     styles={styles}
                     modifySortOrder={this.modifySortOrder}
                     getNewPatents={this.getNewPatents}
+                    changeMode={this.changeMode}
                 />
                 {this.state.working ? (
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: this.state.windowHeight }}>

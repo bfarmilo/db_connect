@@ -20,7 +20,7 @@
         "u_FULLTEXT": "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
         "u_UPDATE": "UPDATE Claim SET ",
         "p_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
-        "m_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS document ON document.DocumentID = mc.DocumentID INNER JOIN Client AS client ON client.ClientID = mtc.ClientID ",
+        "m_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
         "fieldMap": [
             {
                 "name": "PMCRef",
