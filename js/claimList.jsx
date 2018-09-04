@@ -3,6 +3,7 @@ import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
+
 // import 'preact/devtools';
 
 const TITLE_ROW_HEIGHT = 175;
@@ -24,25 +25,31 @@ const enabledButtons = [
     { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
 ];
 
-const enabledColumns = [
-    { display: 'Reference', field: 'PMCRef' },
-    { display: 'Patent', field: 'PatentNumber' },
-    { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
-    { display: 'Notes', field: 'PotentialApplication' },
-    { display: 'Watch', field: 'WatchItems' }
-]
+const claimConfig = {
+    gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
+    columns: [
+        { display: 'Reference', field: 'PMCRef' },
+        { display: 'Patent', field: 'PatentNumber' },
+        { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
+        { display: 'Notes', field: 'PotentialApplication' },
+        { display: 'Watch', field: 'WatchItems' }
+    ]
+}
 
-const markmanColumns = [
-    { display: 'Reference', field: 'PMCRef' },
-    { display: 'Patent', field: 'PatentNumber' },
-    { field: 'Claim Number', field: 'ClaimNumber' },
-    { display: 'Claim Term', field: 'ClaimTerm' },
-    { display: 'Construction', field: 'Construction' },
-    { display: 'Page', field: 'MarkmanPage' },
-    { display: 'Path to Ruling', field: 'DocumentPath' },
-    { field: 'Filename of ruling', field: 'Document' },
-    { field: 'Case', field: 'ClientName' }
-]
+const markmanConfig = {
+    gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
+    columns: [
+        { display: 'Reference', field: 'PMCRef' },
+        { display: 'Patent', field: 'PatentNumber' },
+        { display: 'Clm.', field: 'ClaimNumber' },
+        { display: 'Claim Term', field: 'ClaimTerm' },
+        { display: 'Construction', field: 'Construction' },
+        { display: 'Pg.', field: 'MarkmanPage' },
+        { display: 'Path to Ruling', field: 'DocumentPath' },
+        { display: 'Filename of ruling', field: 'FileName' },
+        { display: 'Case', field: 'ClientName' }
+    ]
+}
 
 const initialList = [
     {
@@ -83,7 +90,7 @@ class ClaimTable extends Component {
     constructor(props) {
         super(props);
         this.state = {
-            claimList: new Map(),
+            resultList: new Map(),
             expandAll: false,
             queryValues,
             windowHeight: 625,
@@ -94,7 +101,7 @@ class ClaimTable extends Component {
             offset: 0,
             scrollTop: 0,
             modalContent: { inventor: '', title: '', claimID: '' },
-            displayMode:'claims'
+            displayMode: 'markman'
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -118,13 +125,21 @@ class ClaimTable extends Component {
         ipcRenderer.on('json_result', (event, data, resultCount, newOffset, appendMode) => {
             if (data) {
                 console.log('got new table data, count, offset, appendmode', resultCount, newOffset, appendMode);
-                const claimList = new Map(this.state.claimList);
+                const resultList = new Map(this.state.resultList);
+                console.log(data);
                 if (!appendMode) {
-                    claimList.clear();
+                    resultList.clear();
                 }
-                data.map(item => claimList.set(`${item.ClaimID}`, item));
+                data.map(item => {
+                    const key = this.state.displayMode === 'claims' ? 
+                    `${item.ClaimID}` :
+                    `${Object.keys(item).filter(hash => /ID$/i.exec(hash)).map(hash => item[hash]).join('_')}`
+                    // debugging - why duplicates?
+                    if (resultList.has(key)) console.log('collision:', resultList.get(key), item);
+                    resultList.set(key, item);
+                });
                 this.setState({
-                    claimList,
+                    resultList,
                     resultCount,
                     working: false,
                     offset: newOffset,
@@ -134,7 +149,7 @@ class ClaimTable extends Component {
                 );
             } else {
                 console.log('no results received');
-                this.setState({ claimList: new Map(), resultCount: 0, working: false })
+                this.setState({ resultList: new Map(), resultCount: 0, working: false })
             }
         });
         // window size changed, needed to recalculate scrollbars
@@ -159,7 +174,7 @@ class ClaimTable extends Component {
 
     //Control Panel Methods
 
-    /** send out a query object and sort order to Main to get a new claimList
+    /** send out a query object and sort order to Main to get a new resultList
      * @returns {undefined}
      * 
      */
@@ -169,7 +184,7 @@ class ClaimTable extends Component {
         console.log('sending new query with appendMode, offset', appendMode, offset);
         // send plain JSON, not maps
         const sortOrder = [...this.state.sortOrder].map(record => record[1]);
-        ipcRenderer.send('json_query', this.state.queryValues, sortOrder, offset, appendMode);
+        ipcRenderer.send('json_query', this.state.displayMode, this.state.queryValues, sortOrder, offset, appendMode);
     }
 
     getNewPatents(event) {
@@ -214,7 +229,7 @@ class ClaimTable extends Component {
     changeDB() {
         console.log('changing database');
         ipcRenderer.send('change_db');
-        this.setState({ claimList: new Map(), queryValues });
+        this.setState({ resultList: new Map(), queryValues });
         this.runQuery(null, NEW);
     }
 
@@ -286,7 +301,7 @@ class ClaimTable extends Component {
         console.log('detected edit event in %s for claim ID %s', field, claimID);
         //load current record into active array, if needed (don't duplicate)
         const activeRows = new Map(this.state.activeRows);
-        activeRows.set(`${claimID}-${field}`, this.state.claimList.get(claimID)[field]);
+        activeRows.set(`${claimID}-${field}`, this.state.resultList.get(claimID)[field]);
         //update the state, ready to listen for keypresses
         this.setState({ activeRows });
     }
@@ -313,16 +328,16 @@ class ClaimTable extends Component {
         const activeRows = new Map(this.state.activeRows);
         if (action === 'save') {
             // send off an updateQuery to the database
-            console.log(this.state.claimList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`));
+            console.log(this.state.resultList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`));
             ipcRenderer.send(
                 'json_update',
-                { field, claimID, value: this.state.claimList.get(claimID)[field] },
+                { field, claimID, value: this.state.resultList.get(claimID)[field] },
                 { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`) }
             )
             // splice in the record and update the main table
-            const claimList = new Map(this.state.claimList);
-            claimList.set(claimID, { ...claimList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`) })
-            this.setState({ claimList })
+            const resultList = new Map(this.state.resultList);
+            resultList.set(claimID, { ...resultList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`) })
+            this.setState({ resultList })
         }
         // clear out and update activeRows
         activeRows.delete(`${claimID}-${field}`);
@@ -331,7 +346,7 @@ class ClaimTable extends Component {
 
     showInventor(e, claimID) {
         if (claimID !== '') {
-            const { InventorLastName, Title } = this.state.claimList.get(claimID);
+            const { InventorLastName, Title } = this.state.resultList.get(claimID);
             const modalContent = { inventor: InventorLastName || '', title: Title, claimID };
             console.log('hovering over patent', modalContent);
             this.setState({ modalContent });
@@ -344,8 +359,8 @@ class ClaimTable extends Component {
         return (
             <div class='FullTable'>
                 <ControlArea
-                    enabledButtons={enabledButtons}
-                    enabledColumns={enabledColumns}
+                    enabledButtons={this.state.displayMode === 'claims' ? enabledButtons : []}
+                    enabledColumns={this.state.displayMode === 'claims' ? claimConfig : markmanConfig}
                     displayMode={this.state.displayMode}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
@@ -382,8 +397,9 @@ class ClaimTable extends Component {
                             ref={s => this.scrollbar = s}
                         >
                             <TableArea
-                                enabledColumns={enabledColumns}
-                                claimList={this.state.claimList}
+                                displayMode={this.state.displayMode}
+                                enabledColumns={this.state.displayMode === 'claims' ? claimConfig : markmanConfig}
+                                resultList={this.state.resultList}
                                 activeRows={this.state.activeRows}
                                 expandAll={this.state.expandAll}
                                 modalContent={this.state.modalContent}

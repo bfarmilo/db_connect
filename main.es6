@@ -90,6 +90,7 @@ const createWindow = () => {
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
   // Open the DevTools.
+  if (process.env.DEVTOOLS = 'show') win.webContents.openDevTools();
   /*   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
       console.log(`Added Extension:  ${name}`);
       win.webContents.openDevTools();
@@ -150,7 +151,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       getPatentWindow.delete(patentNumber);
     });
     activeWin.on('ready-to-show', () => {
-      //activeWin.webContents.openDevTools();
+      if (process.env.DEVTOOLS = 'show') activeWin.webContents.openDevTools();
       console.log('window ready, executing in-page JS for patent', patentNumber);
       //getPatentWindow.show();
       activeWin.webContents.executeJavaScript(scrapeCode, false)
@@ -475,15 +476,15 @@ ipcMain.on('json_update', (event, oldItem, newItem) => {
 })
 
 // Listener for a call to update the main window
-ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
+ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
 
   const runQuery = newOffset => {
-    queryDatabase(connectParams, 'p_SELECTJSON', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
+    queryDatabase(connectParams, mode === 'claims' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
       if (err) {
         console.error(err);
       } else {
         // send the result after parsing properly 
-        win.webContents.send('json_result', parseOutput(result, uriMode), totalCount, newOffset, appendMode);
+        win.webContents.send('json_result', parseOutput(mode, result, uriMode), totalCount, newOffset, appendMode);
       }
     })
 
@@ -491,7 +492,7 @@ ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
 
   //remove duplicates and create an array of ({field, value}) objects
   const fieldList = Object.keys(query).filter(item => query[item] !== '').map(item => ({ field: item, value: query[item] }));
-  console.log('reduced query to %s', JSON.stringify(fieldList));
+  console.log('reduced query to %s with mode %s', JSON.stringify(fieldList), mode);
   //make sure to URI-encode ClaimHtml if appropriate
   if (uriMode && fieldList.ClaimHtml) {
     fieldList.ClaimHtml = encodeURIComponent(fieldList.ClaimHtml).replace(/\'/g, '%27').replace('%', '[%]');
@@ -499,7 +500,7 @@ ipcMain.on('json_query', (event, query, orderBy, offset, appendMode) => {
   //in the case where a blank query is passed, default query is only show claim 1
   const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
   if (!appendMode) {
-    queryDatabase(connectParams, 'p_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
+    queryDatabase(connectParams, mode === 'claims' ? 'p_COUNT' : 'm_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
       if (err) {
         console.error(err)
       } else {

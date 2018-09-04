@@ -27,7 +27,7 @@ const ControlArea = props => {
         },
         TableHeading: {
             display: 'grid',
-            gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
+            gridTemplateColumns: props.enabledColumns.gridTemplateColumns,
             padding: '0.4em 0.5em 0.4em 0.5em',
             fontSize: 'large',
             color: 'white',
@@ -61,7 +61,7 @@ const ControlArea = props => {
         <div class="ControlArea">
             <div style={styles.ButtonArea}>
                 <div style={styles.ResultCount}>{`${props.resultCount} Matching Claim${props.resultCount == 1 ? '' : 's'} Found`}</div>
-                {props.enabledButtons.map(button => (
+                {props.enabledButtons.length ? props.enabledButtons.map(button => (
                     <button
                         key={button.field}
                         data-value={button.field}
@@ -69,16 +69,16 @@ const ControlArea = props => {
                         onClick={props.toggleFilter}
                         style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     >{button.display}</button>
-                ))}
-                {props.displayMode === 'claims' ? <span><button
+                )) : ''}
+                {props.displayMode === 'claims' ? <button
                     style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     data-claimid='all'
                     onClick={props.toggleExpand}
                 >
                     {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
-                </button>
+                </button> : <div />}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
-                    Download New Patents</button></span> : <span></span>}
+                    Download New Patents</button>
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}
@@ -87,7 +87,7 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {props.enabledColumns.map(column => {
+                {props.enabledColumns.columns.map(column => {
                     return (
                         <div key={column.field}>
                             <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>

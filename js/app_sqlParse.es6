@@ -95,19 +95,55 @@ const parseOrder = (orderBy, offset, fetch) => {
   }).join(', ')).concat(` OFFSET ${offset} ROWS FETCH NEXT ${fetch} ROWS ONLY`);
 }
 
-const parseOutput = (result, uriMode) => {
-  // first check to see if any results returned. If so,
+const parseOutput = (mode, result, uriMode) => {
+  // first check to see if any results returned. If so
   // query comes down as an array of chunks. So need to join the chunks,
   // Parse as JSON, then flatten into a an array of records one per claim 
   // note if uriMode decode the ClaimHtml in the returned records
-  return result.length > 0 ? flatten(JSON.parse(result.join('')).map(patent => {
-    let item = Object.assign({}, patent)
-    delete item.claims;
-    return patent.claims.map(claim => ({
-      ...item,
-      ...claim,
-      ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml
-    }))
+  // mode==='claims' for claim query, 'markman' for markman
+
+  return result.length > 0 ? flatten(JSON.parse(result.join('')).map(record => {
+    const { claims, ...join0 } = record;
+    if (mode === 'claims') {
+      // claims mode: FROM claims INNER JOIN patents ON patents.PatentID = claims.PatentID
+      // order ['claims']
+      return claims.map(claim => ({
+        ...join0,
+        ...claim,
+        ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml
+      }))
+    } else {
+      // markman mode: FROM claims
+      // order ['claims', 'mt', 'mc', 'documents', 'clients']
+      return claims.map(claim => {
+        const { mt, ...join1 } = claim;
+        return mt.map(term => {
+          const { mc, ...join2 } = term;
+          return mc.map(construction => {
+            const { documents, ...join3 } = construction;
+            return documents.map(document => {
+              const { clients, ...join4 } = document;
+              return clients.map(client => {
+                return {
+                  ...join0,
+                  ...join1,
+                  ...join2,
+                  ...join3,
+                  ...join4,
+                  ...client
+                };
+              });
+            });
+          });
+        });
+      });
+    }
+    // INNER JOIN patents ON patents.PatentID = claims.PatentID 
+    // INNER JOIN  mtc ON mtc.ClaimID = claims.ClaimID
+    // INNER JOIN  mt ON mt.TermID = mtc.TermID 
+    // INNER JOIN  mc ON mc.ConstructID = mtc.ConstructID 
+    // INNER JOIN  document ON document.DocumentID = mc.DocumentID 
+    // INNER JOIN  client ON client.ClientID = mtc.ClientID
   })) : '';
 }
 
