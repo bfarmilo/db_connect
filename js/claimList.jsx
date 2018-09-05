@@ -11,74 +11,47 @@ const RESIZE_THRESHOLD = 50;
 const NEW = false;
 const APPEND = true;
 
-const config = 
-    {
-        claims: {
-            gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
-            themeColor: 'rgba(51, 122, 183, 1)',
-            selectedColor: 'rgba(183, 130, 51, 0.8)',
-            borderColor: 'rgba(41, 94, 141, 0.8)',
-            enabledButtons: [
-                { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
-                { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
-                { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
-                { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
-                { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
-            ],
-            columns: [
-                { display: 'Reference', field: 'PMCRef' },
-                { display: 'Patent', field: 'PatentNumber' },
-                { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
-                { display: 'Notes', field: 'PotentialApplication' },
-                { display: 'Watch', field: 'WatchItems' }
-            ]
-        },
-        markman: {
-            gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
-            themeColor: 'rgba(12, 84, 0, 1)',
-            selectedColor: 'rgba(183, 130, 51, 0.8)',
-            borderColor: 'rgba(41, 94, 141, 0.8)',
-            enabledButtons: [],
-            columns: [
-                { display: 'Reference', field: 'PMCRef' },
-                { display: 'Patent', field: 'PatentNumber' },
-                { display: 'Clm.', field: 'ClaimNumber' },
-                { display: 'Claim Term', field: 'ClaimTerm' },
-                { display: 'Construction', field: 'Construction' },
-                { display: 'Pg.', field: 'MarkmanPage' },
-                { display: 'Path to Ruling', field: 'DocumentPath' },
-                { display: 'Filename of ruling', field: 'FileName' },
-                { display: 'Case', field: 'ClientName' }
-            ]
-        }
-    };
-
-const initialList = [
-    {
-        PMCRef: '',
-        PatentPath: '',
-        PatentNumber: 0,
-        ClaimID: 0,
-        ClaimNumber: 0,
-        ClaimHtml: '',
-        PotentialApplication: '',
-        WatchItems: '',
-        IsIndependentClaim: true
+const config =
+{
+    claims: {
+        gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
+        themeColor: 'rgba(51, 122, 183, 1)',
+        selectedColor: 'rgba(183, 130, 51, 0.8)',
+        borderColor: 'rgba(41, 94, 141, 0.8)',
+        enabledButtons: [
+            { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
+            { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
+            { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
+            { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
+            { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
+        ],
+        columns: [
+            { display: 'Reference', field: 'PMCRef' },
+            { display: 'Patent', field: 'PatentNumber' },
+            { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
+            { display: 'Notes', field: 'PotentialApplication' },
+            { display: 'Watch', field: 'WatchItems' }
+        ]
+    },
+    markman: {
+        gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
+        themeColor: 'rgba(12, 84, 0, 1)',
+        selectedColor: 'rgba(183, 130, 51, 0.8)',
+        borderColor: 'rgba(41, 94, 141, 0.8)',
+        enabledButtons: [],
+        columns: [
+            { display: 'Reference', field: 'PMCRef' },
+            { display: 'Patent', field: 'PatentNumber' },
+            { display: 'Clm.', field: 'ClaimNumber' },
+            { display: 'Claim Term', field: 'ClaimTerm' },
+            { display: 'Construction', field: 'Construction' },
+            { display: 'Pg.', field: 'MarkmanPage' },
+            { display: 'Path to Ruling', field: 'DocumentPath' },
+            { display: 'Filename of ruling', field: 'FileName' },
+            { display: 'Case', field: 'ClientName' }
+        ]
     }
-];
-
-const queryValues = {
-    PMCRef: '',
-    PatentNumber: '',
-    IsInIPR: '',
-    ClaimNumber: '',
-    ClaimHtml: '',
-    PotentialApplication: '',
-    WatchItems: '',
-    IsMethodClaim: '',
-    IsDocumented: '',
-    IsIndependentClaim: ''
-}
+};
 
 const sortOrder = new Map([
     ['PatentNumber', { field: 'PatentNumber', ascending: true }],
@@ -92,7 +65,7 @@ class ClaimTable extends Component {
         this.state = {
             resultList: new Map(),
             expandAll: false,
-            queryValues,
+            queryValues: {},
             windowHeight: 625,
             resultCount: 0,
             working: true,
@@ -121,6 +94,7 @@ class ClaimTable extends Component {
 
     // lifecycle Methods
     componentDidMount() {
+
         // new query results from Main
         ipcRenderer.on('json_result', (event, data, resultCount, newOffset, appendMode) => {
             if (data) {
@@ -165,7 +139,13 @@ class ClaimTable extends Component {
             console.log('got new patents, rerunning query', list);
             this.runQuery(null, NEW);
         })
-        setTimeout(() => this.runQuery(null, NEW), 2000); //hack to buy time for docker to get server
+        // reset the query
+        this.clearQuery();
+        // wait a few seconds for the server to connect
+        // TODO: use handshake for this
+        setTimeout(() => {
+            this.runQuery(null, NEW)
+        }, 2000); //hack to buy time for docker to get server
     }
 
     componentWillUnmount() {
@@ -185,6 +165,15 @@ class ClaimTable extends Component {
         // send plain JSON, not maps
         const sortOrder = [...this.state.sortOrder].map(record => record[1]);
         ipcRenderer.send('json_query', this.state.displayMode, this.state.queryValues, sortOrder, offset, appendMode);
+    }
+
+    clearQuery = () => {
+        // set up a blank query with the proper properties for the query mode
+        const queryFieldList = config[this.state.displayMode].enabledButtons.concat(config[this.state.displayMode].columns);
+        return queryFieldList.reduce((query, column) => {
+            query[column.field] = '';
+            return query;
+        }, {});
     }
 
     getNewPatents(event) {
@@ -229,7 +218,9 @@ class ClaimTable extends Component {
     changeDB() {
         console.log('changing database');
         ipcRenderer.send('change_db');
-        this.setState({ resultList: new Map(), queryValues });
+        const queryValues = this.clearQuery();
+        const resultList = new Map();
+        this.setState({ resultList, queryValues });
         this.runQuery(null, NEW);
     }
 
@@ -345,7 +336,9 @@ class ClaimTable extends Component {
     }
 
     changeMode = e => {
-        this.setState({ displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims', resultList: new Map(), queryValues });
+        const queryValues = this.clearQuery();
+        const resultList = new Map();
+        this.setState({ displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims', resultList, queryValues });
         this.runQuery(null, NEW);
     }
 
