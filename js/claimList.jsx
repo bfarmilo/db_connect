@@ -152,6 +152,17 @@ class ClaimTable extends Component {
         // clean up window even listeners
     }
 
+    //Helper functions that don't set state
+    
+    clearQuery = () => {
+        // set up a blank query with the proper properties for the query mode
+        const queryFieldList = config[this.state.displayMode].enabledButtons.concat(config[this.state.displayMode].columns);
+        return queryFieldList.reduce((query, column) => {
+            query[column.field] = '';
+            return query;
+        }, {});
+    }
+
     //Control Panel Methods
 
     /** send out a query object and sort order to Main to get a new resultList
@@ -167,14 +178,6 @@ class ClaimTable extends Component {
         ipcRenderer.send('json_query', this.state.displayMode, this.state.queryValues, sortOrder, offset, appendMode);
     }
 
-    clearQuery = () => {
-        // set up a blank query with the proper properties for the query mode
-        const queryFieldList = config[this.state.displayMode].enabledButtons.concat(config[this.state.displayMode].columns);
-        return queryFieldList.reduce((query, column) => {
-            query[column.field] = '';
-            return query;
-        }, {});
-    }
 
     getNewPatents(event) {
         ipcRenderer.send('new_patent_retrieval');
@@ -335,6 +338,9 @@ class ClaimTable extends Component {
         this.setState({ activeRows })
     }
 
+    /**
+     * Change from Claims to Constructions and vice-versa
+     */
     changeMode = e => {
         const queryValues = this.clearQuery();
         const resultList = new Map();
@@ -342,6 +348,11 @@ class ClaimTable extends Component {
         this.runQuery(null, NEW);
     }
 
+    /**
+     * Display the inventor and patent title modal on hover
+     * @param {Event} e 
+     * @param {String} claimID 
+     */
     showInventor(e, claimID) {
         if (claimID !== '') {
             const { InventorLastName, Title } = this.state.resultList.get(claimID);
