@@ -11,45 +11,47 @@ const RESIZE_THRESHOLD = 50;
 const NEW = false;
 const APPEND = true;
 
-const styles = {
-    themeColor: 'rgba(51, 122, 183, 1)',
-    selectedColor: 'rgba(183, 130, 51, 0.8)',
-    borderColor: 'rgba(41, 94, 141, 0.8)'
-}
-
-const enabledButtons = [
-    { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
-    { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
-    { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
-    { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
-    { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
-];
-
-const claimConfig = {
-    gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
-    columns: [
-        { display: 'Reference', field: 'PMCRef' },
-        { display: 'Patent', field: 'PatentNumber' },
-        { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
-        { display: 'Notes', field: 'PotentialApplication' },
-        { display: 'Watch', field: 'WatchItems' }
-    ]
-}
-
-const markmanConfig = {
-    gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
-    columns: [
-        { display: 'Reference', field: 'PMCRef' },
-        { display: 'Patent', field: 'PatentNumber' },
-        { display: 'Clm.', field: 'ClaimNumber' },
-        { display: 'Claim Term', field: 'ClaimTerm' },
-        { display: 'Construction', field: 'Construction' },
-        { display: 'Pg.', field: 'MarkmanPage' },
-        { display: 'Path to Ruling', field: 'DocumentPath' },
-        { display: 'Filename of ruling', field: 'FileName' },
-        { display: 'Case', field: 'ClientName' }
-    ]
-}
+const config = 
+    {
+        claims: {
+            gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
+            themeColor: 'rgba(51, 122, 183, 1)',
+            selectedColor: 'rgba(183, 130, 51, 0.8)',
+            borderColor: 'rgba(41, 94, 141, 0.8)',
+            enabledButtons: [
+                { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
+                { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
+                { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
+                { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
+                { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
+            ],
+            columns: [
+                { display: 'Reference', field: 'PMCRef' },
+                { display: 'Patent', field: 'PatentNumber' },
+                { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
+                { display: 'Notes', field: 'PotentialApplication' },
+                { display: 'Watch', field: 'WatchItems' }
+            ]
+        },
+        markman: {
+            gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
+            themeColor: 'rgba(12, 84, 0, 1)',
+            selectedColor: 'rgba(183, 130, 51, 0.8)',
+            borderColor: 'rgba(41, 94, 141, 0.8)',
+            enabledButtons: [],
+            columns: [
+                { display: 'Reference', field: 'PMCRef' },
+                { display: 'Patent', field: 'PatentNumber' },
+                { display: 'Clm.', field: 'ClaimNumber' },
+                { display: 'Claim Term', field: 'ClaimTerm' },
+                { display: 'Construction', field: 'Construction' },
+                { display: 'Pg.', field: 'MarkmanPage' },
+                { display: 'Path to Ruling', field: 'DocumentPath' },
+                { display: 'Filename of ruling', field: 'FileName' },
+                { display: 'Case', field: 'ClientName' }
+            ]
+        }
+    };
 
 const initialList = [
     {
@@ -83,8 +85,6 @@ const sortOrder = new Map([
     ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
 ]);
 
-//TODO: Convert claimTable, activeRows, sortOtder to maps and get rid of undo
-
 /** */
 class ClaimTable extends Component {
     constructor(props) {
@@ -101,7 +101,7 @@ class ClaimTable extends Component {
             offset: 0,
             scrollTop: 0,
             modalContent: { inventor: '', title: '', claimID: '' },
-            displayMode: 'markman'
+            displayMode: 'claims'
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -131,9 +131,9 @@ class ClaimTable extends Component {
                     resultList.clear();
                 }
                 data.map(item => {
-                    const key = this.state.displayMode === 'claims' ? 
-                    `${item.ClaimID}` :
-                    `${Object.keys(item).filter(hash => /ID$/i.exec(hash)).map(hash => item[hash]).join('_')}`
+                    const key = this.state.displayMode === 'claims' ?
+                        `${item.ClaimID}` :
+                        `${Object.keys(item).filter(hash => /ID$/i.exec(hash)).map(hash => item[hash]).join('_')}`
                     // debugging - why duplicates?
                     if (resultList.has(key)) console.log('collision:', resultList.get(key), item);
                     resultList.set(key, item);
@@ -345,7 +345,8 @@ class ClaimTable extends Component {
     }
 
     changeMode = e => {
-        this.setState({displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims'});
+        this.setState({ displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims', resultList: new Map(), queryValues });
+        this.runQuery(null, NEW);
     }
 
     showInventor(e, claimID) {
@@ -363,8 +364,7 @@ class ClaimTable extends Component {
         return (
             <div class='FullTable'>
                 <ControlArea
-                    enabledButtons={this.state.displayMode === 'claims' ? enabledButtons : []}
-                    enabledColumns={this.state.displayMode === 'claims' ? claimConfig : markmanConfig}
+                    config={config[this.state.displayMode]}
                     displayMode={this.state.displayMode}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
@@ -375,7 +375,7 @@ class ClaimTable extends Component {
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
                     changeDB={this.changeDB}
-                    styles={styles}
+                    styles={config[this.state.displayMode]}
                     modifySortOrder={this.modifySortOrder}
                     getNewPatents={this.getNewPatents}
                     changeMode={this.changeMode}
@@ -384,7 +384,7 @@ class ClaimTable extends Component {
                     <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: this.state.windowHeight }}>
                         <svg version='1.1' x='0px' y='0px' width='40px' height='50px' viewBox='0 0 24 30'>
                             {[0, 1, 2].map(x => (
-                                <rect key={x} x={x * 7} y='0' width='4' height='20' fill={styles.themeColor}>
+                                <rect key={x} x={x * 7} y='0' width='4' height='20' fill={config[this.state.displayMode].themeColor}>
                                     <animate attributeName='opacity' attributeType='XML'
                                         values='1; .2; 1'
                                         begin={`${x * 0.2}s`} dur='0.6s' repeatCount='indefinite' />
@@ -403,7 +403,7 @@ class ClaimTable extends Component {
                         >
                             <TableArea
                                 displayMode={this.state.displayMode}
-                                enabledColumns={this.state.displayMode === 'claims' ? claimConfig : markmanConfig}
+                                config={config[this.state.displayMode]}
                                 resultList={this.state.resultList}
                                 activeRows={this.state.activeRows}
                                 expandAll={this.state.expandAll}
@@ -413,8 +413,6 @@ class ClaimTable extends Component {
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
                                 showInventor={this.showInventor}
-                                selectedColor={styles.selectedColor}
-                                themeColor={styles.themeColor}
                             />
                         </Scrollbars>
                     )}

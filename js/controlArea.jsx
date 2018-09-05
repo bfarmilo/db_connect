@@ -27,7 +27,7 @@ const ControlArea = props => {
         },
         TableHeading: {
             display: 'grid',
-            gridTemplateColumns: props.enabledColumns.gridTemplateColumns,
+            gridTemplateColumns: props.config.gridTemplateColumns,
             padding: '0.4em 0.5em 0.4em 0.5em',
             fontSize: 'large',
             color: 'white',
@@ -60,8 +60,8 @@ const ControlArea = props => {
     return (
         <div class="ControlArea">
             <div style={styles.ButtonArea}>
-                <div style={styles.ResultCount}>{`${props.resultCount} Matching Claim${props.resultCount == 1 ? '' : 's'} Found`}</div>
-                {props.enabledButtons.length ? props.enabledButtons.map(button => (
+                <div style={styles.ResultCount}>{`${props.resultCount} Matching ${props.displayMode === 'claims' ? 'Claim' : 'Construction'}${props.resultCount == 1 ? '' : 's'} Found`}</div>
+                {props.config.enabledButtons.length ? props.config.enabledButtons.map(button => (
                     <button
                         key={button.field}
                         data-value={button.field}
@@ -80,7 +80,7 @@ const ControlArea = props => {
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
                     <button style={styles.FilterButton} onClick={props.changeMode}>
-                    Switch Mode</button>
+                    View {props.displayMode === 'claims' ? 'Constructions' : 'Claims'}</button>
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}
@@ -89,7 +89,7 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {props.enabledColumns.columns.map(column => {
+                {props.config.columns.map(column => {
                     return (
                         <div key={column.field}>
                             <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>

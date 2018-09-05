@@ -10,8 +10,7 @@ const TableArea = props => {
      * @param {(Event, string, string)=>void} editContent handler for changing content
      * @param {(Event, string, string)=>void} editMode handler for switching to edit mode
      * @param {(Event, string, string)=>void} clickSaveCancel handler for clicking Save or Cancel
-     * @param {string} selectedColor style to set the color of a selected box
-     * @param {string} themeColor style to set the theme color
+     * @param {Object} config Object with themecolor, gridTemplates, styles, columns
      */
     const styles = {
         ClaimDiv: {
@@ -22,7 +21,7 @@ const TableArea = props => {
         },
         TableRow: {
             display: 'grid',
-            gridTemplateColumns: props.displayMode === 'claims' ? '7fr 2fr 2fr' : props.enabledColumns.gridTemplateColumns,
+            gridTemplateColumns: props.displayMode === 'claims' ? '7fr 2fr 2fr' : props.config.gridTemplateColumns,
             padding: '0.4em 0.5em 0.4em 0.5em'
         },
         HideTitle: {
@@ -36,7 +35,7 @@ const TableArea = props => {
             color: 'rgba(0, 0, 0, 1)'
         },
         Summary: {
-            backgroundColor: props.themeColor,
+            backgroundColor: props.config.themeColor,
             color: 'white',
             padding: '2px'
         }
@@ -82,8 +81,8 @@ const TableArea = props => {
                         editContent={(e) => props.editContent(e, claimID, field)}
                         clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
                         activateEditMode={(e) => props.editMode(e, claimID, field)}
-                        themeColor={props.themeColor}
-                        selectedColor={props.selectedColor}
+                        themeColor={props.config.themeColor}
+                        selectedColor={props.config.selectedColor}
                     />)
                 )}
             </div>)
@@ -94,7 +93,7 @@ const TableArea = props => {
         // make use of Court and Agreed.
         tableLayout = [...props.resultList].map(([ID, item]) => (
             <div key={ID} style={styles.TableRow}>
-                {props.enabledColumns.columns.map(column => (
+                {props.config.columns.map(column => (
                     <div>{item[column.field]}</div>
                 ))}
             </div>
