@@ -1,5 +1,3 @@
-// takes (field, searchstring, callback) as arguments and
-// returns a callback (error, where string, array of paramaters)
 const { patentDB } = require('../app_config.json'); // stores the whereObj and regEx
 
 /** expands a query item into a three element array
@@ -42,14 +40,14 @@ const parseQuery = query => {
     return result;
   }, []);
   // now flatten it down and map it to a valid SQL where and parameter list
-  return flatten(expandQuery.map(element => {
+  return flatten(expandQuery.map(([fieldName, paramList, operatorList]) => {
     // each element is [fieldname, [param list], [operator list]]
     // lookup the prefix and suffix associated with fieldName
-    const parser = patentDB.fieldMap.filter(val => val.name === element[0])[0];
+    const [parser] = patentDB.fieldMap.filter(val => val.name === fieldName);
     // now parse the param list to create a where array and a param array
     // for now, put in a placeholder ? to hold where the parameter index will go
     // Make sure compound components are surrounded in brackets
-    return element[1].map((item, index) => {
+    return paramList.map((item, index) => {
       const negate = item.includes('!');
       const parsedItem = negate ? item.replace('!', '') : item;
       // note: don't need an opening bracket if there is only a single parameter
@@ -58,7 +56,7 @@ const parseQuery = query => {
       // element, put in an 'AND'. If it turns out this is the last item we will
       // remove the extra 'AND' later
       return {
-        where: `${index === 0 && element[1].length > 1 ? '(' : ''}${parser.prefix}${parser.table}.${element[0]}${negate ? parser.notSuffix : parser.suffix}@? ${element[2][index] || ') AND'}`,
+        where: `${index === 0 && paramList.length > 1 ? '(' : ''}${parser.prefix}${parser.table}.${fieldName}${negate ? parser.notSuffix : parser.suffix}@? ${operatorList[index] || ') AND'}`,
         param: `${parser.suffix === ' LIKE ' ? `%${parsedItem}%` : parsedItem}`,
       }
     });
@@ -69,6 +67,7 @@ const parseQuery = query => {
     result[1].push(current.param);
     return result;
   }, [[], []]).reduce((returnValue, item, index) => {
+    // so now we have a 2 element array. item[0] is the where, item[1] is param List
     // and finally compose the return value with {where, param}
     if (index === 1) {
       returnValue.param = item
