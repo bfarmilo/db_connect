@@ -17,10 +17,10 @@
                 "--colors",
                 "--reporter",
                 "mochawesome",
-                "${workspaceFolder}//test//?(7_*|11_*)"
+                "${workspaceFolder}//test//?(2_*)"
             ],
             "preLaunchTask": "npm: transpile",
-            "postDebugTask": "npm: openTestReport",
+            // "postDebugTask": "npm: openTestReport",
             "internalConsoleOptions": "openOnSessionStart"
         },
     {
