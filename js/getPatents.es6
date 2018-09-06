@@ -11,7 +11,7 @@ import { flatten } from './app_sqlParse';
 
 const downloadPatents = async (recordList, dropBoxPath, update) => {
 
-  // convert the incoming record file into an array of {downloadLink, PatentPath}
+  // convert the incoming record file into an array of {patentNumber, downloadLink, PatentPath}
   const patentList = recordList.map(x => ({ patentNumber: x.PatentNumber, downloadLink: x.downloadLink, PatentPath: x.PatentPath }));
 
   return Promise.all(patentList.map(async patent => {
@@ -32,6 +32,8 @@ const downloadPatents = async (recordList, dropBoxPath, update) => {
  * 
  * @param {Object} params connection Parameters 
  * @param {*} patentList Array of patentRecord objects
+ * @param {Function} update Callback to pass update information back to the front-end
+ * @param {Object} claimFilter Used to filter out certain claims, eg claim 1 only or independent only
  */
 const createPatentQuery = (params, patentList, update, claimFilter = false) => new Promise(async (resolve, reject) => {
   
