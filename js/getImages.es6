@@ -54,12 +54,17 @@ const getAllImages = async patentNumber => {
         return [pageNum, { url, pageData }];
     }
 
-    // the main function. Create an array of page numbers eg. [2, 3, 4, 5] corresponding to the image pages
-    const imageStart = await findEndPage(2);
-    const imageEnd = await findEndPage(3);
-    const pageNumbers = (new Array(imageEnd - imageStart)).fill(0).map((item, idx) => idx + imageStart);
-    // then run getImage over that array
-    return [...await Promise.all(pageNumbers.map(getImage))];
+    try {
+        // the main function. Create an array of page numbers eg. [2, 3, 4, 5] corresponding to the image pages
+        const imageStart = await findEndPage(2);
+        const imageEnd = await findEndPage(3);
+        if (!imageStart && !imageEnd) return new Error('document not found');
+        const pageNumbers = (new Array(imageEnd - imageStart)).fill(0).map((item, idx) => idx + imageStart);
+        // then run getImage over that array
+        return [...await Promise.all(pageNumbers.map(getImage))];
+    } catch (err) {
+        return err;
+    }
 }
 
 module.exports = {
