@@ -17,7 +17,7 @@
                 "--colors",
                 "--reporter",
                 "mochawesome",
-                "${workspaceFolder}//test//?(2_*)"
+                "${workspaceFolder}//test//?(11_*)"
             ],
             "preLaunchTask": "npm: transpile",
             // "postDebugTask": "npm: openTestReport",
