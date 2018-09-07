@@ -12,7 +12,7 @@ let patentImages = new Map();
 // A simple test to verify a visible window is opened with a title
 chai.use(chaiAsPromised);
 
-describe('it can get a pdf image data from the USPTO', () => {
+describe('it can get a pdf image data from the USPTO', function () {
     /*     it('finds section 3', async () => {
             sectionTwoEnd = await findEndPage(docID, 3) - 1;
             console.log(sectionTwoEnd);
@@ -31,15 +31,15 @@ describe('it can get a pdf image data from the USPTO', () => {
             console.log(...testPages.keys());
             return expect(testPages.size).to.equal(6);
         }); */
-    it('can put it all together and do it automatically for a patent', async () => {
+    it('can put it all together and do it automatically for a patent', async function () {
         const imageMap = new Map(await getAllImages(patentNo));
         expect(imageMap.size).to.equal(22);
-         expect(imageMap.has(52)).to.be.true;
+        expect(imageMap.has(52)).to.be.true;
         expect(imageMap.has(53)).to.be.false;
         await fse.writeFile(`./test/page50`,imageMap.get(50).pageData);
         return console.log(imageMap.get(50));
     });
-    it('can put it all together and do it automatically for an application', async () => {
+    it('can put it all together and do it automatically for an application', async function () {
         const imageMap = new Map(await getAllImages(applicationNo));
         expect(imageMap.size).to.equal(13);
         expect(imageMap.has(14)).to.be.true;
@@ -49,13 +49,13 @@ describe('it can get a pdf image data from the USPTO', () => {
     });
 });
 
-describe('it can write image data to the DB', () => {
+describe('it can write image data to the DB', function () {
 
 });
-describe('it can serve image data to the front-end', () => {
+describe('it can serve image data to the front-end', function () {
 
 });
-describe('it can read a PDF buffer and render on-screen', () => {
+describe('it can read a PDF buffer and render on-screen', function () {
 /*     const wrapper = shallow(<PatentImage imageData={patentImages.get(11)} showPage={11} rotation={0}/>);
     it('renders a canvas', () => {
         expect(wrapper.find('canvas').text()).to.equal('')
