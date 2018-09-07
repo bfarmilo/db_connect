@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import { EditCell } from './editCell';
+import { Icon } from './icons';
 
 const TableArea = props => {
     /** Takes props
@@ -38,6 +39,16 @@ const TableArea = props => {
             backgroundColor: props.config.themeColor,
             color: 'white',
             padding: '2px'
+        },
+        FileName: {
+            fontSize: 'small',
+            fontColor: props.config.themeColor,
+            fontStyle: 'italic',
+            cursor: 'pointer',
+            display: 'flex'
+        },
+        Icon: {
+            fill: props.config.themeColor
         }
     }
 
@@ -93,9 +104,18 @@ const TableArea = props => {
         // make use of Court and Agreed.
         tableLayout = [...props.resultList].map(([ID, item]) => (
             <div key={ID} style={styles.TableRow}>
-                {props.config.columns.map(column => (
-                    <div>{item[column.field]}</div>
-                ))}
+                {props.config.columns.map(column => {
+                    if (column.field === 'FileName') {
+                        return <div
+                            style={styles.FileName}
+                            onClick={e => props.openFile(e, item.DocumentPath, item.MarkmanPage)}>
+                            <Icon name='jumpFile' width='1em' height='2em' style={styles.Icon} />
+                            <div style={{paddingLeft:'7px'}}>{item[column.field]}</div>
+                        </div>
+                    }
+                    return <div>{item[column.field]}</div>
+                }
+                )}
             </div>
         )
         )
