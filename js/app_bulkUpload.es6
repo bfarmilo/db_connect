@@ -155,19 +155,26 @@ const updatePatents = (connectParams, field, value, PatentUri) => new Promise(as
  * @param {Object} record -> JSON formatted object {column: value} to be written 
  * @param {String} idField -> The name of the ID field associated with the table, eg. ClaimID
  */
-const insertAndGetID = (connectParams, table, record, idField) => new Promise(async (resolve, reject) => {
+const insertAndGetID = (connectParams, table, record, idField, readOnly = false) => new Promise(async (resolve, reject) => {
   try {
     const { keyList, paramList } = getParams(record);
     const checkSQL = `SELECT ${idField} FROM dbo.${table} WHERE ${keyList.map(key => `${table}.${key} LIKE @${key}`).join(' AND ')}`;
-    const oldID = await queryNoPromises(connectParams, checkSQL, paramList);
-    //There's already a record exactly matching this query, so return the oldID
-    if (oldID && oldID[0] && oldID[0][0]) return resolve({ [idField]: oldID[0][0], type: 'old' });
-    // Otherwise insert and return the newest
-    const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
-    await queryNoPromises(connectParams, insertSQL, paramList);
-    const newID = await queryNoPromises(connectParams, checkSQL, paramList);
-    if (!(newID && newID[0] && newID[0][0])) return reject('can\'t find the record we just added!');
-    return resolve({ [idField]: newID[0][0], type: 'new' });
+    let result = await queryNoPromises(connectParams, checkSQL, paramList);
+    let recordID = result && result[0] && result[0][0];
+    let type = 'existing';
+    if (!recordID && !readOnly) {
+      //There's no existing record, and we're not in readOnly mode
+      //So insert and return the newest
+      const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+      await queryNoPromises(connectParams, insertSQL, paramList);
+      result = await queryNoPromises(connectParams, checkSQL, paramList);
+      recordID = result && result[0] && result[0][0];
+      type = 'new'
+      // in write mode, not finding the record after writing it should throw an error
+      if (!recordID) return reject('no matching record found');
+    }
+    // in readOnly mode, not finding the record should resolve with a not found
+    return resolve(!recordID ? 'not found' : { [idField]: recordID, type });
   } catch (err) {
     return reject(err);
   }
@@ -199,18 +206,6 @@ const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reje
     .catch(err => reject(err));
 });
 
-const findDocument = (connectParams, documentPath, fileName) => new Promise((resolve, reject) => {
-  return queryNoPromises(
-    connectParams,
-    `SELECT DocumentID from Document documents WHERE documents.DocumentPath=@documentPath AND documents.fileName=@fileName`,
-    [{ name: 'documentPath', type: mapType(documentPath), val: documentPath }, { name: 'fileName', type: mapType(fileName), val: fileName }]
-  )
-    .then(result => {
-      const returnVal = result && result[0] && result[0][0] || 'not found';
-      return resolve(returnVal)
-    })
-    .catch(err => reject(err))
-});
 
 
 
@@ -219,7 +214,6 @@ module.exports = {
   insertClaims,
   updatePatents,
   getMarkmanDropdowns,
-  findDocument,
   insertAndGetID,
   getClaimDropdown
 };

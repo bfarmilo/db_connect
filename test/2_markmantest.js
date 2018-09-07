@@ -35,26 +35,39 @@ describe('Markman Interface', function () {
     });
   });
   describe('get document ID', function () {
-    it('finds a documentID given a path and filename', async function () {
-      documentID = await findDocument(connectParams, 'PMC Public\\Licensing\\Clients\\Apple Inc\\litigation\\Claim Construction Court Filings\\', 'PMC v. Apple and Vizio Phase 2 Claim Construction Order.pdf')
-      expect(documentID).to.be.a('number');
+    const READONLY = true;
+    it('finds a documentID given a path', async function () {
+      documentID = await insertAndGetID(
+        connectParams,
+        'Document',
+        { documentPath: 'PMC Public\\Licensing\\Clients\\Zynga\\Trial\\PMC - Claim Construction Memorandum and Order.pdf' },
+        'DocumentID',
+        READONLY
+      );
+      expect(documentID.DocumentID).to.equal(25380);
     });
-    it('fails gracefully when file isn\'t found', async function () {
-      documentID = await findDocument(connectParams, 'PMC Public\\Licensing\\Clients\\Apple Inc\\', 'PMC v. Apple and Vizio Phase 2 Claim Construction Order.pdf')
+    it('reports \'not found\' when file isn\'t found', async function () {
+      documentID = await insertAndGetID(
+        connectParams,
+        'Document',
+        { documentPath: 'ZZZPMC Public\\Licensing\\Clients\\Zynga\\Trial\\PMC - Claim Construction Memorandum and Order.pdf' },
+        'DocumentID',
+        READONLY
+      );
       expect(documentID).to.be.a('string');
       expect(documentID).to.equal('not found');
-    })
+    });
   });
-  describe('insert and getID', function() {
-    it('inserts a new entry into a table and returns the ID', async function() {
-      const newID = await insertAndGetID(connectParams, 'Sector', {SectorName: 'HDTV'}, 'SectorID');
+  describe('insert and getID', function () {
+    it('inserts a new entry into a table and returns the ID', async function () {
+      const newID = await insertAndGetID(connectParams, 'Sector', { SectorName: 'HDTV' }, 'SectorID');
       expect(newID.SectorID).to.be.a('number');
-      const newNewID = await insertAndGetID(connectParams, 'Sector', {SectorName: 'HDTV'}, 'SectorID');
-      expect(newNewID.type).to.equal('old');
+      const newNewID = await insertAndGetID(connectParams, 'Sector', { SectorName: 'HDTV' }, 'SectorID');
+      expect(newNewID.type).to.equal('existing');
     })
   });
   describe('getClaimDropdown', function () {
-    it('retrieves a claim dropdown given a valid patent number', async function() {
+    it('retrieves a claim dropdown given a valid patent number', async function () {
       const dropDown = await getClaimDropdown(connectParams, 58);
       expect(dropDown.claims.size).to.be.greaterThan(1);
     })
