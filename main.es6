@@ -65,9 +65,10 @@ const connectToDB = async () => {
  * @param {String} fullPath
  * @returns {void}
  */
-const openPDF = (fullPath) => {
+const openPDF = (fullPath, pageNo) => {
   console.log(`trying shell: ${dropboxPath}${fullPath}`);
-  shell.openItem(dropboxPath + fullPath);
+  //TODO: replace with custom viewer, enable implementing page jumps
+  shell.openItem(`${dropboxPath}${fullPath}`);
 }
 
 /** createWindow launches the main window
@@ -465,9 +466,9 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 })
 
 // listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal) => {
+ipcMain.on('open_patent', (opEvent, linkVal, pageNo=1) => {
   console.log(`received link click with path ${linkVal}`);
-  openPDF(linkVal);
+  openPDF(linkVal, pageNo);
 });
 
 // Listener for manual closing of the patent window via X button

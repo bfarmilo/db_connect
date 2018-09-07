@@ -46,8 +46,8 @@ const config =
             { display: 'Claim Term', field: 'ClaimTerm' },
             { display: 'Construction', field: 'Construction' },
             { display: 'Pg.', field: 'MarkmanPage' },
-            { display: 'Path to Ruling', field: 'DocumentPath' },
-            { display: 'Filename of ruling', field: 'FileName' },
+            { display: 'Ruling', field: 'FileName' },
+            { display: 'Court', field: 'Court'},
             { display: 'Case', field: 'ClientName' }
         ]
     }
@@ -348,6 +348,10 @@ class ClaimTable extends Component {
         this.runQuery(null, NEW);
     }
 
+    /** Handle call to open a PDF */
+    openFile = (e, filePath, pageNo) => {
+        ipcRenderer.send('open_patent', filePath, pageNo);
+    }
     /**
      * Display the inventor and patent title modal on hover
      * @param {Event} e 
@@ -417,6 +421,7 @@ class ClaimTable extends Component {
                                 editMode={this.editMode}
                                 clickSaveCancel={this.clickSaveCancel}
                                 showInventor={this.showInventor}
+                                openFile={this.openFile}
                             />
                         </Scrollbars>
                     )}
