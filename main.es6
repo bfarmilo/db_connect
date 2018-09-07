@@ -367,7 +367,7 @@ ipcMain.on('markman_entry', e => {
   ]
   a) Select path to file, and a court *Go* (b)
   b) *Add Claim Term* - Select from dropdown (c) or *New* (mt: INSERT & GET_ID)
-  c) *Add Patent & Claim* - Enter Patent Number, default: last selected, and Claim Number, default: last selected 
+  c) *Add Patent & Claim* - Enter Patent Number, default: last selected, and Claim Number (multiselect or comma separated list ?), default: last selected 
   d) *Add Client* - Select from dropdown, default: Last selected
   e) *Add Construction* - Enter Construction, MarkmanPage default:last selected, Agreed: false (mc: INSERT & GET_ID, mtc:INSERT)
   g) All steps also have 'EDIT' which UPDATES mt (term change) | mc (any other change, including court)
