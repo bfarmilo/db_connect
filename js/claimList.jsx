@@ -3,6 +3,7 @@ import { h, render, Component } from 'preact';
 import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
+import { Throbber } from './jsx/throbber';
 
 // import 'preact/devtools';
 
@@ -34,7 +35,7 @@ const config =
         ]
     },
     markman: {
-        gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 2fr 1fr',
+        gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 1fr 1fr',
         themeColor: 'rgba(12, 84, 0, 1)',
         selectedColor: 'rgba(183, 130, 51, 0.8)',
         borderColor: 'rgba(41, 94, 141, 0.8)',
@@ -47,7 +48,7 @@ const config =
             { display: 'Construction', field: 'Construction' },
             { display: 'Pg.', field: 'MarkmanPage' },
             { display: 'Ruling', field: 'FileName' },
-            { display: 'Court', field: 'Court'},
+            { display: 'Court', field: 'Court' },
             { display: 'Case', field: 'ClientName' }
         ]
     }
@@ -107,9 +108,9 @@ class ClaimTable extends Component {
                 data.map(item => {
                     const key = this.state.displayMode === 'claims' ?
                         `${item.ClaimID}` :
-                        `${Object.keys(item).filter(hash => /ID$/i.exec(hash)).map(hash => item[hash]).join('_')}`
+                        `${Object.keys(item).filter(ID => /ID$/i.exec(ID)).map(ID => item[ID]).join('_')}`;
                     // debugging - why duplicates?
-                    if (resultList.has(key)) console.log('collision:', resultList.get(key), item);
+                    // if (resultList.has(key)) console.log('collision:', resultList.get(key), item);
                     resultList.set(key, item);
                 });
                 this.setState({
@@ -153,7 +154,7 @@ class ClaimTable extends Component {
     }
 
     //Helper functions that don't set state
-    
+
     clearQuery = () => {
         // set up a blank query with the proper properties for the query mode
         const queryFieldList = config[this.state.displayMode].enabledButtons.concat(config[this.state.displayMode].columns);
@@ -235,8 +236,8 @@ class ClaimTable extends Component {
         console.log('modifying sort order');
         const field = event.currentTarget.getAttribute('data-field');
         const sortOrder = new Map(this.state.sortOrder);
-        // since maps order by key entry, remove the 'claimNumber' key then add at the end
-        sortOrder.delete('ClaimNumber');
+        // since maps order by key entry, for claims mode remove the 'claimNumber' key then add at the end
+        if (this.state.displayMode === 'claims') sortOrder.delete('ClaimNumber');
         // Logic is this: none -> Ascending -> Descending -> none
         if (!sortOrder.has(field)) {
             // none -> Ascending
@@ -252,7 +253,8 @@ class ClaimTable extends Component {
                 sortOrder.delete(field);
             }
         }
-        sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
+        // for claims mode, add claim back in and set it ascending
+        if (this.state.displayMode === 'claims') sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
         this.setState({ sortOrder }, () => this.runQuery(null, NEW));
 
     }
@@ -388,43 +390,37 @@ class ClaimTable extends Component {
                     getNewPatents={this.getNewPatents}
                     changeMode={this.changeMode}
                 />
-                {this.state.working ? (
-                    <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', height: this.state.windowHeight }}>
-                        <svg version='1.1' x='0px' y='0px' width='40px' height='50px' viewBox='0 0 24 30'>
-                            {[0, 1, 2].map(x => (
-                                <rect key={x} x={x * 7} y='0' width='4' height='20' fill={config[this.state.displayMode].themeColor}>
-                                    <animate attributeName='opacity' attributeType='XML'
-                                        values='1; .2; 1'
-                                        begin={`${x * 0.2}s`} dur='0.6s' repeatCount='indefinite' />
-                                </rect>
-                            ))}
-                        </svg>
-                    </div>
-                ) : (
-                        <Scrollbars
-                            autoHide
-                            autoHeight
-                            autoHeightMax={this.state.windowHeight}
-                            style={{ width: '100%' }}
-                            onScroll={this.handleScroll}
-                            ref={s => this.scrollbar = s}
-                        >
-                            <TableArea
-                                displayMode={this.state.displayMode}
-                                config={config[this.state.displayMode]}
-                                resultList={this.state.resultList}
-                                activeRows={this.state.activeRows}
-                                expandAll={this.state.expandAll}
-                                modalContent={this.state.modalContent}
-                                getDetail={this.getPatentDetail}
-                                editContent={this.editContent}
-                                editMode={this.editMode}
-                                clickSaveCancel={this.clickSaveCancel}
-                                showInventor={this.showInventor}
-                                openFile={this.openFile}
-                            />
-                        </Scrollbars>
-                    )}
+                {this.state.working && this.state.resultList.size === 0 ? <Throbber
+                    visible={true}
+                    windowHeight={this.state.windowHeight}
+                    themeColor={config[this.state.displayMode].themeColor}
+                /> :
+                    <Scrollbars
+                        autoHide
+                        autoHeight
+                        autoHeightMax={this.state.windowHeight}
+                        style={{ width: '100%' }}
+                        onScroll={this.handleScroll}
+                        ref={s => this.scrollbar = s}
+                    >
+                        <TableArea
+                            displayMode={this.state.displayMode}
+                            config={config[this.state.displayMode]}
+                            resultList={this.state.resultList}
+                            activeRows={this.state.activeRows}
+                            expandAll={this.state.expandAll}
+                            modalContent={this.state.modalContent}
+                            getDetail={this.getPatentDetail}
+                            editContent={this.editContent}
+                            editMode={this.editMode}
+                            clickSaveCancel={this.clickSaveCancel}
+                            showInventor={this.showInventor}
+                            openFile={this.openFile}
+                            windowHeight={this.state.windowHeight}
+                            working={this.state.working}
+                        />
+                    </Scrollbars>
+                }
             </div>
         );
     }

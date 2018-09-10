@@ -1,6 +1,7 @@
 import { h } from 'preact';
 import { EditCell } from './editCell';
 import { Icon } from './icons';
+import { Throbber } from './throbber';
 
 const TableArea = props => {
     /** Takes props
@@ -100,7 +101,6 @@ const TableArea = props => {
         )
     } else {
         //markman
-        // TODO: 1. Handle file links properly (in main process?)
         // make use of Court and Agreed.
         tableLayout = [...props.resultList].map(([ID, item]) => (
             <div key={ID} style={styles.TableRow}>
@@ -110,7 +110,7 @@ const TableArea = props => {
                             style={styles.FileName}
                             onClick={e => props.openFile(e, item.DocumentPath, item.MarkmanPage)}>
                             <Icon name='jumpFile' width='1em' height='2em' style={styles.Icon} />
-                            <div style={{paddingLeft:'7px'}}>{item[column.field]}</div>
+                            <div style={{ paddingLeft: '7px' }}>{item[column.field]}</div>
                         </div>
                     }
                     return <div>{item[column.field]}</div>
@@ -123,6 +123,7 @@ const TableArea = props => {
 
     return (
         <div class='TableArea'>
+            <Throbber windowHeight={props.windowHeight} themeColor={props.config.themeColor} visible={props.working} />
             {tableLayout}
         </div>
     );
