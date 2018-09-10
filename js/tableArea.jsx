@@ -69,7 +69,9 @@ const TableArea = props => {
                             style={styles.PatentNumber}
                             onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
                         >
-                            {item.PatentNumber}
+                            {item.PatentNumber < 99000000 ?
+                                item.PatentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
+                                item.PatentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
                         </div>
                         <div>
                             <details open={props.expandAll}>
@@ -86,16 +88,22 @@ const TableArea = props => {
                         >{!!props.modalContent.inventor ? `${props.modalContent.inventor}: ` : ''}{props.modalContent.title}
                         </div>
                     )}
-                {["PotentialApplication", "WatchItems"].map(field => (
-                    <EditCell
-                        editMode={props.activeRows.has(`${claimID}-${field}`)}
-                        value={props.activeRows.get(`${claimID}-${field}`) || item[field]}
-                        editContent={(e) => props.editContent(e, claimID, field)}
-                        clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
-                        activateEditMode={(e) => props.editMode(e, claimID, field)}
-                        themeColor={props.config.themeColor}
-                        selectedColor={props.config.selectedColor}
-                    />)
+                {["PotentialApplication", "WatchItems"].map(field => {
+                    const { record, height } = props.activeRows.has(`${claimID}-${field}`)
+                        ? props.activeRows.get(`${claimID}-${field}`)
+                        : { record: item[field], height: 100 };
+                    return (
+                        <EditCell
+                            editMode={props.activeRows.has(`${claimID}-${field}`)}
+                            value={record}
+                            editContent={(e) => props.editContent(e, claimID, field)}
+                            clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
+                            activateEditMode={(e) => props.editMode(e, claimID, field)}
+                            themeColor={props.config.themeColor}
+                            selectedColor={props.config.selectedColor}
+                            boxHeight={height}
+                        />)
+                }
                 )}
             </div>)
         )
@@ -112,6 +120,18 @@ const TableArea = props => {
                             <Icon name='jumpFile' width='1em' height='2em' style={styles.Icon} />
                             <div style={{ paddingLeft: '7px' }}>{item[column.field]}</div>
                         </div>
+                    }
+                    if (column.field === 'PatentNumber') {
+                        return (
+                            <div
+                                style={styles.PatentNumber}
+                                onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
+                            >
+                                {item.PatentNumber < 99000000 ?
+                                    item.PatentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
+                                    item.PatentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
+                            </div>
+                        )
                     }
                     return <div>{item[column.field]}</div>
                 }

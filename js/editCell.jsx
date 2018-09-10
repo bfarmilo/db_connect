@@ -10,8 +10,13 @@ import { Icon } from './icons.js';
  * @param {string} props.themeColor style to set for buttons and other highlighting
  * @param {string} props.selectedColor style to set the color of a selected box
  * @param {string} props.value content of the edit cell
+ * @param {number} props.boxHeight height of the edit cell
+ * @param {boolean} props.editMode true when editing
  */
 const EditCell = props => {
+
+    const editModeRows = Math.max(10, Math.round(props.boxHeight / 15));
+
     const styles = {
         EditBoxContainer: {
             display: 'flex',
@@ -28,8 +33,7 @@ const EditCell = props => {
         EditArea: {
             backgroundColor: props.selectedColor,
             border: 'none',
-            fontFamily: 'Arial',
-            height: 'auto'
+            fontFamily: 'Arial'
         },
         Hidden: {
             display: 'none',
@@ -53,7 +57,7 @@ const EditCell = props => {
                 contentEditable={true}
                 onChange={props.editContent}
                 value={props.value}
-                rows={10}
+                rows={editModeRows}
             />
             <div>
                 <SaveCancel

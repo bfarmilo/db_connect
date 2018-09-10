@@ -296,8 +296,10 @@ class ClaimTable extends Component {
     editMode(event, claimID, field) {
         console.log('detected edit event in %s for claim ID %s', field, claimID);
         //load current record into active array, if needed (don't duplicate)
+        console.log(event.target.localName === 'span' ? event.target.clientHeight : event.target.parentElement.clientHeight);
+        const height = event.target.localName === 'span' ? event.target.clientHeight : event.target.parentElement.clientHeight;
         const activeRows = new Map(this.state.activeRows);
-        activeRows.set(`${claimID}-${field}`, this.state.resultList.get(claimID)[field]);
+        activeRows.set(`${claimID}-${field}`, {record: this.state.resultList.get(claimID)[field], height});
         //update the state, ready to listen for keypresses
         this.setState({ activeRows });
     }
@@ -307,11 +309,12 @@ class ClaimTable extends Component {
      * @param {*} event 
      */
     editContent(event, claimID, field) {
-        const newValue = event.currentTarget.value;
+        const record = event.currentTarget.value;
         // console.log('got content Change event for claim ID %s, new value %s', claimID, newValue);
         //Set the value for the activeRow corresponding to this field so it updates !
         const activeRows = new Map(this.state.activeRows);
-        activeRows.set(`${claimID}-${field}`, newValue);
+        const height = event.currentTarget.clientHeight;
+        activeRows.set(`${claimID}-${field}`, {record, height});
         this.setState({ activeRows })
     }
 
@@ -322,17 +325,18 @@ class ClaimTable extends Component {
     clickSaveCancel(event, claimID, field, action) {
         console.log('detected %s event in %s for claim ID %s', action, field, claimID);
         const activeRows = new Map(this.state.activeRows);
+        console.log(activeRows);
         if (action === 'save') {
             // send off an updateQuery to the database
-            console.log(this.state.resultList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`));
+            console.log(this.state.resultList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`).record);
             ipcRenderer.send(
                 'json_update',
                 { field, claimID, value: this.state.resultList.get(claimID)[field] },
-                { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`) }
+                { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`).record }
             )
             // splice in the record and update the main table
             const resultList = new Map(this.state.resultList);
-            resultList.set(claimID, { ...resultList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`) })
+            resultList.set(claimID, { ...resultList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`).record })
             this.setState({ resultList })
         }
         // clear out and update activeRows
@@ -408,6 +412,7 @@ class ClaimTable extends Component {
                             config={config[this.state.displayMode]}
                             resultList={this.state.resultList}
                             activeRows={this.state.activeRows}
+                            activeRowHeight={this.state.activeRowHeight}
                             expandAll={this.state.expandAll}
                             modalContent={this.state.modalContent}
                             getDetail={this.getPatentDetail}
