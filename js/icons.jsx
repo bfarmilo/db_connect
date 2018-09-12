@@ -1,6 +1,9 @@
 import { h } from 'preact';
 
 const Icon = ({ name, width, height, style, handleClick }) => {
+
+    const iconStyle = {display: 'flex', ...style}; //this will allow 'style' to overwrite display if needed
+
     const iconMap = new Map([
 ['circleX', {svg:<path d="M4 0c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm-1.5 1.781l1.5 1.5 1.5-1.5.719.719-1.5 1.5 1.5 1.5-.719.719-1.5-1.5-1.5 1.5-.719-.719 1.5-1.5-1.5-1.5.719-.719z" />}],
         ['circleCheck', {svg:<path d="M4 0c-2.21 0-4 1.79-4 4s1.79 4 4 4 4-1.79 4-4-1.79-4-4-4zm2 1.781l.719.719-3.219 3.219-1.719-1.719.719-.719 1 1 2.5-2.5z" />}],
@@ -26,8 +29,13 @@ const Icon = ({ name, width, height, style, handleClick }) => {
         </g>}]
     ]);
     return (
-        <div onClick={handleClick} style={style.display === 'flex' ? {display:'flex'} : ''}>
-            <svg width={width} height={height} viewBox={iconMap.get(name).viewBox || `0 0 8 8`} xmlns="http://www.w3.org/2000/svg" style={style}>
+        <div onClick={handleClick} style={iconStyle}>
+            <svg 
+            width={width} 
+            height={height} 
+            viewBox={iconMap.get(name).viewBox || `0 0 8 8`} 
+            xmlns="http://www.w3.org/2000/svg" 
+            style={iconStyle}>
                 {iconMap.get(name).svg}
             </svg>
         </div>

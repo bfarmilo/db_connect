@@ -3,6 +3,30 @@ import { EditCell } from './editCell';
 import { Icon } from './icons';
 import { Throbber } from './throbber';
 
+const patentNumberCell = (patentNumber, style) => {
+
+    const styles = {
+        Icon: style.Icon,
+        patentNumber: {
+            cursor: 'pointer',
+            display: 'flex'
+        }
+    };
+
+    return (<div
+        style={styles.patentNumber}
+        onClick={(e) => props.getDetail(e, `${patentNumber}`)}
+    >
+        <div style={{ paddingRight: '7px' }}>
+            {patentNumber < 99000000 ?
+                patentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
+                patentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
+        </div>
+        <Icon name='jumpFile' width='1em' height='1em' style={styles.Icon} />
+    </div>)
+}
+    ;
+
 const TableArea = props => {
     /** Takes props
      * @param {Map} resultList a claimList map, one entry per claim, key=ClaimID
@@ -17,9 +41,6 @@ const TableArea = props => {
     const styles = {
         ClaimDiv: {
             padding: '0 5px 0 5px'
-        },
-        PatentNumber: {
-            cursor: 'pointer'
         },
         TableRow: {
             display: 'grid',
@@ -54,7 +75,9 @@ const TableArea = props => {
     }
 
     let tableLayout;
-    console.log(props.resultList);
+
+
+
     if (props.displayMode === 'claims') {
         // claims
         tableLayout = [...props.resultList].map(([claimID, item]) => (
@@ -65,14 +88,7 @@ const TableArea = props => {
                             style={{ cursor: 'pointer' }}
                             onMouseOver={e => props.showInventor(e, `${claimID}`)}
                         >{item.PMCRef}</div>
-                        <div
-                            style={styles.PatentNumber}
-                            onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
-                        >
-                            {item.PatentNumber < 99000000 ?
-                                item.PatentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
-                                item.PatentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
-                        </div>
+                        {patentNumberCell(item.PatentNumber, styles)}
                         <div>
                             <details open={props.expandAll}>
                                 <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
@@ -89,6 +105,7 @@ const TableArea = props => {
                         </div>
                     )}
                 {["PotentialApplication", "WatchItems"].map(field => {
+                    // lookup the record contents and row height from activeRows, or set defaults
                     const { record, height } = props.activeRows.has(`${claimID}-${field}`)
                         ? props.activeRows.get(`${claimID}-${field}`)
                         : { record: item[field], height: 100 };
@@ -122,16 +139,7 @@ const TableArea = props => {
                         </div>
                     }
                     if (column.field === 'PatentNumber') {
-                        return (
-                            <div
-                                style={styles.PatentNumber}
-                                onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
-                            >
-                                {item.PatentNumber < 99000000 ?
-                                    item.PatentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
-                                    item.PatentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
-                            </div>
-                        )
+                        return patentNumberCell(item[column.field], styles)
                     }
                     return <div>{item[column.field]}</div>
                 }
