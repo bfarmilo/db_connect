@@ -38,6 +38,9 @@ const EditCell = props => {
         Hidden: {
             display: 'none',
             height: 'auto'
+        },
+        li: {
+            listStyleType: 'disc'
         }
     }
     const markdownOptions = {
