@@ -1,0 +1,96 @@
+body {
+  font-family: "Arial";
+}
+
+button {
+  border-radius: 2px;
+  background-color:rgba(51, 122, 183, 1);
+  color: whitesmoke;
+  font-weight: bold;
+  border: none;
+  outline: none;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+.PatentDetail {
+  display: grid;
+  grid-template-columns: 1.5fr 5fr 2fr auto;
+  grid-template-rows: 1fr 1fr auto 1.5fr;
+  padding: 10px;
+  margin: 10px;
+  background: white;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+  grid-row-gap: 0.25em;
+  border-radius: 5px;
+}
+
+.PatentNumber {
+  font-weight: bold;
+  padding-left: 4px;
+}
+
+.CloseWindow {
+  text-align: right;
+  display:flex;
+  justify-content:flex-end;
+}
+
+.Title {
+  font-weight: bold;
+  grid-row-start: 2;
+  grid-column: 1 / 5;
+}
+
+.Summary {
+  background-color: rgba(200, 200, 200, 0.2);
+  border-radius: 5px;
+  padding: 5px;
+  grid-column: 1 / 5;
+  grid-row-start: 3;
+}
+
+.ClaimsCount {
+  grid-row-start: 4;
+  grid-column: 1 / 3;
+}
+
+.OpenPDF {
+  grid-row-start: 4;
+  grid-column: 4 / 5;
+  margin-left: 0.25em;
+  display:flex;
+}
+
+.FullText {
+  padding: 10px;
+  margin: 10px;
+  background: white;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+  height: 600px;
+  overflow-y: auto;
+  scroll-behavior: smooth;
+}
+
+.PatentParagraph {
+  margin: 3px;
+  padding: 3px;
+}
+
+.Highlight {
+  margin: 3px;
+  padding: 3px;
+  background-color: rgba(251, 247, 198, 0.8);
+}
+
+.Search {
+  display: flex;
+}
+
+.HighlightWord {
+  background-color: green;
+}
+
+.PatentHeader {
+  background-color:rgba(51, 122, 183, 1);
+  color: white;
+}

@@ -1,0 +1,86 @@
+body {
+  font-family: "Arial"
+}
+
+p {
+  margin: 0px
+}
+
+ul {
+  padding-left: 1em
+}
+
+h1 {
+  background-color: rgba(51, 122, 183, 0.5);
+  color: white;
+  font-size: 1em;
+  margin: 0 5px 0 0;
+  padding: 0 0 0 3px;
+}
+
+h2 {
+  background-color: rgba(51, 121, 183, 0.4);
+  color: white;
+  font-size: 0.9em;
+  margin: 0 5px 0 0;
+  font-style: italic;
+  padding: 0 0 0 3px;
+}
+
+button {
+  border-radius: 2px;
+  background-color: rgba(51, 121, 183, 1);
+  color: lightgrey;
+  font-weight: bold;
+  border: none;
+  outline: none;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+.FullTable {
+  display: grid;
+  grid-template-rows: 2em (auto);
+}
+
+::placeholder {
+  opacity: 1;
+  color: lightgray;
+  font-style: italic;
+}
+
+.TableRow {
+  display: grid;
+  grid-template-columns: 1fr 1fr 5fr 2fr 2fr;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+th, tr {
+  border-bottom: 1px solid rgba(51, 121, 183,1);
+  font-size: smaller;
+}
+
+/* style tags for innerHTML set*/
+
+.claim-text {
+  font-family: 'Calibri';
+  margin-left: 20px;
+  text-indent: -20px;
+  margin-bottom: 5px;
+  line-height: 1.2em;
+}
+
+/*Comes from the database with this class applied*/
+
+.claim-dependent {
+  color: #A0A0A0;
+}
+
+/*make dependent claims grey in text*/
+
+/* style by tag */
+
+.claim-ref {
+  font-weight: bold;
+}
+
+/*used by dependent claims to reference the independent they depend from */

@@ -1,0 +1,219 @@
+{
+    "patentDB": {
+        "connection": {
+            "container": "sqlserver",
+            "userName": "sa",
+            "password": "8ill5Sql",
+            "options": {
+                "database": "PMCDB"
+            }
+        },
+        "localConnection": "Driver={SQL Server Native Client 11.0};Server={(LocalDB)\\v11.0};Database=C:\\PMC-Project\\Server\\bin\\PMC_LicensingDB1.mdf;Integrated Security=True; Connect Timeout=150;MultipleActiveResultSets=True;App=EntityFramework;",
+        "m_MARKMANALL": "SELECT patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, mt.ClaimTerm, mc.Construction, mc.MarkmanPage, documents.DocumentPath, documents.FileName, clients.ClientName, mc.Court, mc.Agreed, mt.TermID, mc.ConstructID, claims.ClaimID, clients.ClientID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
+        "m_PATENTSCLAIMS": "SELECT patents.PMCRef, patents.PatentNumber, claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
+        "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
+        "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
+        "p_SELECTJSON": "SELECT patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID, claims.IsIndependentClaim, patents.InventorLastName, patents.Title FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
+        "p_PATENT": "SELECT * FROM Patent AS patents LEFT OUTER JOIN PatentSummary AS summaries ON patents.PatentID = summaries.PatentID ",
+        "u_FULLTEXT": "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
+        "u_UPDATE": "UPDATE Claim SET ",
+        "p_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
+        "m_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
+        "fieldMap": [
+            {
+                "name": "PMCRef",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "PatentPath",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE"
+            },
+            {
+                "name": "PatentNumber",
+                "table": "patents",
+                "prefix": "RIGHT(CAST(",
+                "suffix": " AS char(7)),3)=",
+                "notSuffix": " AS char(7)),3)!="
+            },
+            {
+                "name": "IsInIPR",
+                "table": "patents",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "ClaimNumber",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "ClaimHtml",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "IsDocumented",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "IsIndependentClaim",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "IsMethodClaim",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "PotentialApplication",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "WatchItems",
+                "table": "claims",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Summary",
+                "table": "PatentSummary",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "InventorLastName",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "ClaimTerm",
+                "table": "mt",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Construction",
+                "table": "mc",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "MarkmanPage",
+                "table": "mc",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Court",
+                "table": "mc",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Agreed",
+                "table": "mc",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
+                "name": "DocumentPath",
+                "table": "documents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "FileName",
+                "table": "documents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "ClientName",
+                "table": "clients",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            }
+        ]
+    },
+    "patentURL": "http://patents.google.com/patent/",
+    "uspto": {
+        "patent": {
+            "url": "http://patft.uspto.gov/netacgi/nph-Parser",
+            "redirectPattern": "\\?(.*)(?=\"\\>)",
+            "images": {
+                "baseUrl": "http://pdfpiw.uspto.gov",
+                "url": "/.piw?docid=",
+                "matchPattern": "(\\d{3})(\\d{3})(\\d{2})",
+                "replacePattern": "/$3/$2/$1/"
+            },
+            "queryParams": {
+                "Sect1": "PTO1",
+                "Sect2": "HITOFF",
+                "d": "PALL",
+                "p": "1",
+                "u": "/netahtml/PTO/srchnum.htm",
+                "r": 0,
+                "f": "S",
+                "l": 50
+            }
+        },
+        "application": {
+            "url": "http://appft.uspto.gov/netacgi/nph-Parser",
+            "redirectPattern": "HREF=(\/netac.*)(?=\\>\\d)",
+            "images": {
+                "baseUrl": "http://pdfaiw.uspto.gov",
+                "url": "/.aiw?docid=",
+                "matchPattern": "(\\d{4})(\\d{3})(\\d{2})(\\d{2})",
+                "replacePattern": "/$4/$1/$3/$2/"
+            },
+            "queryParams": {
+                "Sect1": "PTO1",
+                "Sect2": "HITOFF",
+                "d": "PG01",
+                "p": 1,
+                "u": "/netahtml/PTO/srchnum.html",
+                "r": 0,
+                "f": "S",
+                "l": 50
+            }
+        },
+        "startMatch": "<i>Description",
+        "endMatch": "\\* \\* \\* \\* \\*",
+        "breakMatch": " ?<BR><BR> ?",
+        "stripMatch": "( ?<CENTER> ?| ?<\\/CENTER> ?|<HR>|<b>|<\\/b>|<i>|<\\/i>)"
+    }
+}
