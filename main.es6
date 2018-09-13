@@ -90,7 +90,7 @@ const createWindow = () => {
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
   // Open the DevTools.
-  if (process.env.DEVTOOLS = 'show') win.webContents.openDevTools();
+  if (process.env.DEVTOOLS === 'show') win.webContents.openDevTools();
   /*   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
       console.log(`Added Extension:  ${name}`);
       win.webContents.openDevTools();
@@ -151,7 +151,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       getPatentWindow.delete(patentNumber);
     });
     activeWin.on('ready-to-show', () => {
-      if (process.env.DEVTOOLS = 'show') activeWin.webContents.openDevTools();
+      if (process.env.DEVTOOLS === 'show') activeWin.webContents.openDevTools();
       console.log('window ready, executing in-page JS for patent', patentNumber);
       //getPatentWindow.show();
       activeWin.webContents.executeJavaScript(scrapeCode, false)
