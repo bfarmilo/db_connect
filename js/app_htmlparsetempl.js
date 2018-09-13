@@ -39,20 +39,20 @@ const markmantable = (resultArray, uriMode) =>
 `<table class='table-striped table-bordered'>
 <!--0:PMC Ref-1:PatentURL-2:Patent Number-3:Claim Number-4:Claim Term-5:Construction-6:Page-7:Path to Ruling-8:Filename of ruling-9:application-->
 <tbody>
-<tr class='toprow'></tr>
-${resultArray.map(patent => `    <tr>
-      <td class='col-sm-1 col-md-1 col-lg-1'>${patent[0]}</td>
-      <td class='col-sm-1 col-md-1 col-lg-1'>
-      <div class='patentLink btn btn-small' data-url='${patent[1] ? patent[1] : '#'}' target='_blank'>
-        ${patent[2]}
+<tr class="toprow"></tr>
+${resultArray.map( patent => `    <tr>
+      <td class="col-sm-1 col-md-1 col-lg-1">${patent[0]?patent[0]:" "}</td>
+      <td class="col-sm-1 col-md-1 col-lg-1">
+      <div class="patentLink btn btn-small" data-url="${patent[1]?patent[1]:"#"}" target="_blank">
+        ${patent[2]:patent[2]:" "}
       </div>
       </td>
-      <td class='col-sm-1 col-md-1 col-lg-1'>${patent[3]}</td>
-      <td class='col-sm-3 col-md-3 col-lg-3'>${patent[4]}</td>
-      <td class='col-sm-4 col-md-4 col-lg-4'>${patent[5]} <span class='claim-dependent'><small>[${patent[11] ? 'agreed' : patent[10]}]</small></span></td>
-      <td class='col-sm-1 col-md-1 col-lg-1'>
-        <div class='patentLink btn btn-small' data-url='${patent[7].replace(/\\/g, '/')}${patent[8]}' target='_blank'>
-          <span class='glyphicon glyphicon-new-window'></span> pg.${patent[6]}
+      <td class="col-sm-1 col-md-1 col-lg-1">${patent[3]?patent[3]:" "}</td>
+      <td class="col-sm-3 col-md-3 col-lg-3">${patent[4]?patent[4]:" "}</td>
+      <td class="col-sm-4 col-md-4 col-lg-4">${patent[5]?patent[5]:" "}</td>
+      <td class="col-sm-1 col-md-1 col-lg-1">
+        <div class="patentLink btn btn-small" data-url="${patent[7].replace(/\\/g, "/")}${patent[8]}" target="_blank">
+          <span class="glyphicon glyphicon-new-window"></span> pg.${patent[6]}
         </div>
       </td>
       <td class='col-sm-1 col-md-1 col-lg-1'>${patent[9] ? patent[9] : ' '}</td>
