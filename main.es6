@@ -9,7 +9,6 @@ const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
 // configuration
-const changeLog = require('./changeLog.json');
 const { patentDB } = require('./app_config.json');
 // developer
 // const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
@@ -466,7 +465,7 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 })
 
 // listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, pageNo=1) => {
+ipcMain.on('open_patent', (opEvent, linkVal, pageNo = 1) => {
   console.log(`received link click with path ${linkVal}`);
   openPDF(linkVal, pageNo);
 });
@@ -520,8 +519,14 @@ ipcMain.on('change_db', event => {
 })
 
 // Listener for a call to update PotentialApplication or WatchItems
-ipcMain.on('json_update', (event, oldItem, newItem) => {
+ipcMain.on('json_update', async (event, oldItem, newItem) => {
   // items have structure patentNumber, index, claimID, field, value
+  let changeLog = { changes: [] };
+  try {
+    changeLog = await fse.readJSON('./changeLog.json');
+  } catch (err) {
+    console.error('changeLog not found, creating new file');
+  }
   changeLog.changes.push({ datetime: Date.now(), from: oldItem.value, to: newItem.value });
   fse.writeJSON('./changeLog.json', changeLog, 'utf8')
     .then(() => queryDatabase(connectParams, 'u_UPDATE', ` ${newItem.field}=@0 WHERE ClaimID=@1`, [newItem.value, parseInt(newItem.claimID, 10)], '', (err2, result) => {
