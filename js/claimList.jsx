@@ -51,6 +51,15 @@ const config =
             { display: 'Court', field: 'Court' },
             { display: 'Case', field: 'ClientName' }
         ]
+    },
+    databaseOptions: {
+        PMCDB: {
+            hideColumns: [
+                { field: 'InventorLastName' },
+                { field: 'Title' }
+            ],
+            enableConstructions: true
+        }
     }
 };
 
@@ -299,7 +308,7 @@ class ClaimTable extends Component {
         console.log(event.target.localName === 'span' ? event.target.clientHeight : event.target.parentElement.clientHeight);
         const height = event.target.localName === 'span' ? event.target.clientHeight : event.target.parentElement.clientHeight;
         const activeRows = new Map(this.state.activeRows);
-        activeRows.set(`${claimID}-${field}`, {record: this.state.resultList.get(claimID)[field], height});
+        activeRows.set(`${claimID}-${field}`, { record: this.state.resultList.get(claimID)[field], height });
         //update the state, ready to listen for keypresses
         this.setState({ activeRows });
     }
@@ -314,7 +323,7 @@ class ClaimTable extends Component {
         //Set the value for the activeRow corresponding to this field so it updates !
         const activeRows = new Map(this.state.activeRows);
         const height = event.currentTarget.clientHeight;
-        activeRows.set(`${claimID}-${field}`, {record, height});
+        activeRows.set(`${claimID}-${field}`, { record, height });
         this.setState({ activeRows })
     }
 
