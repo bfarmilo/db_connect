@@ -8,6 +8,8 @@ const { connectDocker } = require('./jsx/connectDocker');
 const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
+const { insertAndGetID } = require('./jsx/app_bulkUpload');
+const { getAllImages } = require('./jsx/getImages');
 // configuration
 const { patentDB } = require('./app_config.json');
 // developer
@@ -19,8 +21,10 @@ const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
 let markmanwin;
 let detailWindow = null;
-let getPatentWindow;
+let imageWindow = null;
 let newPatentWindow;
+let timer;
+let manualResize = true;
 
 // globals
 let totalCount = 0;
@@ -52,7 +56,7 @@ const connectToDB = async () => {
   try {
     connectParams = await connectDocker(patentDB.connection);
     uriMode = databases[connectParams.options.database].uriMode;
-    console.log('new connection parameters set: %j', connectParams);
+    console.log(`new connection parameters set: ${JSON.stringify(connectParams)}`);
     return connectParams.server;
   } catch (err) {
     return err;
@@ -90,7 +94,7 @@ const createWindow = () => {
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
   // Open the DevTools.
-  if (process.env.DEVTOOLS = 'show') win.webContents.openDevTools();
+  if (process.env.DEVTOOLS === 'show') win.webContents.openDevTools();
   /*   installExtension(REACT_DEVELOPER_TOOLS).then(name => {
       console.log(`Added Extension:  ${name}`);
       win.webContents.openDevTools();
@@ -151,7 +155,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       getPatentWindow.delete(patentNumber);
     });
     activeWin.on('ready-to-show', () => {
-      if (process.env.DEVTOOLS = 'show') activeWin.webContents.openDevTools();
+      if (process.env.DEVTOOLS === 'show') activeWin.webContents.openDevTools();
       console.log('window ready, executing in-page JS for patent', patentNumber);
       //getPatentWindow.show();
       activeWin.webContents.executeJavaScript(scrapeCode, false)
@@ -318,7 +322,6 @@ ipcMain.on('browse', (e, startFolder) => {
       defaultPath: `${dropboxPath}${startFolder}`,
       properties: ['openDirectory']
     }, folder => {
-      console.log(folder);
       newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
     })
 })
@@ -384,19 +387,18 @@ ipcMain.on('markman_entry', e => {
 // Listener for launching new Patent retrieval UI
 ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
 
+/** private function that sends new data to the patent detail window
+ * @param {Array<records>} newData - the JSON formatted data from the DB
+ * @returns {void}
+ */
+const updateRenderWindow = (newData, targetWindow) => {
+  console.log('sending state for patent', newData.PMCRef || newData[0].PatentID);
+  targetWindow.webContents.send('state', newData);
+  return targetWindow;
+}
+
 //Listener for launching patent details
 ipcMain.on('view_patentdetail', (event, patentNumber) => {
-
-  /** private function that sends new data to the patent detail window
-   * @param {Array<records>} newData - the JSON formatted data from the DB
-   * @returns {void}
-   */
-  const updateRenderWindow = (newData) => {
-    console.log('sending state for patent', newData.PMCRef);
-    detailWindow.webContents.send('state', newData);
-    detailWindow.show();
-  }
-
   /** private function that queries the DB then hits the USPTO if empty
    * @returns {void}
    */
@@ -410,11 +412,6 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
         // otherwise, go fetch it, serve it up, and meanwhile update the DB with it !
         // data returns the row in multiple columns of an array (if large)
         const state = JSON.parse(data.reduce((accum, item) => accum.concat(item), ''));
-        ///TEST
-        const pageData = await fse.readFile('./test/page50');
-        const url = 'testUrl';
-        state.images = [[50, { url, pageData }]];
-        // END TEST
         if (!state.PatentHtml) {
           console.log('no PatentHtml found, querying USPTO for patent Full Text');
           getFullText(patentNumber)
@@ -426,42 +423,140 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
                   console.error(err2);
                 } else {
                   console.log('record updated with new fullText');
-                  updateRenderWindow(state);
+                  return updateRenderWindow(state, detailWindow);
                 }
               })
-              return;
             })
             .catch(err3 => console.error(err3))
         } else {
-          updateRenderWindow(state);
+          return updateRenderWindow(state, detailWindow);
         }
       }
     })
   }
 
+
   if (detailWindow === null) {
     detailWindow = new BrowserWindow({
       width: 800,
       height: 1000,
-      show: false,
-      //autoHideMenuBar: true
+      show: false
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
     detailWindow.on('closed', () => {
       detailWindow = null;
+      if (imageWindow) imageWindow.close();
     });
     detailWindow.on('ready-to-show', () => {
       console.log('window ready, calling getPatentHtml');
       detailWindow.webContents.send('resize', { width: 800, height: 1000 });
       getPatentHtml();
+      detailWindow.show();
     })
     detailWindow.on('resize', () => {
-      console.log('window size changed, sending new size');
-      detailWindow.webContents.send('resize', { width: detailWindow.getSize()[0], height: detailWindow.getSize()[1] });
+      console.log('detailWindow size changed, sending new size');
+      setTimeout(() => detailWindow.webContents.send('resize', { width: detailWindow.getSize()[0], height: detailWindow.getSize()[1] }), 500);
     });
   } else {
+    console.log('window already visible, calling getPatentHtml');
     getPatentHtml();
   }
+})
+
+ipcMain.on('show_images', (event, PatentID, patentNo) => {
+
+  const getPatentImages = () => {
+
+    console.log('got call for patent detail view with patent ID', PatentID);
+    queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
+      if (err) {
+        console.error(err)
+      } else {
+        // if the query returns image data, serve it up,
+        // otherwise, go fetch it, serve it up, and meanwhile update the DB with it !
+        if (!data.length) {
+          console.log('no images found, querying USPTO for images');
+          // get images from USPTO
+          getAllImages(patentNo)
+            .then(result => {
+              // add in the PatentID
+              const withID = result.map(image => ({ PatentID, ...image }))
+              // send them off to the imageWindow
+              updateRenderWindow(withID, imageWindow);
+              return withID;
+              // in them meantime write to the DB
+            })
+            .then(imageRecords => Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData', 'Rotation'] }))))
+            .catch(error => console.error(error))
+        } else {
+          // data returns the row in multiple columns of an array (if large)
+          updateRenderWindow(JSON.parse(data.join('')), imageWindow);
+        }
+      }
+    });
+  }
+
+  if (imageWindow === null) {
+    const [x, y] = detailWindow.getPosition();
+    const [xSize, ySize] = detailWindow.getSize();
+    imageWindow = new BrowserWindow({
+      width: 650,
+      height: 425,
+      y,
+      x: x + xSize + 10,
+      show: false
+    });
+    imageWindow.loadURL(`file://${__dirname}/patentfigures.html`);
+    imageWindow.on('closed', () => {
+      imageWindow = null;
+    });
+    imageWindow.on('ready-to-show', () => {
+      console.log('window ready, calling getPatentHtml');
+      imageWindow.webContents.send('resize', { width: 650, height: 425 });
+      getPatentImages();
+      imageWindow.show();
+    })
+    imageWindow.on('resize', () => {
+      if (manualResize) {
+        // only send update if manualResize = true
+        clearTimeout(timer);
+        timer = setTimeout(() => {
+          console.log('imageWindow size changed, sending new size');
+          const [width, height] = imageWindow.getContentSize();
+          imageWindow.webContents.send('resize', { width, height })
+        }, 500);
+      } else {
+        // reset to listen for mouse events
+        manualResize = true;
+      }
+
+    });
+  } else {
+    getPatentImages();
+  }
+})
+
+ipcMain.on('change_window_rotation', e => {
+  // reset the window size to keep the image size constant
+  const [height, width] = imageWindow.getContentSize();
+  imageWindow.setContentSize(width, height);
+  imageWindow.webContents.send('resize', { width, height });
+})
+
+ipcMain.on('request_resize', (e, width, height) => {
+  manualResize = false;
+  const newWidth = Math.round(width) + 1;
+  const newHeight = Math.round(height) + 1;
+  imageWindow.setContentSize(newWidth, newHeight);
+})
+
+ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
+  console.log(`request to rotate imageID ${imageID} to new ${newRot}`);
+  // write the new rotation data to the DB
+  insertAndGetID(connectParams, 'Images', { Rotation: newRot, ImageID: imageID }, 'ImageID', { skipCheck: ['Rotation'], updateFields: ['Rotation'] })
+    .then(status => console.log(status))
+    .catch(err => console.error(err));
+  // no need to re-query since the component updates its local copy also
 })
 
 // listener to handle when a user clicks on a patent link

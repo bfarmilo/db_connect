@@ -151,19 +151,42 @@ const updatePatents = (connectParams, field, value, PatentUri) => new Promise(as
 /**
  * 
  * @param {Object} connectParams -> connection parameters object
- * @param {String} table -> name of table, eg Claim
+ * @param {string} table -> name of table, eg Claim
  * @param {Object} record -> JSON formatted object {column: value} to be written 
- * @param {String} idField -> The name of the ID field associated with the table, eg. ClaimID
+ * @param {string} idField -> The name of the ID field associated with the table, eg. ClaimID
+ * @param {Object} [options] -> A list of options
+ * @param {boolean} [options.readOnly=false] -> If true, don't write or update the database, only check and return an idField if present
+ * @param {string[]} [options.skipCheck=[]] -> List of columns to **not** use in the DB 'SELECT' query
+ * @param {string[]} [options.skipWrite=[]] -> List of columns to **not** use in the DB 'INSERT' query. Ignored if options.readOnly: true or options.updateFields is set
+ * @param {string[]} [options.updateFields=[]] -> List of columns to update with an 'UPDATE' query. Ignored if options.readOnly:true. 
+ * @returns {(string|Object)} -> 'not found' if data doesn't exist in DB, otherwise {[idField]:value, type:'new' or 'existing'}
  */
-const insertAndGetID = (connectParams, table, record, idField, readOnly = false) => new Promise(async (resolve, reject) => {
+const insertAndGetID = (connectParams, table, record, idField, options = {}) => new Promise(async (resolve, reject) => {
   try {
-    const { keyList, paramList } = getParams(record);
+    const controlOptions = {
+      skipCheck: options.skipCheck || [],
+      skipWrite: (!options.readOnly && !options.updateFields && options.skipWrite) || [],
+      readOnly: options.readOnly || false,
+      updateFields: (!options.readOnly && options.updateFields) || [],
+    }
+    // first query to see if the record exists
+    let { keyList, paramList } = getParams(record, controlOptions.skipCheck);
     const checkSQL = `SELECT ${idField} FROM dbo.${table} WHERE ${keyList.map(key => `${table}.${key} LIKE @${key}`).join(' AND ')}`;
     let result = await queryNoPromises(connectParams, checkSQL, paramList);
     let recordID = result && result[0] && result[0][0];
     let type = 'existing';
-    if (!recordID && !readOnly) {
+    console.log(recordID, JSON.stringify(controlOptions));
+    if (recordID && controlOptions.updateFields) {
+      // it is found, and we're in update mode
+      // this time the fields to include are listed, so only exclude non-matching fields and the idField
+      const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
+      ({ keyList, paramList } = getParams(record, skipFields));
+      const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
+      await queryNoPromises(connectParams, updateSQL, paramList);
+      type = 'updated';
+    } else if (!recordID && !controlOptions.readOnly) {
       //There's no existing record, and we're not in readOnly mode
+      ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
       //So insert and return the newest
       const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
       await queryNoPromises(connectParams, insertSQL, paramList);

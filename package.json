@@ -7,7 +7,7 @@
     "test": "mocha",
     "transpile": "babel ./js/ --out-dir ./jsx/",
     "transpile-main": "babel ./main.es6 -o main.js",
-    "package-win": "npx electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-report --ignore=es6$",
+    "package-win": "npx electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-report --ignore=es6$ --ignore=.vscode",
     "package": "npm run transpile && npm run transpile-main && npm run package-win",
     "start": "npm run transpile && npm run transpile-main && electron .",
     "openTestReport": "C:\\Progra~1\\Mozill~1\\firefox.exe ./mochawesome-report/mochawesome.html"
