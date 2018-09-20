@@ -25,9 +25,11 @@ TODO: Write a front-end (new window for Image display)
 /** getAllImages retrieves the PDF data for each page, from 2 to the end of the images section
  * 
  * @param {string} patentNumber -> the string or number documentID from the USPTO corresponding to the patent
- * @returns {Array<[number, blob]>} -> a nested array of page number, pdf data suitable for conversion into a Map
+ * @returns {Array<[{ PageNumber{number}, ImageURL{string}, PageData{buffer}, Rotation{number}}]>} -> a nested array of page number, pdf data suitable for conversion into a Map
  */
 const getAllImages = async patentNumber => {
+
+    const DEFAULT_ROTATION = 90;
 
     const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
     const docNumber = (docType === 'application') ? `${patentNumber}` : (patentNumber < 10000000) ? `0${patentNumber}` : `${patentNumber}`;
@@ -44,14 +46,15 @@ const getAllImages = async patentNumber => {
 
     /** Helper function to retrieve the pdf blob for a given page
      * 
-     * @param {*} pageNum
-     * @returns {[number, {url:string, pageData:Uint8Array}]} -> an array of [page number, {online link, local data}] for the single page
+     * @param {*} PageNumber
+     * @returns {[number, {url:string, pageData:base64 string}]} -> an array of [page number, {online link, local data}] for the single page
      */
-    const getImage = async pageNum => {
+    const getImage = async PageNumber => {
         const matchPattern = new RegExp(uspto[docType].images.matchPattern, 'g');
-        const url = `${uspto[docType].images.baseUrl}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${pageNum}.pdf`;
-        const pageData = (await (await fetch(url)).buffer()).toString('base64');
-        return [pageNum, { url, pageData }];
+        const ImageURL = `${uspto[docType].images.baseUrl}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${PageNumber}.pdf`;
+        const PageData = (await (await fetch(ImageURL)).buffer()).toString('base64');
+        const Rotation = DEFAULT_ROTATION;
+        return { PageNumber, ImageURL, PageData, Rotation };
     }
 
     try {
@@ -59,6 +62,7 @@ const getAllImages = async patentNumber => {
         const imageStart = await findEndPage(2);
         const imageEnd = await findEndPage(3);
         if (!imageStart && !imageEnd) return new Error('document not found');
+        // create an array of page numbers
         const pageNumbers = (new Array(imageEnd - imageStart)).fill(0).map((item, idx) => idx + imageStart);
         // then run getImage over that array
         return [...await Promise.all(pageNumbers.map(getImage))];
