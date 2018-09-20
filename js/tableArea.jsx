@@ -3,7 +3,7 @@ import { EditCell } from './editCell';
 import { Icon } from './icons';
 import { Throbber } from './throbber';
 
-const patentNumberCell = (patentNumber, style) => {
+const patentNumberCell = (patentNumber, style, clickHandler) => {
 
     const styles = {
         Icon: style.Icon,
@@ -15,7 +15,7 @@ const patentNumberCell = (patentNumber, style) => {
 
     return (<div
         style={styles.patentNumber}
-        onClick={(e) => props.getDetail(e, `${patentNumber}`)}
+        onClick={clickHandler}
     >
         <div style={{ paddingRight: '7px' }}>
             {patentNumber < 99000000 ?
@@ -88,7 +88,7 @@ const TableArea = props => {
                             style={{ cursor: 'pointer' }}
                             onMouseOver={e => props.showInventor(e, `${claimID}`)}
                         >{item.PMCRef}</div>
-                        {patentNumberCell(item.PatentNumber, styles)}
+                        {patentNumberCell(item.PatentNumber, styles, e => props.getDetail(e, `${item.PatentNumber}`))}
                         <div>
                             <details open={props.expandAll}>
                                 <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
@@ -139,7 +139,7 @@ const TableArea = props => {
                         </div>
                     }
                     if (column.field === 'PatentNumber') {
-                        return patentNumberCell(item[column.field], styles)
+                        return patentNumberCell(item[column.field], styles, e => props.getDetail(e, `${item[column.field]}`))
                     }
                     return <div>{item[column.field]}</div>
                 }
