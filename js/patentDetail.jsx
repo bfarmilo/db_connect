@@ -2,7 +2,6 @@ import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { EditCell } from './jsx/editCell';
 import { Icon } from './jsx/icons';
-import { PatentImage } from './jsx/PatentImageView';
 /** @jsx h */
 
 class PatentDetail extends Component {
@@ -20,7 +19,7 @@ class PatentDetail extends Component {
                 PatentHtml: '[""]',
                 InventorLastName: '',
                 EstimatedExpiryDate,
-                images: null,
+                PatentID: 0
             },
             patentSummaries: new Map(),
             activeSummary: new Map(),
@@ -46,10 +45,9 @@ class PatentDetail extends Component {
         ipcRenderer.on('state', (event, data) => {
             console.log('received data', data);
             // console.log('summaries', JSON.stringify(data.summaries));
-            const { summaries, images, ...result } = { ...data.summaries, ...data.images, ...data };
+            const { summaries, ...result } = { ...data.summaries, ...data };
             const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
             // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
-            console.log(new Map(images), images[0][0]);
             this.setState({
                 result,
                 patentSummaries,
@@ -57,8 +55,6 @@ class PatentDetail extends Component {
                 searchTerm: '',
                 currentScroll: 0,
                 scrollNavigation: new Map(),
-                patentImages: images && new Map(images),
-                currentImage: images && images[0][0]
             });
         });
         ipcRenderer.on('resize', (event, { width, height }) => {
@@ -68,7 +64,7 @@ class PatentDetail extends Component {
     }
 
     openClickHandler(event) {
-        console.log('opening patent', this.state.result.patentPath);
+        console.log('opening patent', this.state.result.PatentPath);
         ipcRenderer.send('open_patent', this.state.result.PatentPath);
     }
 
@@ -167,6 +163,11 @@ class PatentDetail extends Component {
         this.setState({ currentScroll });
     }
 
+    showImages = e => {
+        console.log('got request to show images for patent ID', this.state.result.PatentID);
+        ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber);
+    }
+
     render({ }, { result }) {
         console.log('calling render with state', this.state.result, this.state.patentSummaries)
         return (
@@ -185,18 +186,13 @@ class PatentDetail extends Component {
                         changeSearchTerm={this.changeSearchTerm}
                         highlightList={this.state.highlightList}
                         scrollToNext={this.scrollToNext}
+                        showImages={this.showImages}
                     />
                     <FullText
                         patentHtml={JSON.parse(this.state.result.PatentHtml)}
                         highlightList={this.state.highlightList}
                         addNewRef={this.addNewRef}
                     />
-                    {this.state.currentImage ? < PatentImage
-                        imageData={this.state.patentImages}
-                        showPage={this.state.currentImage}
-                        rotation={90}
-                        width={this.state.windowSize.width}
-                    /> : <div />}
                 </div>
             </div>
         );
@@ -261,7 +257,8 @@ const Result = (props) => {
                     <Icon name='triDown' width='1em' height='0.5em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
                 </div>) : ''}
             </div>
-            <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button></div>
+            <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
+                <button style={{ flexGrow: '1' }} onClick={props.showImages}>Show Images</button></div>
         </div>
     )
 };
