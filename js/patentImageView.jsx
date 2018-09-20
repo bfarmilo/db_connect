@@ -33,24 +33,32 @@ class PatentImage extends Component {
     }
 
     render() {
-        pdfJsLib.getDocument({ data: atob(this.props.imageData.get(this.props.showPage).pageData) }).then((pdf) => {
-            pdf.getPage(1).then((page) => {
-                const viewportBaseline = page.getViewport(1, this.props.rotation);
-                const scale = this.props.width / viewportBaseline.width;
-                const viewport = page.getViewport(scale, this.props.rotation);
-                const { canvas } = this;
-                const canvasContext = canvas.getContext('2d');
-                canvas.height = viewport.height;
-                canvas.width = viewport.width;
+        const portraitMode = this.props.rotation == 0 || this.props.rotation == 180;
+        if (this.props.showPage) {
+            pdfJsLib.getDocument({ data: atob(this.props.imageData.get(this.props.showPage).pageData) }).then((pdf) => {
+                pdf.getPage(1).then((page) => {
+                    const viewportBaseline = page.getViewport(1, this.props.rotation);
+                    const scale = portraitMode ?
+                        (this.props.windowSize.height - this.props.controlAreaHeight - 5) / viewportBaseline.height :
+                        this.props.windowSize.width / viewportBaseline.width;
+                    const viewport = page.getViewport(scale, this.props.rotation);
+                    console.log('width', this.props.windowSize.width, viewport.width);
+                    console.log('height', this.props.windowSize.height, viewport.height);
+                    this.props.reportViewport(viewport.width, viewport.height);
+                    const { canvas } = this;
+                    const canvasContext = canvas.getContext('2d');
+                    canvas.height = viewport.height;
+                    canvas.width = viewport.width;
 
-                const renderContext = {
-                    canvasContext,
-                    viewport,
-                };
-                page.render(renderContext);
+                    const renderContext = {
+                        canvasContext,
+                        viewport,
+                    };
+                    page.render(renderContext);
+                });
             });
-        });
-        return <canvas ref={(canvas) => { this.canvas = canvas; }} />;
+            return <canvas ref={(canvas) => { this.canvas = canvas; }} />
+        } else return <div />;
     }
 }
 
