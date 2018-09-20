@@ -22,9 +22,9 @@
     "marked": "^0.3.19",
     "node-fetch": "^2.2.0",
     "pdfjs-dist": "^2.0.489",
-    "preact": "^8.2.9",
+    "preact": "^8.3.1",
     "preact-custom-scrollbars": "^4.0.4",
-    "tedious": "^2.6.3",
+    "tedious": "^2.6.4",
     "tedious-promises": "^0.4.1"
   },
   "devDependencies": {
@@ -35,10 +35,10 @@
     "babel-preset-preact": "^1.1.0",
     "chai": "*",
     "chai-as-promised": "^6.0.0",
-    "electron": "^3.0.0-beta.3",
+    "electron": "^3.0.0",
     "electron-devtools-installer": "^2.2.4",
-    "electron-packager": "^12.1.0",
-    "jsdom": "^11.11.0",
+    "electron-packager": "^12.1.2",
+    "jsdom": "^11.12.0",
     "mocha": "^5.2.0",
     "mochawesome": "^3.0.3",
     "shell": "^0.3.2"
