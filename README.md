@@ -9,9 +9,11 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Use | & ! in search for OR AND NOT respectively
 * Update the 'Application Area' and 'Watch Items' through markdown-enabled edit boxes
 * clicking on the patent will open a patent Detail view with full text, pulled from the USPTO if not already in the DB
+* clicking on Show Images from the Detail view will launch a resizable image viewer
 * Patent detail view has option to launch full PDF it in your native PDF viewer (assuming dropbox folders properly connected)
 * Download New Patents will enable lists of patents to be downloaded to the DB
-* rudimentary claim construction search mode. When you select 'Terms (markman)' or 'Constructions (Markman)' as your search field the table will update to Markman view
+* Cycle between multiple databases hosted by the sql server
+* Markman view for claim constructions if applicable
 * In Markman view clicking on the page number will launch the order in your native PDF viewer (assuming dropbox folders properly connected)
 
 Currently very much a work-in-progress.
@@ -19,8 +21,6 @@ Currently very much a work-in-progress.
 ### Known TODOs:
 
 1. Interface to allow addition and linking of markman terms to patents and constructions
-1. Update back-end to write patent image data to DB
-1. Write front-end for patent image viewing (see https://github.com/wojtekmaj/react-pdf)
 1. Better reporting for shortlisting, claim export
 1. Write back-end for Patent Summary updating
 1. Enable Expiry date estimation writing
@@ -28,9 +28,8 @@ Currently very much a work-in-progress.
 1. DB authentication and user tracking
 1. Support for US Applications
 1. Option to enable general PDF linking
-1. Idea to store full text (or documents) in a new table by SHA. That way if a document already exists don't need to add it again
+1. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
 1. Sort by author, or generally make table editable
-  1. Make markman view for preact build
 
 ### Build Notes:
 1. Docker code to start container:
