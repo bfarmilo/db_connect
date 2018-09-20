@@ -35,14 +35,13 @@ describe('Markman Interface', function () {
     });
   });
   describe('get document ID', function () {
-    const READONLY = true;
     it('finds a documentID given a path', async function () {
       documentID = await insertAndGetID(
         connectParams,
         'Document',
         { documentPath: 'PMC Public\\Licensing\\Clients\\Zynga\\Trial\\PMC - Claim Construction Memorandum and Order.pdf' },
         'DocumentID',
-        READONLY
+        { readOnly: true }
       );
       expect(documentID.DocumentID).to.equal(25380);
     });
@@ -52,7 +51,7 @@ describe('Markman Interface', function () {
         'Document',
         { documentPath: 'ZZZPMC Public\\Licensing\\Clients\\Zynga\\Trial\\PMC - Claim Construction Memorandum and Order.pdf' },
         'DocumentID',
-        READONLY
+        { readOnly: true }
       );
       expect(documentID).to.be.a('string');
       expect(documentID).to.equal('not found');
