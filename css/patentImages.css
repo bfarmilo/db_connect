@@ -1,3 +1,31 @@
 body {
-    margin:0px
+    margin: 0px
+}
+
+button {
+    border-radius: 2px;
+    background-color: rgba(51, 122, 183, 1);
+    color: whitesmoke;
+    font-weight: bold;
+    border: none;
+    outline: none;
+    padding: 0.4em 0.5em 0.4em 0.5em;
+    display:flex;
+    justify-content:space-around;
+
+}
+
+button:disabled {
+    color: rgb(114, 149, 180);
+}
+
+.controlArea {
+    display: grid;
+    grid-template-columns: 1fr 2fr 1fr 1fr 2fr 2fr;
+    position: fixed;
+    width:100%;
+}
+
+.imageArea {
+    margin: 0px
 }

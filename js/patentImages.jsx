@@ -6,6 +6,13 @@ import { PatentImage } from './jsx/PatentImageView';
 
 const CONTROL_HEIGHT = 25;
 
+const styles = {
+    Icon: {
+        fill: 'white',
+        strokeWidth: '0px'
+    }
+}
+
 class PatentImages extends Component {
 
     constructor(props) {
@@ -110,13 +117,15 @@ class PatentImages extends Component {
     render({ }, { }) {
         return (
             <div>
-                <div style={{ height: `${CONTROL_HEIGHT}px`, position: 'fixed' }}>
-                    <button onClick={this.changeRotation}>Rotate</button>
-                    <button disabled={!this.state.nextEnabled} onClick={this.nextPage}>Next</button>
-                    <button disabled={!this.state.prevEnabled} onClick={this.prevPage}>Prev</button>
-                    <button disabled={!this.state.enableOffline} onClick={this.makeOffline}>Save to DB</button>
+                <div class="controlArea" style={{ height: `${CONTROL_HEIGHT}px` }}>
+                    <button onClick={this.changeRotation}><Icon name='rotate' width='1em' height='1em' style={styles.Icon} /></button>
+                    <div />
+                    <button disabled={!this.state.prevEnabled} onClick={this.prevPage}><Icon name='prevArrow' width='1em' height='1em' style={styles.Icon} /></button>
+                    <button disabled={!this.state.nextEnabled} onClick={this.nextPage}><Icon name='nextArrow' width='1em' height='1em' style={styles.Icon} /></button>
+                    <div />
+                    <button disabled={!this.state.enableOffline} onClick={this.makeOffline}>Make available offline</button>
                 </div>
-                <div style={{ paddingTop: `${CONTROL_HEIGHT}px`, margin: '0px' }}>
+                <div class="imageArea" style={{ paddingTop: `${CONTROL_HEIGHT}px` }}>
                     {this.state.currentImage ? < PatentImage
                         imageData={this.state.patentImages}
                         showPage={this.state.currentImage}
