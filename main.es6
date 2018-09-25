@@ -465,7 +465,6 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 
 ipcMain.on('store_images', (event, imageMap) => {
   console.log('writing current image data to DB')
-  console.log(imageMap);
   // destructure the map and turn it into a simple array of records
   const imageRecords = imageMap.map(([pg, record]) => ({ ImageID: record.imageID, PageData: record.pageData }));
   return Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData'], updateFields: ['PageData'] })))
