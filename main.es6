@@ -463,36 +463,54 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
   }
 })
 
+ipcMain.on('store_images', (event, imageMap) => {
+  console.log('writing current image data to DB')
+  console.log(imageMap);
+  // destructure the map and turn it into a simple array of records
+  const imageRecords = imageMap.map(([pg, record]) => ({ ImageID: record.imageID, PageData: record.pageData }));
+  return Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData'], updateFields: ['PageData'] })))
+    .then(status => {
+      imageWindow.webContents.send('available_offline', true);
+      console.log(status)
+    })
+    .catch(err => console.error(err))
+})
+
 ipcMain.on('show_images', (event, PatentID, patentNo) => {
 
   const getPatentImages = () => {
-
+    const DEFAULT_ROTATION = 90;
     console.log('got call for patent detail view with patent ID', PatentID);
     queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
       if (err) {
         console.error(err)
-      } else {
-        // if the query returns image data, serve it up,
-        // otherwise, go fetch it, serve it up, and meanwhile update the DB with it !
-        if (!data.length) {
-          console.log('no images found, querying USPTO for images');
-          // get images from USPTO
-          getAllImages(patentNo)
-            .then(result => {
-              // add in the PatentID
-              const withID = result.map(image => ({ PatentID, ...image }))
-              // send them off to the imageWindow
-              updateRenderWindow(withID, imageWindow);
-              return withID;
-              // in them meantime write to the DB
-            })
-            .then(imageRecords => Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData', 'Rotation'] }))))
-            .catch(error => console.error(error))
-        } else {
-          // data returns the row in multiple columns of an array (if large)
-          updateRenderWindow(JSON.parse(data.join('')), imageWindow);
-        }
+        return;
       }
+      // if the query returns image data, serve it up,
+      const resultList = data.length && JSON.parse(data.join(''));
+      const hasPageData = resultList && resultList[0] && resultList[0].PageData;
+      imageWindow.webContents.send('available_offline', hasPageData);
+      if (resultList && hasPageData) return updateRenderWindow(resultList, imageWindow);
+      // otherwise, go fetch it, serve it up !
+      console.log('no image data found, querying USPTO for images');
+      // get images from USPTO
+      return getAllImages(patentNo)
+        .then(result => {
+          const withID = result.map(image => {
+            // there is no record at all, so return a (mostly) complete record
+            if (!resultList) return { PatentID, Rotation: DEFAULT_ROTATION, ...image };
+            // there's already a record, so only return the PageData and leave everything else as-is
+            const currentRecord = resultList.filter(page => page.PageNumber === image.PageNumber)[0];
+            console.log(currentRecord);
+            return { ...currentRecord, PageData: image.PageData };
+          })
+          // send them off to the imageWindow
+          updateRenderWindow(withID, imageWindow);
+          // return it to write the record (minus PageData) to the DB, unless it's already there
+          return !resultList ? withID : false;
+        })
+        .then(imageRecords => imageRecords && Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData', 'Rotation'], skipWrite: ['PageData'] }))))
+        .catch(error => console.error(error))
     });
   }
 

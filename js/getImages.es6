@@ -25,11 +25,9 @@ TODO: Write a front-end (new window for Image display)
 /** getAllImages retrieves the PDF data for each page, from 2 to the end of the images section
  * 
  * @param {string} patentNumber -> the string or number documentID from the USPTO corresponding to the patent
- * @returns {Array<[{ PageNumber{number}, ImageURL{string}, PageData{buffer}, Rotation{number}}]>} -> a nested array of page number, pdf data suitable for conversion into a Map
+ * @returns {Array<[{ PageNumber{number}, ImageURL{string}, PageData{buffer}}]>} -> a nested array of page number, pdf data suitable for conversion into a Map
  */
 const getAllImages = async patentNumber => {
-
-    const DEFAULT_ROTATION = 90;
 
     const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
     const docNumber = (docType === 'application') ? `${patentNumber}` : (patentNumber < 10000000) ? `0${patentNumber}` : `${patentNumber}`;
@@ -53,8 +51,7 @@ const getAllImages = async patentNumber => {
         const matchPattern = new RegExp(uspto[docType].images.matchPattern, 'g');
         const ImageURL = `${uspto[docType].images.baseUrl}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${PageNumber}.pdf`;
         const PageData = (await (await fetch(ImageURL)).buffer()).toString('base64');
-        const Rotation = DEFAULT_ROTATION;
-        return { PageNumber, ImageURL, PageData, Rotation };
+        return { PageNumber, ImageURL, PageData};
     }
 
     try {

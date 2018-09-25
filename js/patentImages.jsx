@@ -18,6 +18,7 @@ class PatentImages extends Component {
             lastImage: 0,
             nextEnabled: true,
             rotation: 0,
+            enableOffline: false,
             windowSize: { width: 0, height: 0 }
         };
     }
@@ -51,6 +52,10 @@ class PatentImages extends Component {
             console.log(`got new window size width:${width} height:${height}`);
             this.setState({ windowSize: { width, height } });
         });
+        ipcRenderer.on('available_offline', (event, isOffline) => {
+            console.log(`images are ${isOffline ? '' : 'not'} available offline`);
+            this.setState({ enableOffline: !isOffline });
+        })
     }
 
     changeRotation = e => {
@@ -97,6 +102,11 @@ class PatentImages extends Component {
         ipcRenderer.send('request_resize', width, height + CONTROL_HEIGHT + 5);
     }
 
+    makeOffline = e => {
+        console.log('got request to save image data to DB');
+        ipcRenderer.send('store_images', [...this.state.patentImages]);
+    }
+
     render({ }, { }) {
         return (
             <div>
@@ -104,6 +114,7 @@ class PatentImages extends Component {
                     <button onClick={this.changeRotation}>Rotate</button>
                     <button disabled={!this.state.nextEnabled} onClick={this.nextPage}>Next</button>
                     <button disabled={!this.state.prevEnabled} onClick={this.prevPage}>Prev</button>
+                    <button disabled={!this.state.enableOffline} onClick={this.makeOffline}>Save to DB</button>
                 </div>
                 <div style={{ paddingTop: `${CONTROL_HEIGHT}px`, margin: '0px' }}>
                     {this.state.currentImage ? < PatentImage
