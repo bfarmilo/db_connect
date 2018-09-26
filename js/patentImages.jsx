@@ -8,7 +8,6 @@ const CONTROL_HEIGHT = 25;
 
 const styles = {
     Icon: {
-        fill: 'white',
         strokeWidth: '0px'
     }
 }

@@ -6,6 +6,7 @@ button {
     border-radius: 2px;
     background-color: rgba(51, 122, 183, 1);
     color: whitesmoke;
+    fill: whitesmoke;
     font-weight: bold;
     border: none;
     outline: none;
@@ -17,11 +18,12 @@ button {
 
 button:disabled {
     color: rgb(114, 149, 180);
+    fill: rgb(114, 149, 180);
 }
 
 .controlArea {
     display: grid;
-    grid-template-columns: 1fr 2fr 1fr 1fr 2fr 2fr;
+    grid-template-columns: 40px 100px 40px 40px auto 200px;
     position: fixed;
     width:100%;
 }
