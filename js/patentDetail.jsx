@@ -116,25 +116,36 @@ class PatentDetail extends Component {
 
     //TODO: Highlight the word in the paragraph
     changeSearchTerm(event) {
-        const searchTerm = new RegExp(event.target.value, 'g');
+        const searchTerm = new RegExp(event.target.value, 'i');
         // paraList stores an array of paragraph indexes where the regex is found
         const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
         // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
+        console.log(paraList);
         const highlightList = new Map([...paraList.map(index => [index, {}])]);
         console.log('searching for', searchTerm);
-        console.log('set initial highlightList', highlightList);
-        // hack so the first click of 'down' goes to the first instance
-        const currentScroll = paraList[paraList.length - 1];
-        const scrollNavigation = new Map([...paraList.map((val, idx) => {
-            const nav = {
-                next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
-                prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
-            };
-            return [val, nav]
-        })]);
-        console.log('set navigation', scrollNavigation)
-        console.log('set currentScroll', currentScroll)
-        this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+        if (highlightList.size > 0) {
+            console.log('set initial highlightList', highlightList);
+            // hack so the first click of 'down' goes to the first instance
+            const currentScroll = paraList[paraList.length - 1];
+            const scrollNavigation = new Map([...paraList.map((val, idx) => {
+                const nav = {
+                    next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
+                    prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
+                };
+                return [val, nav]
+            })]);
+            console.log('set navigation', scrollNavigation)
+            console.log('set currentScroll', currentScroll)
+            this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+        } else {
+            // not found, so reset everything
+            this.setState({
+                searchTerm: event.currentTarget.value,
+                highlightList: new Map(),
+                scrollNavigation: new Map(),
+                currentScroll: 0
+            })
+        }
     }
 
     addNewRef(paraIndex, node) {
@@ -222,7 +233,9 @@ const Result = (props) => {
         SearchBox: {},
         Icon: {
             fill: 'white',
-            strokeWidth: '0px'
+            strokeWidth: '0px',
+            display: 'flex',
+            justifyContent: 'center'
         }
     }
 
@@ -252,9 +265,9 @@ const Result = (props) => {
             <div class="ClaimsCount">Claims (<strong>Independent</strong>/Total): <strong>{props.result.IndependentClaimsCount}</strong>/{props.result.ClaimsCount}</div>
             <div class="Search">
                 <input style={styles.SearchBox} placeholder="type term then Enter" onChange={e => props.changeSearchTerm(e)} />
-                {props.highlightList.size > 0 ? (<div style={{ backgroundColor: 'rgba(51, 122, 183, 1)' }} >
-                    <Icon name='triUp' width='1em' height='0.5em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'up')} />
-                    <Icon name='triDown' width='1em' height='0.5em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
+                {props.highlightList.size > 0 ? (<div class='SearchNext' >
+                    <Icon name='triUp' width='1em' height='1em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'up')} />
+                    <Icon name='triDown' width='1em' height='1em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
                 </div>) : ''}
             </div>
             <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
