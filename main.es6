@@ -394,6 +394,7 @@ ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
 const updateRenderWindow = (newData, targetWindow) => {
   console.log('sending state for patent', newData.PMCRef || newData[0].PatentID);
   targetWindow.webContents.send('state', newData);
+  targetWindow.show();
   return targetWindow;
 }
 
@@ -451,7 +452,6 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
       console.log('window ready, calling getPatentHtml');
       detailWindow.webContents.send('resize', { width: 800, height: 1000 });
       getPatentHtml();
-      detailWindow.show();
     })
     detailWindow.on('resize', () => {
       console.log('detailWindow size changed, sending new size');
@@ -481,10 +481,7 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
     const DEFAULT_ROTATION = 90;
     console.log('got call for patent detail view with patent ID', PatentID);
     queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
-      if (err) {
-        console.error(err)
-        return;
-      }
+      if (err) throw err;
       // if the query returns image data, serve it up,
       const resultList = data.length && JSON.parse(data.join(''));
       const hasPageData = resultList && resultList[0] && resultList[0].PageData;
@@ -495,20 +492,34 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
       // get images from USPTO
       return getAllImages(patentNo)
         .then(result => {
-          const withID = result.map(image => {
-            // there is no record at all, so return a (mostly) complete record
-            if (!resultList) return { PatentID, Rotation: DEFAULT_ROTATION, ...image };
-            // there's already a record, so only return the PageData and leave everything else as-is
+          // first: if we have data but no pageData just append it and add
+          if (resultList) return updateRenderWindow(result.map(image => {
             const currentRecord = resultList.filter(page => page.PageNumber === image.PageNumber)[0];
-            console.log(currentRecord);
             return { ...currentRecord, PageData: image.PageData };
-          })
-          // send them off to the imageWindow
-          updateRenderWindow(withID, imageWindow);
-          // return it to write the record (minus PageData) to the DB, unless it's already there
-          return !resultList ? withID : false;
+          }), imageWindow);
+          // if we're here, we don't have any records, and hence no ImageID. Need to insert images into the DB
+          return Promise.all(result.map(imageRecord => insertAndGetID(
+            connectParams, 
+            'Images', 
+            { PatentID, Rotation:DEFAULT_ROTATION, ...imageRecord }, 
+            'ImageID', 
+            { 
+              skipCheck: ['PageData', 'Rotation'], 
+              skipWrite: ['PageData'] 
+            }
+            )))
+            .then(idList => {
+              // now the records are there, minus any page data. re-query to get the ImageID's, append
+              // PageData, and send it off to the renderer window
+              queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err2, data2) => {
+                if (err2) throw err2;
+                return updateRenderWindow(result.map(image => {
+                  const currentRecord = JSON.parse(data2.join('')).filter(page => page.PageNumber === image.PageNumber)[0];
+                  return {...currentRecord, PageData:image.PageData};
+                }), imageWindow);
+              })
+            })
         })
-        .then(imageRecords => imageRecords && Promise.all(imageRecords.map(imageRecord => insertAndGetID(connectParams, 'Images', imageRecord, 'ImageID', { skipCheck: ['PageData', 'Rotation'], skipWrite: ['PageData'] }))))
         .catch(error => console.error(error))
     });
   }
@@ -568,7 +579,7 @@ ipcMain.on('request_resize', (e, width, height) => {
 })
 
 ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
-  console.log(`request to rotate imageID ${imageID} to new ${newRot}`);
+  console.log(`request to rotate imageID ${imageID} to ${newRot} degrees`);
   // write the new rotation data to the DB
   insertAndGetID(connectParams, 'Images', { Rotation: newRot, ImageID: imageID }, 'ImageID', { skipCheck: ['Rotation'], updateFields: ['Rotation'] })
     .then(status => console.log(status))
