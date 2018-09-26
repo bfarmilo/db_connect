@@ -104,7 +104,8 @@ const createWindow = () => {
       }); */
   win.on('resize', () => {
     console.log('window size changed, sending new size');
-    win.webContents.send('resize', { width: win.getSize()[0], height: win.getSize()[1] });
+    clearTimeout(timer);
+    timer = setTimeout(() => win.webContents.send('resize', { width: win.getSize()[0], height: win.getSize()[1] }), 500);
   });
   // Emitted when the window is closed.
   win.on('closed', () => {
@@ -438,9 +439,12 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 
 
   if (detailWindow === null) {
+    const [x, y] = win.getPosition();
     detailWindow = new BrowserWindow({
       width: 800,
       height: 1000,
+      x: x + 20,
+      y,
       show: false
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
@@ -455,7 +459,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
     })
     detailWindow.on('resize', () => {
       console.log('detailWindow size changed, sending new size');
-      setTimeout(() => detailWindow.webContents.send('resize', { width: detailWindow.getSize()[0], height: detailWindow.getSize()[1] }), 500);
+      clearTimeout(timer);
+      timer = setTimeout(() => detailWindow.webContents.send('resize', { width: detailWindow.getSize()[0], height: detailWindow.getSize()[1] }), 500);
     });
   } else {
     console.log('window already visible, calling getPatentHtml');
@@ -499,15 +504,15 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
           }), imageWindow);
           // if we're here, we don't have any records, and hence no ImageID. Need to insert images into the DB
           return Promise.all(result.map(imageRecord => insertAndGetID(
-            connectParams, 
-            'Images', 
-            { PatentID, Rotation:DEFAULT_ROTATION, ...imageRecord }, 
-            'ImageID', 
-            { 
-              skipCheck: ['PageData', 'Rotation'], 
-              skipWrite: ['PageData'] 
+            connectParams,
+            'Images',
+            { PatentID, Rotation: DEFAULT_ROTATION, ...imageRecord },
+            'ImageID',
+            {
+              skipCheck: ['PageData', 'Rotation'],
+              skipWrite: ['PageData']
             }
-            )))
+          )))
             .then(idList => {
               // now the records are there, minus any page data. re-query to get the ImageID's, append
               // PageData, and send it off to the renderer window
@@ -515,7 +520,7 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
                 if (err2) throw err2;
                 return updateRenderWindow(result.map(image => {
                   const currentRecord = JSON.parse(data2.join('')).filter(page => page.PageNumber === image.PageNumber)[0];
-                  return {...currentRecord, PageData:image.PageData};
+                  return { ...currentRecord, PageData: image.PageData };
                 }), imageWindow);
               })
             })
