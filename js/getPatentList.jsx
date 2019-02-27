@@ -62,14 +62,16 @@ class GetPatentList extends Component {
             isScraped: false,
             isDownloaded: false,
             isPatentInserted: false,
-            isClaimInserted: false
+            isClaimInserted: false,
+            isError: false
         }
         this.updateKey = new Map([
             ['requested', 'isRequested'],
             ['scraped', 'isScraped'],
             ['downloaded', 'isDownloaded'],
             ['patent inserted', 'isPatentInserted'],
-            ['claim inserted', 'isClaimInserted']
+            ['claim inserted', 'isClaimInserted'],
+            ['error', 'isError']
         ])
         this.handleInput = this.handleInput.bind(this);
         this.handlePatentButton = this.handlePatentButton.bind(this);
@@ -195,6 +197,7 @@ class GetPatentList extends Component {
                             <th>PDF downloaded</th>
                             <th>Patent Inserted in DB</th>
                             <th>Claims Inserted in DB</th>
+                            <th>Error</th>
                         </tr>
                         {[...this.state.updateStatus].map(([patent, status]) => (
                             <tr key={patent}>

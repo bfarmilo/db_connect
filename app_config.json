@@ -180,6 +180,32 @@
         ]
     },
     "patentURL": "http://patents.google.com/patent/",
+    "patentParser": {
+        "Number": {
+            "selector": "[name='citation_patent_application_number']",
+            "target": "content"
+        },
+        "Title": {
+            "selector": "[name='DC.title']",
+            "target": "content"
+        },
+        "downloadLink": {
+            "selector": "[name='citation_pdf_url']",
+            "target": "content"
+        },
+        "PatentUri": {
+            "selector": ".knowledge-card h2",
+            "target": "innerHTML"
+        },
+        "InventorLastName": {
+            "selector": "[name='DC.contributor']",
+            "target": "content"
+        },
+        "Claims": {
+            "selector": "#claims #text .claims",
+            "target": "children"
+        }
+    },
     "uspto": {
         "patent": {
             "url": "http://patft.uspto.gov/netacgi/nph-Parser",

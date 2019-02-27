@@ -11,7 +11,7 @@ const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
 const { insertAndGetID } = require('./jsx/app_bulkUpload');
 const { getAllImages } = require('./jsx/getImages');
 // configuration
-const { patentDB } = require('./app_config.json');
+const { patentDB, patentParser } = require('./app_config.json');
 // developer
 // const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
@@ -130,14 +130,14 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
   // create a map of hidden browser windows indexed by a patent number
   const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
 
-  const scrapeCode = `require('electron').ipcRenderer.send('result_ready', {
-    PatentPath: document.querySelector('.knowledge-card-action-bar a').href,
-    Number: document.querySelector('.applist .approw .appno b').innerHTML,
-    Title: document.querySelector('#title').innerText,
-    downloadLink: document.querySelector('a.style-scope.patent-result').href,
-    PatentUri: document.querySelector('.knowledge-card h2').innerHTML,
-    InventorLastName: document.querySelector('.important-people dd').innerText,
-    Claims: Array.from(document.querySelector('#claims #text .claims').children).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
+  const scrapeCode = `
+  const ipc = require('electron').ipcRenderer;
+  window.onerror = function (error, url, line) {
+    ipc.send('scraping_error', error);
+  }
+  ipc.send('result_ready', {
+    ${['Number', 'Title', 'downloadLink', 'PatentUri', 'InventorLastName'].map(key => `${key}: document.querySelector("${patentParser[key].selector}").${patentParser[key].target},`).join('\n  ')}
+    Claims: Array.from(document.querySelector("${patentParser.Claims.selector}").${patentParser.Claims.target}).map(claim => ({localName: claim.localName, outerHTML:claim.outerHTML, innerText:claim.innerText, className:claim.className}))
   });`;
 
   /** @private getNewPatent sets up the (hidden) patent retrieval window
@@ -161,19 +161,21 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
         activeWin.webContents.openDevTools();
       }
       console.log('window ready, executing in-page JS for patent', patentNumber);
-      //getPatentWindow.show();
       activeWin.webContents.executeJavaScript(scrapeCode, false)
     })
     activeWin.on('did-fail-load', (...args) => {
-      activeWin.send('page_load_error', {...args});
+      activeWin.send('page_load_error', { ...args });
     })
 
     // content event listeners
-    return new Promise(resolve => {
+    return new Promise((resolve, reject) => {
+      ipcMain.on('scraping_error', (e, error) => {
+        return reject(error);
+      })
       ipcMain.once('result_ready', (e, result) => {
         console.log('received result event')
         activeWin.close();
-        // Number: formatted as USAABBBCC, reformat to AA/BBB,CCC
+        // Number: formatted as US:AABBBCC, reformat to AA/BBB,CCC
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
         // Claims: condition claims to exclude JSON-ineligible characters 
@@ -182,7 +184,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
         return resolve(
           {
             ...result,
-            Number: result.Number.replace(/US(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
+            Number: result.Number.replace(/US:(\d{2})(\d{3})(\d{3})/, '$1/$2,$3'),
             PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
             Title: result.Title.trim().split('\n')[0],
             InventorLastName: result.InventorLastName.split(' ')[result.InventorLastName.split(' ').length - 1],
@@ -218,9 +220,15 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
     let index = 0;
     //TODO: Option to use inventor last name instead of patentRef
     for (let [patentNumber, browserWin] of getPatentWindow.entries()) {
-      patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
-      index++;
-      update(patentNumber, 'scraped');
+      try {
+        patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
+        index++;
+        update(patentNumber, 'scraped');
+      } catch (err) {
+        index++;
+        console.error(err);
+        update(patentNumber, 'error')
+      }
     };
     return patentRecords;
   }
