@@ -15,7 +15,7 @@ import { Icon } from './icons.js';
  */
 const EditCell = props => {
 
-    const editModeRows = Math.max(10, Math.round(props.boxHeight / 15));
+    const editModeRows = Math.max(10, Math.round(props.boxHeight / 15) - 2); //estimate buttons are 2 rows high (2em)
 
     const styles = {
         EditBoxContainer: {
@@ -103,7 +103,7 @@ const SaveCancel = props => {
             padding: '0.4em 0.5em 0.4em 0.5em'
         },
         Icon: {
-            fill:'white',
+            fill: 'white',
             strokeWidth: '1px'
         }
     };
@@ -118,7 +118,7 @@ const SaveCancel = props => {
                     style={styles.Button}
                     onClick={(e) => props.handleClick(e, item.action)}
                 >
-                        <Icon name={item.action === 'save' ?'circleCheck' : 'circleX'} width='1em' height='1em' style={styles.Icon} />
+                    <Icon name={item.action === 'save' ? 'circleCheck' : 'circleX'} width='1em' height='1em' style={styles.Icon} />
                 </button>
             ))}
         </div>

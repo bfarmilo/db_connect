@@ -91,6 +91,9 @@ class GetPatentList extends Component {
             updateStatus.set(parseInt(patentNumber, 10), { ...this.state.updateStatus.get(patentNumber), [this.updateKey.get(statusMessage)]: true });
             console.log('new status set', updateStatus);
             this.setState({ updateStatus });
+        });
+        ipcRenderer.on('page_load_error', (e, error) => {
+            console.error('external window reports new error', error);
         })
     }
 
@@ -99,9 +102,9 @@ class GetPatentList extends Component {
         console.log('received change to %s, setting new value %s', inputType, newValue);
         switch (inputType) {
             case 'patentList':
-                // strip out 'US' and commas, convert to an array of strings by splitting on \n
+                // strip out 'US', commas, slashes and spaces, filter out things <7 digits long, convert to an array of strings by splitting on \n
                 // format as {patentNumber:Ref}
-                const patentList = newValue.replace(/(US|,)/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}/));
+                const patentList = newValue.replace(/(US|,|\/| )/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}/));
                 this.setState({ patentList });
                 break;
             case 'downloadPats':

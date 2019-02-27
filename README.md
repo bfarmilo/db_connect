@@ -20,6 +20,8 @@ Currently very much a work-in-progress.
 
 ### Known TODOs:
 
+1. Update all refernces to ./jsx/
+1. Update components to include preact, h or preact
 1. Interface to allow addition and linking of markman terms to patents and constructions
 1. Better reporting for shortlisting, claim export
 1. Write back-end for Patent Summary updating

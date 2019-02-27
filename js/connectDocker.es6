@@ -11,7 +11,7 @@ const connectDocker = connectParams => {
             exec(`powershell.exe docker inspect --format \'{{.NetworkSettings.Networks.nat.IPAddress}}\' ${connectParams.container}`, (err, stdout, stderr) => {
                 if (err) return reject(err);
                 if (stderr) return reject(stderr);
-                dockerParams.server = stdout.toString().split(/\n/g)[0];
+                dockerParams.server = stdout.toString().match(/(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})/g)[0];
                 console.log('connecting with parameters %j', dockerParams);
                 return resolve(dockerParams);
             });

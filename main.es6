@@ -156,10 +156,16 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       getPatentWindow.delete(patentNumber);
     });
     activeWin.on('ready-to-show', () => {
-      if (process.env.DEVTOOLS === 'show') activeWin.webContents.openDevTools();
+      if (process.env.DEVTOOLS === 'show') {
+        activeWin.show();
+        activeWin.webContents.openDevTools();
+      }
       console.log('window ready, executing in-page JS for patent', patentNumber);
       //getPatentWindow.show();
       activeWin.webContents.executeJavaScript(scrapeCode, false)
+    })
+    activeWin.on('did-fail-load', (...args) => {
+      activeWin.send('page_load_error', {...args});
     })
 
     // content event listeners
