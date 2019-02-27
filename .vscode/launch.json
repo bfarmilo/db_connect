@@ -7,6 +7,26 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Debug Electron Main",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "cwd": "${workspaceRoot}",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+            },
+            "program": "${workspaceRoot}/main.es6",
+            "outFiles": [
+                "${workspaceRoot}/main.js"
+            ],
+            "protocol": "inspector",
+            "preLaunchTask": "npm: transpile-main",
+            "outputCapture": "std",
+            "env": {
+                "DEVTOOLS": "show"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "Mocha Tests",
             "program": "${workspaceFolder}/node_modules/mocha/bin/_mocha",
             "args": [
@@ -23,29 +43,18 @@
             // "postDebugTask": "npm: openTestReport",
             "internalConsoleOptions": "openOnSessionStart"
         },
-    {
-        "type": "node",
-        "request": "launch",
-        "name": "Upload Patents via NPM",
-        "runtimeExecutable": "npm",
-        "runtimeArgs": [
-            "run",
-            "startUpload"
-        ],
-        "port": 9229
-    },
-    {
-        "type": "node",
-        "request": "launch",
-        "name": "Test Tedious",
-        "program": "${workspaceFolder}\\js\\tedioustest"
-    },
-    {
-        "type": "node",
-        "request": "launch",
-        "name": "Test ",
-        "program": "${workspaceFolder}\\js\\tedioustest"
-    },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Test Tedious",
+            "program": "${workspaceFolder}\\js\\tedioustest"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Test ",
+            "program": "${workspaceFolder}\\js\\tedioustest"
+        },
         {
             "type": "node",
             "request": "launch",
