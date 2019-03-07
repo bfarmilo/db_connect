@@ -18,8 +18,8 @@ const patentNumberCell = (patentNumber, style, clickHandler) => {
         onClick={clickHandler}
     >
         <div style={{ paddingRight: '7px' }}>
-            {patentNumber < 99000000 ?
-                patentNumber.toString().replace(/(\d)(\d{3})(\d{3})/i, '$1,$2,$3') :
+            {patentNumber < 19999999 ?
+                patentNumber.toString().replace(/(\d{1,2})(\d{3})(\d{3})/i, '$1,$2,$3') :
                 patentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
         </div>
         <Icon name='jumpFile' width='1em' height='1em' style={styles.Icon} />

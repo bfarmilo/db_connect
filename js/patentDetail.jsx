@@ -212,8 +212,8 @@ class PatentDetail extends Component {
 
 const Result = (props) => {
     const hasDate = !!props.result.EstimatedExpiryDate;
-    const formattedNumber = props.result.PatentNumber < 10000000 ?
-        props.result.PatentNumber.toString().replace(/(\d{1})(\d{3})(\d{3})/g, '$1,$2,$3') :
+    const formattedNumber = props.result.PatentNumber < 19999999 ?
+        props.result.PatentNumber.toString().replace(/(\d{1,2})(\d{3})(\d{3})/g, '$1,$2,$3') :
         props.result.PatentNumber.toString().replace(/(\d{4})(.*)/g, '$1/$2');
     // TODO - deal with patent numbers above 9,999,999
     //TODO: Make date, inventor, PMCRef editable

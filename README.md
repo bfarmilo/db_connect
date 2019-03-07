@@ -21,7 +21,13 @@ Currently very much a work-in-progress.
 ### Known TODOs:
 
 1. Update all refernces to ./jsx/
-1. Update components to include preact, h or preact
+1. Make patent Full Text writing offline by choice
+1. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
+1. Check for duplicate (claims, patents) before inserting
+1. Update components to include react hooks
+1. Get Patent Detail window size right
+1. Migrate to React-Native
+1. DB Backend to SQLite for portablility
 1. Interface to allow addition and linking of markman terms to patents and constructions
 1. Better reporting for shortlisting, claim export
 1. Write back-end for Patent Summary updating
