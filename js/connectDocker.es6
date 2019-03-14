@@ -19,6 +19,19 @@ const connectDocker = connectParams => {
     })
 }
 
+const closeDocker = connectParams => {
+    const dockerParams = Object.assign(connectParams);
+    return new Promise((resolve, reject) => {
+        exec(`docker stop ${dockerParams.container}`, (err0, stdout0, stderr0) => {
+            if (err0) return reject(err0);
+            if (stderr0) return reject(stderr0);
+            console.log('%s stopped', stdout0);
+            return resolve(stdout0);
+        })
+    })
+}
+
 module.exports = {
-    connectDocker
+    connectDocker,
+    closeDocker
 }

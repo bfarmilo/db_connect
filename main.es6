@@ -4,7 +4,7 @@ const spawn = require('child_process').spawn;
 // local modules
 const { getDropBoxPath } = require('./jsx/getDropBoxPath');
 const { queryDatabase } = require('./jsx/app_DBconnect');
-const { connectDocker } = require('./jsx/connectDocker');
+const { connectDocker, closeDocker } = require('./jsx/connectDocker');
 const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
@@ -62,6 +62,11 @@ const connectToDB = async () => {
     return err;
   }
 };
+
+// close sql server connection
+const closeDB = () => {
+  return closeDocker(connectParams);
+}
 
 /** openPDF will try to open a pdf file using the shell
  * 
@@ -311,10 +316,11 @@ app.on('ready', async () => {
   }
 });
 // Quit when all windows are closed.
-app.on('window-all-closed', () => {
+app.on('window-all-closed', async () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
+    await closeDB();
     app.quit();
   }
 });
