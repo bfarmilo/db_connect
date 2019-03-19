@@ -1,6 +1,6 @@
 {
   "name": "dbviewer",
-  "version": "1.3.4",
+  "version": "1.3.5",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
@@ -18,29 +18,33 @@
     "node": ">9.0.0"
   },
   "dependencies": {
+    "@babel/runtime": "^7.3.4",
     "fs-extra": "^5.0.0",
     "marked": "^0.3.19",
-    "node-fetch": "^2.2.0",
-    "pdfjs-dist": "^2.0.489",
-    "preact": "^8.3.1",
+    "node-fetch": "^2.3.0",
+    "pdfjs-dist": "^2.0.943",
+    "preact": "^8.4.2",
     "preact-custom-scrollbars": "^4.0.4",
-    "tedious": "^2.6.4",
+    "tedious": "^2.7.1",
     "tedious-promises": "^0.4.1"
   },
   "devDependencies": {
-    "babel-cli": "^6.26.0",
-    "babel-env": "^2.4.1",
-    "babel-plugin-transform-runtime": "^6.23.0",
-    "babel-polyfill": "^6.26.0",
-    "babel-preset-preact": "^1.1.0",
-    "chai": "*",
+    "@babel/cli": "^7.2.3",
+    "@babel/core": "^7.3.4",
+    "@babel/plugin-proposal-class-properties": "^7.3.4",
+    "@babel/plugin-proposal-function-bind": "^7.2.0",
+    "@babel/plugin-transform-react-jsx": "^7.3.0",
+    "@babel/plugin-transform-runtime": "^7.3.4",
+    "@babel/polyfill": "^7.2.5",
+    "@babel/preset-env": "^7.3.4",
+    "chai": "^4.2.0",
     "chai-as-promised": "^6.0.0",
-    "electron": "^3.0.0",
+    "electron": "^4.0.8",
     "electron-devtools-installer": "^2.2.4",
-    "electron-packager": "^12.1.2",
+    "electron-packager": "^12.2.0",
     "jsdom": "^11.12.0",
     "mocha": "^5.2.0",
-    "mochawesome": "^3.0.3",
+    "mochawesome": "^3.1.1",
     "shell": "^0.3.2"
   }
 }

@@ -29,7 +29,7 @@ import pdfJsLib from 'pdfjs-dist';
 class PatentImage extends Component {
 
     componentDidMount() {
-        pdfJsLib.GlobalWorkerOptions.workerSrc = 'http://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.489/pdf.worker.js';
+        pdfJsLib.GlobalWorkerOptions.workerSrc = 'http://cdnjs.cloudflare.com/ajax/libs/pdf.js/2.0.943/pdf.worker.js';
     }
 
     render() {
