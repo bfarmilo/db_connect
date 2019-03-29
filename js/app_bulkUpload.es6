@@ -34,7 +34,7 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
   const connectParams = { ...connectInfo };
   return new Promise((resolve, reject) => {
     //console.log('connecting to ', connectParams.options.database);
-    if (connection) connection.close();
+    // not working if (typeof connection !== 'undefined') connection.close();
     if (!connectParams.server) reject('server not yet available');
     const connection = new Connection(connectParams);
     // listener for connect
@@ -109,8 +109,10 @@ const insertNewPatents = (connectParams, patentRecord, reportStatus) => new Prom
 const insertClaims = (connectParams, claim) => new Promise(async (resolve, reject) => {
   try {
     const { keyList, paramList } = getParams(claim);
-    const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE ${keyList.map(key => `Claim.${key} LIKE @${key}`).join(' AND ')}`;
-    let result = await queryNoPromises(connectParams, testSQL, paramList);
+    // const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE ${keyList.map(key => `Claim.${key} LIKE @${key}`).join(' AND ')}`;
+    // really just check for duplicates of this patent & this claim number
+    const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE Claim.PatentID=${claim.PatentID} AND Claim.ClaimNumber=${claim.ClaimNumber}`;
+    let result = await queryNoPromises(connectParams, testSQL, paramList.filter(param => param.name === 'PatentID' || param.name === 'ClaimNumber'));
     const ClaimID = result && result[0] && result[0][0];
     if (!ClaimID) {
       // the ClaimID doesn't exist, so insert a new claim
@@ -176,7 +178,7 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
     let recordID = result && result[0] && result[0][0];
     let type = 'existing';
     console.log(recordID, JSON.stringify(controlOptions));
-    if (recordID && controlOptions.updateFields) {
+    if (recordID && controlOptions.updateFields.length) {
       // it is found, and we're in update mode
       // this time the fields to include are listed, so only exclude non-matching fields and the idField
       const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
@@ -219,13 +221,23 @@ const getMarkmanDropdowns = connectParams => new Promise((resolve, reject) => {
     .catch(err => reject(err))
 });
 
+const getPatentFromDigits = (connectParams, digits) => new Promise((resolve, reject) => {
+  return queryNoPromises(
+    connectParams,
+    `SELECT Patent.PatentNumber, Patent.PatentID FROM Patent WHERE CAST(Patent.PatentNumber AS char(7)) LIKE @digits`,
+    [{ name: 'digits', type: TYPES.NVarChar, val: `%${digits}%` }]
+  )
+    .then(patentList => resolve(new Map(patentList)))
+    .catch(err => reject(err))
+})
+
 const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reject) => {
   const { paramList } = getParams({ PatentID });
   return queryNoPromises(
     connectParams,
     `SELECT claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID=claims.PatentID WHERE claims.PatentID=@PatentID`,
     paramList)
-    .then(result => resolve({ claims: new Map(result) }))
+    .then(result => resolve(new Map(result)))
     .catch(err => reject(err));
 });
 
@@ -238,5 +250,6 @@ module.exports = {
   updatePatents,
   getMarkmanDropdowns,
   insertAndGetID,
-  getClaimDropdown
+  getClaimDropdown,
+  getPatentFromDigits
 };
