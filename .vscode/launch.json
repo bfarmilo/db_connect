@@ -8,10 +8,10 @@
             "type": "node",
             "request": "launch",
             "name": "Debug Electron Main",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
             "cwd": "${workspaceRoot}",
             "windows": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
             },
             "program": "${workspaceRoot}/main.es6",
             "outFiles": [
@@ -37,7 +37,7 @@
                 "--colors",
                 "--reporter",
                 "mochawesome",
-                "${workspaceFolder}//test//?(11_*)"
+                "${workspaceFolder}//test//?(2_*)"
             ],
             "preLaunchTask": "npm: transpile",
             // "postDebugTask": "npm: openTestReport",

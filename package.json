@@ -1,6 +1,6 @@
 {
   "name": "dbviewer",
-  "version": "1.3.5",
+  "version": "1.3.6",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
@@ -39,7 +39,7 @@
     "@babel/preset-env": "^7.3.4",
     "chai": "^4.2.0",
     "chai-as-promised": "^6.0.0",
-    "electron": "^4.0.8",
+    "electron": "^4.1.1",
     "electron-devtools-installer": "^2.2.4",
     "electron-packager": "^12.2.0",
     "jsdom": "^11.12.0",
