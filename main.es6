@@ -413,7 +413,8 @@ ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
  * @returns {void}
  */
 const updateRenderWindow = (newData, targetWindow) => {
-  console.log('sending state for patent', newData.PMCRef || newData[0].PatentID);
+  console.log(newData.working)
+  // ? 'sending working message to detail window' : 'sending state for patent', newData.PMCRef || newData[0].PatentID);
   targetWindow.webContents.send('state', newData);
   targetWindow.show();
   return targetWindow;
@@ -425,6 +426,7 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
    * @returns {void}
    */
   const getPatentHtml = () => {
+    updateRenderWindow({ working: true }, detailWindow);
     console.log('got call for patent detail view with patent number', patentNumber);
     queryDatabase(connectParams, 'p_PATENT', `WHERE PatentNumber=@0`, [patentNumber], ' FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER', async (err, data) => {
       if (err) {
@@ -436,21 +438,16 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
         const state = JSON.parse(data.reduce((accum, item) => accum.concat(item), ''));
         if (!state.PatentHtml) {
           console.log('no PatentHtml found, querying USPTO for patent Full Text');
+          detailWindow.webContents.send('available_offline', false);
           getFullText(patentNumber)
             .then(PatentHtml => {
               state.PatentHtml = JSON.stringify(PatentHtml);
-              // now store the new data in the DB for future reference
-              queryDatabase(connectParams, 'u_FULLTEXT', '', [state.PatentHtml, state.PatentID], '', (err2, status) => {
-                if (err2) {
-                  console.error(err2);
-                } else {
-                  console.log('record updated with new fullText');
-                  return updateRenderWindow(state, detailWindow);
-                }
-              })
+              return updateRenderWindow(state, detailWindow);
             })
             .catch(err3 => console.error(err3))
         } else {
+          // we found it, so it is already available offline
+          detailWindow.webContents.send('available_offline', true);
           return updateRenderWindow(state, detailWindow);
         }
       }
@@ -498,6 +495,19 @@ ipcMain.on('store_images', (event, imageMap) => {
       console.log(status)
     })
     .catch(err => console.error(err))
+})
+
+ipcMain.on('store_fulltext', (event, PatentHtml, PatentID) => {
+  console.log('writing fullText to DB');
+  // now store the new data in the DB for future reference
+  queryDatabase(connectParams, 'u_FULLTEXT', '', [PatentHtml, PatentID], '', (err, status) => {
+    if (err) {
+      console.error(err);
+    } else {
+      detailWindow.webContents.send('available_offline', true);
+      console.log('record updated with new fullText');
+    }
+  })
 })
 
 ipcMain.on('show_images', (event, PatentID, patentNo) => {

@@ -12,6 +12,11 @@ button {
   padding: 0.4em 0.5em 0.4em 0.5em;
 }
 
+button:disabled {
+  background-color: rgba(51,122,183,0.5);
+  color: grey;
+}
+
 .PatentDetail {
   display: grid;
   grid-template-columns: 1.5fr 5fr 2fr auto;

@@ -22,7 +22,7 @@ Currently very much a work-in-progress.
 ### Known TODOs:
 
 1. Update all refernces to ./jsx/
-2. Make patent Full Text writing offline by choice
+2. ~~Make patent Full Text writing offline by choice~~
 3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
 4. Check for duplicate (claims, patents) before inserting
 5. Update components to include react hooks

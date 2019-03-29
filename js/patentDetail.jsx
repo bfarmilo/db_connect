@@ -2,6 +2,8 @@ import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { EditCell } from './jsx/editCell';
 import { Icon } from './jsx/icons';
+import { Throbber } from './jsx/Throbber';
+
 /** @jsx h */
 
 class PatentDetail extends Component {
@@ -29,7 +31,9 @@ class PatentDetail extends Component {
             patentImages: new Map(),
             currentScroll: 0,
             currentImage: 0,
-            windowSize: { width: 0, height: 0 }
+            enableOffline: false,
+            windowSize: { width: 0, height: 0 },
+            working: true
         };
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
@@ -39,28 +43,38 @@ class PatentDetail extends Component {
         this.changeSearchTerm = this.changeSearchTerm.bind(this);
         this.addNewRef = this.addNewRef.bind(this);
         this.scrollToNext = this.scrollToNext.bind(this);
+        this.makeOffline = this.makeOffline.bind(this);
     }
 
     componentDidMount() {
         ipcRenderer.on('state', (event, data) => {
             console.log('received data', data);
             // console.log('summaries', JSON.stringify(data.summaries));
-            const { summaries, ...result } = { ...data.summaries, ...data };
-            const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
-            // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
-            this.setState({
-                result,
-                patentSummaries,
-                highlightList: new Map(),
-                searchTerm: '',
-                currentScroll: 0,
-                scrollNavigation: new Map(),
-            });
+            if (data.working) {
+                this.setState({ working: data.working })
+            } else {
+                const { summaries, ...result } = { ...data.summaries, ...data };
+                const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
+                // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
+                this.setState({
+                    result,
+                    patentSummaries,
+                    highlightList: new Map(),
+                    searchTerm: '',
+                    currentScroll: 0,
+                    scrollNavigation: new Map(),
+                    working: false
+                });
+            }
         });
         ipcRenderer.on('resize', (event, { width, height }) => {
             console.log(`got new window size width:${width} height:${height}`);
             this.setState({ windowSize: { width, height } })
-        })
+        });
+        ipcRenderer.on('available_offline', (event, isOffline) => {
+            console.log(`fullText is ${isOffline ? '' : 'not'} available offline`);
+            this.setState({ enableOffline: isOffline });
+        });
     }
 
     openClickHandler(event) {
@@ -179,6 +193,11 @@ class PatentDetail extends Component {
         ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber);
     }
 
+    makeOffline = e => {
+        console.log('got request to save fulltext to DB');
+        ipcRenderer.send('store_fulltext', this.state.result.PatentHtml, this.state.result.PatentID);
+    }
+
     render({ }, { result }) {
         console.log('calling render with state', this.state.result, this.state.patentSummaries)
         return (
@@ -191,6 +210,8 @@ class PatentDetail extends Component {
                         goBackClickHandler={this.goBackClickHandler}
                         selectedColor={'rgba(51, 122, 183, 0.2)'}
                         activeSummary={this.state.activeSummary}
+                        enableOffline={this.state.enableOffline}
+                        makeOffline={this.makeOffline}
                         editContent={this.editContent}
                         activateEditMode={this.activateEditMode}
                         clickSaveCancel={this.clickSaveCancel}
@@ -199,11 +220,15 @@ class PatentDetail extends Component {
                         scrollToNext={this.scrollToNext}
                         showImages={this.showImages}
                     />
-                    <FullText
-                        patentHtml={JSON.parse(this.state.result.PatentHtml)}
-                        highlightList={this.state.highlightList}
-                        addNewRef={this.addNewRef}
-                    />
+                    {this.state.working ? <Throbber
+                        visible={true}
+                        windowHeight={200}
+                        themeColor={'rgba(51, 122, 183, 0.2)'}
+                    /> : <FullText
+                            patentHtml={JSON.parse(this.state.result.PatentHtml)}
+                            highlightList={this.state.highlightList}
+                            addNewRef={this.addNewRef}
+                        />}
                 </div>
             </div>
         );
@@ -270,8 +295,12 @@ const Result = (props) => {
                     <Icon name='triDown' width='1em' height='1em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
                 </div>) : ''}
             </div>
-            <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
-                <button style={{ flexGrow: '1' }} onClick={props.showImages}>Show Images</button></div>
+            <div class="OpenPDF">
+                <button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
+                <button style={{ flexGrow: '1' }} onClick={props.showImages}>Show Images</button>
+                {!props.enableOffline ? <button style={{ flexGrow: '1' }} onClick={e => props.makeOffline(e)}>Make available offline</button> : ''}
+            </div>
+
         </div>
     )
 };
