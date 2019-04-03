@@ -25,6 +25,7 @@ const EditCell = props => {
         EditableBox: {
             display: 'grid',
             gridTemplateRows: 'auto 1fr',
+            minHeight: '1em'
         },
         ViewArea: {
             flexGrow: '1',
@@ -71,11 +72,18 @@ const EditCell = props => {
         </div>
     ) : (
             <div style={styles.EditBoxContainer}>
-                <span
-                    style={styles.ViewArea}
-                    dangerouslySetInnerHTML={markdownText}
-                    onClick={props.activateEditMode}
-                />
+                {props.value ?
+                    <span
+                        style={styles.ViewArea}
+                        dangerouslySetInnerHTML={markdownText}
+                        onClick={props.activateEditMode}
+                    /> :
+                    <span
+                        style={{ color: 'lightgrey' }}
+                        onClick={props.activateEditMode}
+                    >Click to Add Text
+                    </span>
+                }
             </div>
         )
     )
