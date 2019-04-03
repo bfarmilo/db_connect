@@ -21,7 +21,8 @@
             "preLaunchTask": "npm: transpile-main",
             "outputCapture": "std",
             "env": {
-                "DEVTOOLS": "show"
+                "DEVTOOLS": "show",
+                "DBMODE": "readonly"
             }
         },
         {
