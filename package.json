@@ -5,7 +5,7 @@
   "main": "main.js",
   "scripts": {
     "test": "mocha",
-    "transpile": "babel ./js/ --out-dir ./jsx/",
+    "transpile": "babel ./js/ --out-dir ./jsx/ --source-maps --watch",
     "transpile-main": "babel ./main.es6 -o main.js",
     "package-win": "npx electron-packager . --platform=win32 --arch=x64 --overwrite --ignore=^/js$ --ignore=test --ignore=mochawesome-report --ignore=es6$ --ignore=.vscode --icon=icons/icon.ico",
     "package": "npm run transpile && npm run transpile-main && npm run package-win",
