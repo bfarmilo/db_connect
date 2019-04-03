@@ -4,6 +4,7 @@ import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
 import { Throbber } from './jsx/throbber';
+import { config } from './jsx/config'
 
 // import 'preact/devtools';
 
@@ -12,56 +13,7 @@ const RESIZE_THRESHOLD = 50;
 const NEW = false;
 const APPEND = true;
 
-const config =
-{
-    claims: {
-        gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
-        themeColor: 'rgba(51, 122, 183, 1)',
-        selectedColor: 'rgba(183, 130, 51, 0.8)',
-        borderColor: 'rgba(41, 94, 141, 0.8)',
-        enabledButtons: [
-            { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
-            { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
-            { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
-            { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
-            { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
-        ],
-        columns: [
-            { display: 'Reference', field: 'PMCRef' },
-            { display: 'Patent', field: 'PatentNumber' },
-            { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
-            { display: 'Notes', field: 'PotentialApplication' },
-            { display: 'Watch', field: 'WatchItems' }
-        ]
-    },
-    markman: {
-        gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 1fr 1fr',
-        themeColor: 'rgba(12, 84, 0, 1)',
-        selectedColor: 'rgba(183, 130, 51, 0.8)',
-        borderColor: 'rgba(41, 94, 141, 0.8)',
-        enabledButtons: [],
-        columns: [
-            { display: 'Reference', field: 'PMCRef' },
-            { display: 'Patent', field: 'PatentNumber' },
-            { display: 'Clm.', field: 'ClaimNumber' },
-            { display: 'Claim Term', field: 'ClaimTerm' },
-            { display: 'Construction', field: 'Construction' },
-            { display: 'Pg.', field: 'MarkmanPage' },
-            { display: 'Ruling', field: 'FileName' },
-            { display: 'Court', field: 'Court' },
-            { display: 'Case', field: 'ClientName' }
-        ]
-    },
-    databaseOptions: {
-        PMCDB: {
-            hideColumns: [
-                { field: 'InventorLastName' },
-                { field: 'Title' }
-            ],
-            enableConstructions: true
-        }
-    }
-};
+
 
 const sortOrder = new Map([
     ['PatentNumber', { field: 'PatentNumber', ascending: true }],
@@ -100,6 +52,7 @@ class ClaimTable extends Component {
         this.handleScroll = this.handleScroll.bind(this);
         this.getNewPatents = this.getNewPatents.bind(this);
         this.showInventor = this.showInventor.bind(this);
+        this.newConstruction = this.newConstruction.bind(this);
     }
 
     // lifecycle Methods
@@ -291,13 +244,22 @@ class ClaimTable extends Component {
     }
     /** send view_patentdetail to main to cause a new window to open with patent details
      * 
-     * @param {Event} event 
+     * @param {Event} event
+     * @param {Number} patentNumber 
      */
     getPatentDetail(event, patentNumber) {
         console.log('getting detail for patent', patentNumber);
         ipcRenderer.send('view_patentdetail', patentNumber);
     }
 
+    /** send view_markman to main to cause a new window to open for markman entry
+     * @param {Event} event
+     */
+
+    newConstruction(event) {
+        console.log('launching Markman entry window');
+        ipcRenderer.send('add_claimconstructions');
+    }
     /** switch into Edit Mode for an editable field
      * 
      * @param {*} event 
@@ -402,6 +364,7 @@ class ClaimTable extends Component {
                     modifySortOrder={this.modifySortOrder}
                     getNewPatents={this.getNewPatents}
                     changeMode={this.changeMode}
+                    newConstruction={this.newConstruction}
                 />
                 {this.state.working && this.state.resultList.size === 0 ? <Throbber
                     visible={true}
