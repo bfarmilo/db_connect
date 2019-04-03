@@ -10,6 +10,7 @@ const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
 const { insertAndGetID } = require('./jsx/app_bulkUpload');
 const { getAllImages } = require('./jsx/getImages');
+const { initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman } = require('./jsx/app_markmanInterface');
 // configuration
 const { patentDB, patentParser } = require('./app_config.json');
 // developer
@@ -349,6 +350,7 @@ ipcMain.on('browse', (e, startFolder) => {
 
 // Listener for Markman updating
 ipcMain.on('markman_entry', e => {
+  console.log('got request to open markman window');
   /*  table reference
   mt: TermID, ClaimTerm
   clients: ClientID, ClientName, SugarID
@@ -634,14 +636,19 @@ ipcMain.on('close_patent_window', event => {
 })
 
 // Listener for launching the Markman Linking applications
-ipcMain.on('add_claimconstructions', () => {
+ipcMain.on('add_claimconstructions', async () => {
   // open new window for applications
   markmanwin = new BrowserWindow({
     width: 1440,
     height: 800,
+    options: {
+      hidden: true
+    }
   });
   // and load the index.html of the app.
   markmanwin.loadURL(`file://${__dirname}/markman.html`);
+  // Open the DevTools.
+  if (process.env.DEVTOOLS === 'show') markmanwin.webContents.openDevTools();
   // Emitted when the window is closed.
   markmanwin.on('closed', () => {
     // Dereference the window object, usually you would store windows
@@ -667,6 +674,76 @@ ipcMain.on('add_claimconstructions', () => {
   // confirm if update not applied
   // close window
 });
+
+ipcMain.on('markman_ready', async event => {
+  const { claimTerms, clients, sectors, patents } = await initializeMarkman(connectParams);
+  markmanwin.webContents.send('init_complete', [...claimTerms], [...clients], [...patents]);
+  markmanwin.show();
+})
+
+ipcMain.on('get_claims', async (e, patentID) => {
+  const claims = await getClaims(connectParams, patentID);
+  markmanwin.webContents.send('got_claims', [...claims]);
+})
+
+ipcMain.on('get_file', async (e, client, ClientID) => {
+  const { document, documentID } = await linkDocument(connectParams, dropboxPath, client, ClientID);
+  markmanwin.webContents.send('got_file', document, documentID);
+})
+
+ipcMain.on('markman_write', async (e, list, record) => {
+
+  // map a term to a term table query
+  const termRecord = { ClaimTerm: record.term }
+  // if no TermID is sent, it is a new term. So write and store the termID
+  const TermID = record.termID || await addMarkman(connectParams, 'term', termRecord);
+
+  // map a construction to a construction table query
+  const constructionRecord = {
+    DocumentID: record.documentID,
+    Construction: record.construction,
+    MarkmanPage: record.page,
+    Agreed: record.agreed,
+    Court: record.court
+  }
+  // if no ConstructID is sent, it is a new construction, so write & store the constructID
+  const ConstructID = record.constructID || await addMarkman(connectParams, 'construction', constructionRecord);
+
+  // map the term, construction, and client to the claim
+  const linkRecord = list.map(([key, value]) => {
+    const returnRecord = {
+      TermID,
+      ConstructID,
+      ClaimID: value.claimID,
+      ClientID: value.clientID
+    }
+    // if it contains a termConstructID it is an existing link record, so add it
+    if (Object.keys(value).includes('termConstructID')) {
+      returnRecord.TermConstructID = value.termConstructID;
+    }
+    return returnRecord;
+  })
+
+  // now write the new links and collect the constructionID's for resending
+  const TermConstructIDList = Promise.all(linkRecord.map(entry => {
+    // if the record has a TermConstructID then just modify the record and return the TermConstructID
+    if (entry.TermConstructID) {
+      return modifyMarkman(connectParams, {
+        ...entry,
+        ...constructionRecord,
+        ...termRecord
+      })
+    }
+    // if not then add the record using 'link' mode
+    return addMarkman(connectParams, 'link', { ...entry })
+  }));
+
+  // finally, send the new termConstructionIDs back to the renderer in place
+  markmanwin.webContents.send('write_complete', TermConstructIDList.map((TermConstructID, index) => {
+    list[index][1].TermConstructID = TermConstructID;
+    return list[index];
+  }))
+})
 
 // Listener for changing to the other Databases
 ipcMain.on('change_db', event => {

@@ -2,7 +2,7 @@ const { getMarkmanDropdowns, insertAndGetID, getClaimDropdown, getPatentFromDigi
 const connectParams = require('../app_config.json').patentDB.connection;
 const { connectDocker } = require('../jsx/connectDocker');
 const { dialog } = require('electron');
-
+const fs = require('fs');
 
 const tableSchema = {
     documents: { table: 'Document', index: 'DocumentID' },
@@ -30,16 +30,16 @@ const passesSchema = (mode, payload) => {
     const keys = Object.keys(payload);
     let requiredKeys;
     if (mode === 'term') {
-        requiredKeys = ['term'];
+        requiredKeys = ['ClaimTerm'];
     }
     if (mode === 'construction') {
-        requiredKeys = ['construction'];
+        requiredKeys = ['Construction'];
     }
     if (mode === 'link') {
-        requiredKeys = ['constructID', 'termID', 'claimID'];
+        requiredKeys = ['ConstructID', 'TermID', 'ClaimID'];
     }
     if (mode === 'modify') {
-        requiredKeys = ['constructID', 'termID', 'claimID']
+        requiredKeys = ['ConstructID', 'TermID', 'ClaimID']
     }
     return requiredKeys.reduce((result, key) => {
         if (!keys.includes(key)) return result && false;
@@ -60,7 +60,7 @@ const passesSchema = (mode, payload) => {
 //A.3 Link term to construction, client, and claim
 
 /**
- * Will initialized the database with placeholders if needed
+ * populate some dropdowns, will initialize the database with placeholders if needed
  * @param connectParams 
  * @returns {Promise} resolving to {claimTerms:Map[term, termID], clients:Map[client, clientID], sectors:Map[sector, sectorID]}
  */
@@ -120,15 +120,6 @@ const lookupIDs = (connectParams, query, collection) => {
     return insertAndGetID(connectParams, table, query, index, { readOnly: true });
 }
 
-/**
- * 
- * @param connectParams 
- * @param digits - any number of digits used to search by Patent Number
- * @returns {Map[number,number]} where key=Patent Number and value=PatentID
- */
-const getPatents = (connectParams, digits) => {
-    return getPatentFromDigits(connectParams, digits)
-}
 
 /**
  * 
@@ -141,98 +132,109 @@ const getClaims = (connectParams, PatentID) => {
 }
 
 /**
- * add a new term, construction and link between them
+ * add a new term, construction or link between them
  * @param connectParams 
  * @param {String} mode -> 'term', 'construction', or 'link' 
  * @param {Object} data 'term' mode: {term}, 'construction' mode: {construction, <documentID>, <page>, <agreed>, <court>}, 'link' mode:{constructID, termID, claimID, <clientID>}
  * @returns {Promise} resolving to an ID
  */
 const addMarkman = async (connectParams, mode, data) => {
-
-    const { terms, constructions, documents, clients, claims } = tableSchema;
-    if (!passesSchema(mode, data)) return Promise.reject('data does not have the required keys')
+    const { terms, constructions, documents, clients } = tableSchema;
+    if (!passesSchema(mode, data)) return Promise.reject('data does not have the required keys');
+    const record = { ...data };
     // get (or create if not exists) a term from the terms table and return a termID.
-    if (mode === 'term') return insertAndGetID(connectParams, terms.table, { ClaimTerm: data.term }, terms.index);
-    // force-create a new construction since all of the other fields (document, etc.) are in this table
+    if (mode === 'term') return insertAndGetID(connectParams, terms.table, record, terms.index);
+    // create a new construction since all of the other fields (document, etc.) are in this table
     if (mode === 'construction') return insertAndGetID(
         connectParams,
         constructions.table,
-        { Construction: data.construction, [documents.index]: data.documentID || DOC_PLACEHOLDER, MarkmanPage: data.page || 0, Agreed: data.agreed || 0, Court: data.court || '' },
-        tableSchema.constructions.index,
         {
-            readOnly: false
-        });
+            ...record,
+            [documents.index]: data[documents.index] || DOC_PLACEHOLDER,
+            MarkmanPage: data.MarkmanPage || 0,
+            Agreed: data.Agreed || 0,
+            Court: data.Court || ''
+        },
+        tableSchema.constructions.index,
+        { readOnly: false }
+    );
     if (mode === 'link') return insertAndGetID(
         connectParams,
         'MarkmanTermConstruction',
-        {
-            [constructions.index]: data.constructID,
-            [terms.index]: data.termID,
-            [clients.index]: data.clientID || CLIENT_PLACEHOLDER,
-            [claims.index]: data.claimID,
-        },
+        { ...record, [clients.index]: data[clients.index] || CLIENT_PLACEHOLDER },
         'TermConstructionID',
         { readOnly: false }
-    )
+    );
 }
 
 /**
- * modifyMarkman changes value in a markman table
+ * modifyMarkman changes value in one or more markman tables 
  * @param connectParams 
- * @param {Object} record {constructID, termID, claimID, <term>, <construction>, <documentID>, <page>, <agreed>, <court>, <clientID>}
+ * @param {Object} record {ConstructID, TermID, ClaimID, <ClaimTerm>, <Construction>, <DocumentID>, <MarkmanPage>, <Agreed>, <Court>, <ClientID>}
  * @returns
  */
-const modifyMarkman = async (connectParams, record, collection) => {
-    const { terms, constructions, clients } = tableSchema;
+const modifyMarkman = async (connectParams, record) => {
+    const { terms, constructions } = tableSchema;
     const recordKeys = Object.keys(record);
-    if (!passesSchema('modify', data)) return Promise.reject('data does not have the required keys');
+    if (!passesSchema('modify', data)) throw('data does not have the required keys');
     // figure out which tables need to change based on contents of record
     // term -- MarkmanTerm
-    if (recordKeys.includes('term')) {
+    if (recordKeys.includes('ClaimTerm')) {
         await insertAndGetID(connectParams, terms.table, {
-            TermID: termID,
-            ClaimTerm: term
+            [terms.index]: record[terms.index],
+            ClaimTerm: record.ClaimTerm
         }, terms.index, { updateFields: ['ClaimTerm'] })
     }
-    // clientID -- MarkmanTermConstruction
-    if (recordKeys.includes('clientID')) {
-        await insertAndGetID(connectParams, 'MarkmanTermConstruction', {
-
-        }, '')
-    }
     // construction, documentID, page, agreed, court -- MarkmanConstruction
-    if (['construction', 'documentID', 'page', 'agreed', 'court'].reduce((result, key) => {
-        if (!recordKeys.includes(key)) result.push(key);
+    const constructionKeys = ['Construction', 'DocumentID', 'MarkmanPage', 'Agreed', 'Court'].reduce((result, key) => {
+        if (recordKeys.includes(key)) result.push(key);
         return result;
-    }, []).length) {
-
+    }, [])
+    if (constructionKeys.length) {
+        const constructionRecord = [constructions.index].concat(constructionKeys).reduce((result, key) => {
+            result[key] = record[key];
+            return result;
+        }, {});
+        await insertAndGetID(connectParams, constructions.table, constructionRecord, constructions.index, { updateFields: constructionKeys })
     }
+    // clientID -- MarkmanTermConstruction, and return a {TermConstructID, 'existing'} record
+    if (recordKeys.includes('ClientID')) {
+        const { TermConstructID } = await insertAndGetID(connectParams, 'MarkmanTermConstruction', { TermConstructID: record.TermConstructID, ClientID: record.ClientID }, 'TermConstructID', { updateFields: ['ClientID'] })
+    }
+    return record.TermConstructID || TermConstructID;
 }
 
-const linkDocument = async (connectParams, DropboxPath, ClientID) => {
-    //TODO does this return an array or a single value?
-    const clientSectorIDs = await insertAndGetID(connectParams, 'ClientSector', { ClientID }, 'ClientSectorID', { readOnly: true });
-    // really only care about one
-    const { ClientSectorID } = clientSectorIDs !== 'not found' ? clientSectorIDs : { ClientSectorID: 1 };
-    dialog.showOpenDialog({
-        title: 'Select a Ruling',
-        defaultPath: DropboxPath,
-        properties: 'openFile'
-    }, filePath => {
-        const [DocumentPath, ignore, FileName] = filePath.split(DropboxPath)[1].match(/\\(.*\\(.*))/);
-        const DateModified = fs.statSync(`${DropboxPath}/${DocumentPath}`).mtime;
-        // now return the documentID, or write a new one if needed
-        // when checking if it exists, just use documentpath
-        // if writing a new one, skip the 'Comments' field
-        return insertAndGetID(
-            connectParams,
-            tableSchema.table.documents,
-            { DocumentPath, FileName, DateModified, DocumentTypeID: DOCTYPE_PLACEHOLDER, ClientSectorID },
-            tableSchema.documents.index,
-            { skipWrite: ['Comments'], skipCheck: ['DateModified', 'DocumentTypeID', 'ClientSectorID', 'FileName'] }
-        )
-    });
-}
+const linkDocument = (connectParams, DropboxPath, client, ClientID) => new Promise(async (resolve, reject) => {
+    try {
+        let document;
+        //TODO does this return an array or a single value?
+        const clientSectorIDs = await insertAndGetID(connectParams, 'ClientSector', { ClientID }, 'ClientSectorID', { readOnly: true });
+        // really only care about one
+        const { ClientSectorID } = clientSectorIDs !== 'not found' ? clientSectorIDs : { ClientSectorID: 1 };
+        dialog.showOpenDialog({
+            title: 'Select a Ruling',
+            defaultPath: `${DropboxPath}PMC Public\\PMC ASSETS\\PMC Patents\\Claim Construction`,
+            properties: ['openFile']
+        }, async ([filePath]) => {
+            const [fullPath, DocumentPath, FileName] = filePath.split(DropboxPath)[1].match(/(.*\\(.*))/);
+            const DateModified = (new Date(fs.statSync(`${DropboxPath}${DocumentPath}`).mtimeMs)).toISOString();
+            document = FileName;
+            // now return the documentID, or write a new one if needed
+            // when checking if it exists, just use documentpath
+            // if writing a new one, skip the 'Comments' field
+            const docResult = await insertAndGetID(
+                connectParams,
+                tableSchema.documents.table,
+                { DocumentPath, FileName, DateModified, DocumentTypeID: DOCTYPE_PLACEHOLDER, ClientSectorID },
+                tableSchema.documents.index,
+                { skipWrite: ['Comments'], skipCheck: ['DateModified', 'DocumentTypeID', 'ClientSectorID', 'FileName'] }
+            );
+            return resolve({ documentID: docResult[tableSchema.documents.index], document });
+        })
+    } catch (err) {
+        return reject(err)
+    }
+});
 
 /*
 Need to insert
@@ -276,7 +278,6 @@ FilePath,  Court
 module.exports = {
     initializeMarkman,
     lookupIDs,
-    getPatents,
     getClaims,
     addMarkman,
     modifyMarkman,

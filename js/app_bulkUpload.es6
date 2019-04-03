@@ -177,26 +177,48 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
     let result = await queryNoPromises(connectParams, checkSQL, paramList);
     let recordID = result && result[0] && result[0][0];
     let type = 'existing';
-    console.log(recordID, JSON.stringify(controlOptions));
-    if (recordID && controlOptions.updateFields.length) {
-      // it is found, and we're in update mode
-      // this time the fields to include are listed, so only exclude non-matching fields and the idField
-      const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
-      ({ keyList, paramList } = getParams(record, skipFields));
-      const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
-      await queryNoPromises(connectParams, updateSQL, paramList);
-      type = 'updated';
-    } else if (!recordID && !controlOptions.readOnly) {
-      //There's no existing record, and we're not in readOnly mode
-      ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
-      //So insert and return the newest
-      const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
-      await queryNoPromises(connectParams, insertSQL, paramList);
-      result = await queryNoPromises(connectParams, checkSQL, paramList);
-      recordID = result && result[0] && result[0][0];
-      type = 'new'
-      // in write mode, not finding the record after writing it should throw an error
-      if (!recordID) return reject('no matching record found');
+    // for testing, stub out the part about writing new or updating records
+    if (process.env.DBMODE === 'readonly') {
+      if (recordID && controlOptions.updateFields.length) {
+        console.log('Caught UPDATE call with DB in Readonly Mode');
+        // it is found, and we're in update mode
+        // this time the fields to include are listed, so only exclude non-matching fields and the idField
+        const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
+        ({ keyList, paramList } = getParams(record, skipFields));
+        const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
+        type = 'updated';
+        console.log(updateSQL)
+      } else if (!recordID && !controlOptions.readOnly) {
+        console.log('Caught INSERT call with DB in Readonly Mode');
+        //There's no existing record, and we're not in readOnly mode
+        ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
+        //So insert and return the newest
+        const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+        recordID = 999999999;
+        type = 'new';
+        console.log(insertSQL);
+      }
+    } else {
+      if (recordID && controlOptions.updateFields.length) {
+        // it is found, and we're in update mode
+        // this time the fields to include are listed, so only exclude non-matching fields and the idField
+        const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
+        ({ keyList, paramList } = getParams(record, skipFields));
+        const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
+        await queryNoPromises(connectParams, updateSQL, paramList);
+        type = 'updated';
+      } else if (!recordID && !controlOptions.readOnly) {
+        //There's no existing record, and we're not in readOnly mode
+        ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
+        //So insert and return the newest
+        const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+        await queryNoPromises(connectParams, insertSQL, paramList);
+        result = await queryNoPromises(connectParams, checkSQL, paramList);
+        recordID = result && result[0] && result[0][0];
+        type = 'new'
+        // in write mode, not finding the record after writing it should throw an error
+        if (!recordID) return reject('no matching record found');
+      }
     }
     // in readOnly mode, not finding the record should resolve with a not found
     return resolve(!recordID ? 'not found' : { [idField]: recordID, type });
@@ -211,12 +233,13 @@ const getMarkmanDropdowns = connectParams => new Promise((resolve, reject) => {
   // clients -- A map of client: clientID
   // sectors -- A map of sectors: sectorID
   return Promise.all(
-    ['MarkmanTerms', 'Client', 'Sector'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}`))
+    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}`))
   )
-    .then(([claimTerms, clients, sectors]) => resolve({
+    .then(([claimTerms, clients, sectors, patents]) => resolve({
       claimTerms: new Map(claimTerms.map(([ID, term]) => [term, ID])),
       clients: new Map(clients.map(([ID, client, ...rest]) => [client, ID])),
-      sectors: new Map(sectors.map(([ID, sect]) => [sect, ID]))
+      sectors: new Map(sectors.map(([ID, sect]) => [sect, ID])),
+      patents: new Map(patents.map(([ID, uri, ref, title, html, count, patent]) => [patent, ID]))
     }))
     .catch(err => reject(err))
 });

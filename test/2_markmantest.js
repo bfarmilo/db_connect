@@ -107,13 +107,6 @@ describe('Markman Interface', function () {
       await addMarkman(connectParams, 'link', { constructID: constructID.ConstructID, termID: termID.TermID, claimID: 830 })
       expect(constructID).to.exist();
     });
-    // load past constructions & Patents, Claims and display on screen
-    it('loads a list of past constructions into an array');
-    it('deals with a lack of past constructions cleanly');
-    // ... user selects a patent / claim
-    it('loads the ClaimID of the selected claim');
-    // ... user selects a constructions
-    it('loads the ConstructID of the selected construction');
     // enable 'update' button
     it('enables the `UPDATE` button when valid selections are made');
     it('disables the `UPDATE` button if a selections is changed to an invalid selection');

@@ -54,7 +54,7 @@ const ControlArea = props => {
         },
         Icon: {
             fill: 'white',
-            display:'flex'
+            display: 'flex'
         }
     }
     return (
@@ -76,10 +76,10 @@ const ControlArea = props => {
                     onClick={props.toggleExpand}
                 >
                     {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
-                </button> : <div />}
+                </button> : <button style={styles.FilterButton} onClick={props.newConstruction}>Enter New Construction</button>}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
-                    <button style={styles.FilterButton} onClick={props.changeMode}>
+                <button style={styles.FilterButton} onClick={props.changeMode}>
                     View {props.displayMode === 'claims' ? 'Constructions' : 'Claims'}</button>
                 <button
                     style={styles.FilterButton}
@@ -92,8 +92,8 @@ const ControlArea = props => {
                 {props.config.columns.map(column => {
                     return (
                         <div key={column.field}>
-                            <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>
-                                <div style={{display:'flex'}}>{column.display} </div>{props.sortOrder.has(column.field) ? <Icon name={props.sortOrder.get(column.field).ascending ? 'sortAscending' : 'sortDescending'} width='1em' height='1em' style={styles.Icon} /> : ''}</div>
+                            <div data-field={column.field} onClick={props.modifySortOrder} style={{ display: 'flex', justifyContent: 'space-between', paddingRight: '1em' }}>
+                                <div style={{ display: 'flex' }}>{column.display} </div>{props.sortOrder.has(column.field) ? <Icon name={props.sortOrder.get(column.field).ascending ? 'sortAscending' : 'sortDescending'} width='1em' height='1em' style={styles.Icon} /> : ''}</div>
                             <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.styles.selectedColor } : styles.ColumnControl}>
                                 <input
                                     style={styles.ValuesField}

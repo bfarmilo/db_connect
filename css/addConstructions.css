@@ -1,0 +1,161 @@
+body {
+  font-family: "Arial";
+}
+
+button {
+  border-radius: 2px;
+  background-color: rgb(106, 142, 99);
+  color: whitesmoke;
+  font-weight: bold;
+  border: none;
+  border-radius: 3px;
+  outline: none;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+button:disabled {
+  background-color: rgba(12, 84, 0, 0.5);
+  color: grey;
+}
+
+.firstpanel {
+  display: grid;
+  grid-template-areas: "term term document" "construction construction client" "construction construction agreed";
+  padding: 10px;
+  margin: 10px;
+  background: white;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+  grid-row-gap: 0.25em;
+  border-radius: 5px;
+}
+
+.secondpanel {
+  display: grid;
+  grid-template-areas: "patent patent claim claim control";
+  padding: 10px;
+  margin: 10px;
+  background: white;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+  grid-row-gap: 0.25em;
+  border-radius: 5px;
+  width: 50%;
+}
+
+.thirdpanel {
+  display: grid;
+  padding: 10px;
+  margin: 10px;
+  background: white;
+  box-shadow: 0px 1px 5px rgba(0, 0, 0, 0.5);
+  border-radius: 5px;
+  width: 50%;
+}
+
+.listToAdd {
+  display: grid;
+  align-items: center;
+  grid-template-columns: 1fr 1fr 1fr 1fr;
+  grid-row-gap: 0.25em;
+}
+
+/* Custom dropdown */
+
+input {
+  color: white;
+  font-size: inherit;
+  border: 0;
+  padding-top: 0.5em;
+  padding-bottom: 0.5em;
+  margin: 1px;
+  border-radius: 3px;
+  text-indent: 4px;
+  text-overflow: '';
+  width: 100%;
+}
+
+/* input::-webkit-calendar-picker-indicator {
+  display: none;
+} */
+
+.customdropdown {
+  position: relative;
+  display: inline-block;
+  vertical-align: middle;
+}
+
+.customdropdown select {
+  color: white;
+  font-size: inherit;
+  padding: .5em;
+  padding-right: 2.5em;
+  border: 0;
+  margin: 1px;
+  border-radius: 3px;
+  text-indent: 0.01px;
+  text-overflow: '';
+  width: 100%;
+}
+
+select::-webkit-scrollbar {
+  border-radius: 2px;
+  background-color: rgb(106, 142, 99);
+  color: whitesmoke;
+  font-weight: bold;
+  border: none;
+  border-radius: 3px;
+  outline: none;
+  padding: 0.4em 0.5em 0.4em 0.5em;
+}
+
+.messageModal {
+  height: 25%;
+  width: 50%;
+  position: absolute;
+  background-color: rgba(255, 255, 255, 0.8);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color:darkolivegreen;
+  font-weight: bold;
+  z-index:9999;
+}
+
+/* .customdropdown::before, .customdropdown::after {
+  content: "";
+  position: absolute;
+  pointer-events: none;
+} */
+
+/* .customdropdown::after {
+  content: "\25BC";
+  height: 1em;
+  font-size: .625em;
+  line-height: 1;
+  right: 1.2em;
+  top: 50%;
+  margin-top: -.5em;
+}
+
+.customdropdown::before {
+  width: 2em;
+  right: 0;
+  top: 0;
+  bottom: 0;
+  border-radius: 0 3px 3px 0;
+} */
+
+.customdropdown select[disabled] {
+  color: rgba(0, 0, 0, .3);
+}
+
+.customdropdown select[disabled]::after {
+  color: rgba(0, 0, 0, .1);
+}
+
+.customdropdown::before {
+  background-color: rgba(0, 0, 0, .15);
+}
+
+.customdropdown::after {
+  color: rgba(0, 0, 0, .4);
+}
