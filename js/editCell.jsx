@@ -79,7 +79,7 @@ const EditCell = props => {
                         onClick={props.activateEditMode}
                     /> :
                     <span
-                        style={{ color: 'lightgrey' }}
+                        style={{ color: 'lightgrey', fontStyle: 'italic', fontSize: 'small' }}
                         onClick={props.activateEditMode}
                     >Click to Add Text
                     </span>
