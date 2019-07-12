@@ -1,4 +1,5 @@
 const { Connection, Request, TYPES } = require('tedious');
+const { parseOutput } = require('./app_sqlParse');
 
 const MAX_CHARS_TO_SHOW = 10;
 
@@ -180,7 +181,7 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
     // for testing, stub out the part about writing new or updating records
     if (process.env.DBMODE === 'readonly') {
       if (recordID && controlOptions.updateFields.length) {
-        console.log('Caught UPDATE call with DB in Readonly Mode');
+        console.log('Caught UPDATE call with DB in Readonly  (DEV) Mode');
         // it is found, and we're in update mode
         // this time the fields to include are listed, so only exclude non-matching fields and the idField
         const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
@@ -264,6 +265,35 @@ const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reje
     .catch(err => reject(err));
 });
 
+const getTermConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
+  const { keyList, paramList } = getParams(queryRecord)
+  return queryNoPromises(connectParams,
+    `SELECT * FROM dbo.MarkmanTermConstruction AS mtc WHERE ${keyList.map(key => `mtc.${key}=@${key}`).join(' AND ')} FOR JSON AUTO`,
+    paramList)
+    .then(result => {
+      const output = [parseOutput('simple', result).map(entry => {
+        const { TermConstructionID, ...rest } = entry;
+        return [rest, TermConstructionID]
+      })];
+      return resolve(new Map(output))
+    })
+    .catch(err => reject(err))
+})
+
+const getConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
+  const { keyList, paramList } = getParams(queryRecord)
+  return queryNoPromises(connectParams,
+    `SELECT mc.* FROM dbo.MarkmanConstructions AS mc INNER JOIN dbo.MarkmanTermConstruction AS mtc ON mc.ConstructID=mtc.ConstructID WHERE ${keyList.map(key => `mtc.${key}=@${key}`).join(' AND ')} FOR JSON AUTO`,
+    paramList)
+    .then(result => {
+      const output = [parseOutput('simple', result).map(entry => {
+        const { ConstructID, ...rest } = entry;
+        return [rest, ConstructID]
+      })];
+      return resolve(new Map(output))
+    })
+    .catch(err => reject(err))
+})
 
 
 
@@ -274,5 +304,7 @@ module.exports = {
   getMarkmanDropdowns,
   insertAndGetID,
   getClaimDropdown,
-  getPatentFromDigits
+  getPatentFromDigits,
+  getTermConstructions,
+  getConstructions
 };

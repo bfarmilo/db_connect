@@ -30,7 +30,7 @@ const Dropdown = props => {
     const listID = props.contents; // change this into a hash?
 
     return (
-        <div class={'customdropdown'} style={{ gridArea: props.contents, margin: '3px' }}>
+        <div class={'customdropdown'} style={{ display: 'flex', flexGrow:'1', margin: '3px' }}>
             {props.editable ?
                 <input style={styles.input} value={props.selected} list={listID} onChange={e => props.onChange(e, props.contents)}>
                     <datalist id={listID} style={styles.select}>

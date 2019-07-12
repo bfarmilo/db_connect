@@ -8,9 +8,10 @@ const { connectDocker, closeDocker } = require('./jsx/connectDocker');
 const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
-const { insertAndGetID } = require('./jsx/app_bulkUpload');
+const { insertAndGetID, getTermConstructions, getConstructions } = require('./jsx/app_bulkUpload');
 const { getAllImages } = require('./jsx/getImages');
 const { initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman } = require('./jsx/app_markmanInterface');
+const { formatClaim } = require('./jsx/formatClaim');
 // configuration
 const { patentDB, patentParser } = require('./app_config.json');
 // developer
@@ -151,9 +152,10 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
    * @param {number} patentNumber
    * @param {string} PMCRef
    * @param {boolean} uriMode
+   * @param {Array<string>} claimText -> Should be an array of plain strings
    * @returns {Object} ready for insertion into the DB
    */
-  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode) => {
+  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode, claimText = false) => {
 
     //const activeWin = {...getPatentWindow.get(patentNumber)};
 
@@ -178,13 +180,24 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       ipcMain.on('scraping_error', (e, error) => {
         return reject(error);
       })
-      ipcMain.once('result_ready', (e, result) => {
+      ipcMain.once('result_ready', async (e, result) => {
         console.log('received result event')
         activeWin.close();
         // Number: formatted as US:AABBBCC, reformat to AA/BBB,CCC
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
-        // Claims: condition claims to exclude JSON-ineligible characters 
+        // Claims: condition claims to exclude JSON-ineligible characters
+        const Claims = claimText ? 
+          claimText.map(formatClaim) :
+          result.Claims.filter(y => y.localName !== 'claim-statement')
+          .map(x => ({
+            ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
+            ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+            IsMethodClaim: x.innerText.includes('method'),
+            IsDocumented: false,
+            IsIndependentClaim: !x.className.includes('claim-dependent'),
+            PatentID: 0
+          }))
         // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
         // InventorLastName: split name on ' ' and take the last element of the array
         return resolve(
@@ -194,15 +207,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
             PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
             Title: result.Title.trim().split('\n')[0],
             InventorLastName: result.InventorLastName.split(' ')[result.InventorLastName.split(' ').length - 1],
-            Claims: result.Claims.filter(y => y.localName !== 'claim-statement')
-              .map(x => ({
-                ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-                ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-                IsMethodClaim: x.innerText.includes('method'),
-                IsDocumented: false,
-                IsIndependentClaim: !x.className.includes('claim-dependent'),
-                PatentID: 0
-              })),
+            Claims,
             IndependentClaimsCount: result.Claims.filter(y => y.localName !== 'claim-statement' && !y.className.includes('claim-dependent')).length,
             ClaimsCount: result.Claims.length,
             PatentNumber: patentNumber,
@@ -287,6 +292,7 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
     await getNextSlice(0);
     win.webContents.send('new_patents_ready', addedList);
   } catch (err) {
+    // send error to getPatent window
     console.error(err);
   }
 };
@@ -333,6 +339,8 @@ app.on('activate', () => {
   }
 });
 
+/** EVENT LISTENERS */
+
 //Listener for getting a patent and loading the DB, optionally downloading it
 ipcMain.on('get_new_patents', (event, ...args) => writeNewPatents(...args));
 
@@ -346,65 +354,6 @@ ipcMain.on('browse', (e, startFolder) => {
     }, folder => {
       newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
     })
-})
-
-// Listener for Markman updating
-ipcMain.on('markman_entry', e => {
-  console.log('got request to open markman window');
-  /*  table reference
-  mt: TermID, ClaimTerm
-  clients: ClientID, ClientName, SugarID
-  documents: DocumentID, DocumentPath, DocumentType, FileName, ClientSectorID, DateModified, Comments
-      ClientSector: ClientSectorID, ClientID, SectorID
-          Sector: SectorID, SectorName
-  mc: ConstructID, Construction, DocumentID, MarkmanPage, Agreed (BOOL), Court
-  mtc: TermID, ClaimID, ConstructID, ClientID
-  */
-
-  /*
-  Write Sequence
-  1) -done- Get ClientID: SELECT ClientID, ClientName FROM clients to populate a dropdown
-  If 'Other':
-      1.1) INSERT INTO clients (ClientName, SugarID) VALUES ([clientName], 99)
-      1.2) Get sector from user SELECT * FROM Sector to populate dropdown
-      1.3) SELECT ClientID from clients WHERE ClientName = [clientName] 
-      1.4) INSERT INTO ClientSector (ClientID, SectorID) VALUES ([clientID], [sectorID])
-  2) -done- Get DocumentID: SELECT DocumentID FROM documents WHERE FileName=[fileName] AND DocumentPath=[documentPath]
-  If not found:
-      2.1) TODO: Steps to insert a document
-  3) Get ClaimID: SELECT ClaimID FROM claims INNER JOIN Patents AS patents ON patents:PatentID = claims:PatentID WHERE patents.PatentNumber=[patentNumber] AND claims.claimNumber=[claimNumber]
-  4) -done- select from dropdown for TermID: SELECT * FROM mt WHERE ClaimTerm=[claimTerm]
-      4.1) INSERT INTO mt (ClaimTerm) VALUES ([claimTerm])
-      4.2) SELECT TermID FROM mt WHERE ClaimTerm=[claimTerm]
-  5) -avail- Enter Construction Data: INSERT INTO mc (Construction, DocumentID, MarkmanPage, Agreed, Court) VALUES ([construction], [documentID], [markmanPage], [agreed], [Court])
-  6) -avail- Link term and construction: INSERT INTO mtc (TermID, ClaimID, ConstructID, ClientID) VALUES([termID], [claimID], [constructID], [clientID])
-  */
-
-  /*
-  UI Notes:
-  UI Assumes you're working through a document
-  FilePath+FileName,  Court
-  [ClaimTerm ->
-      [Patent, Claim 
-          [Client -> 
-              [ClaimTerm -> Construction, MarkmanPage, Agreed]
-          ]
-      ]
-  ]
-  a) Select path to file, and a court *Go* (b)
-  b) *Add Claim Term* - Select from dropdown (c) or *New* (mt: INSERT & GET_ID)
-  c) *Add Patent & Claim* - Enter Patent Number, default: last selected, and Claim Number (multiselect or comma separated list ?), default: last selected 
-  d) *Add Client* - Select from dropdown, default: Last selected
-  e) *Add Construction* - Enter Construction, MarkmanPage default:last selected, Agreed: false (mc: INSERT & GET_ID, mtc:INSERT)
-  g) All steps also have 'EDIT' which UPDATES mt (term change) | mc (any other change, including court)
-  h) Any changes to Client, Claim also need to update mtc
-  
-  Dropdowns: ClaimTerm, Clients, Claims, <Sector>
-  FileReader: DocumentPath, FileName
-  Checkbox: Agreed
-  EditBox: Construction
-  TextBox: PatentNumber, ClaimTerm(new) <Clients(new)>
-  */
 })
 
 // Listener for launching new Patent retrieval UI
@@ -488,6 +437,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 })
 
 ipcMain.on('store_images', (event, imageMap) => {
+  // uses connectParams, imageWindow
+  // imports insertAndGetID
   console.log('writing current image data to DB')
   // destructure the map and turn it into a simple array of ID's and pageData's
   const imageRecords = imageMap.map(([pg, record]) => ({ ImageID: record.imageID, PageData: record.pageData }));
@@ -500,6 +451,8 @@ ipcMain.on('store_images', (event, imageMap) => {
 })
 
 ipcMain.on('store_fulltext', (event, PatentHtml, PatentID) => {
+  // uses connectParams, detailWindow
+  // imports queryDatabase
   console.log('writing fullText to DB');
   // now store the new data in the DB for future reference
   queryDatabase(connectParams, 'u_FULLTEXT', '', [PatentHtml, PatentID], '', (err, status) => {
@@ -513,6 +466,8 @@ ipcMain.on('store_fulltext', (event, PatentHtml, PatentID) => {
 })
 
 ipcMain.on('show_images', (event, PatentID, patentNo) => {
+  // uses connectParams, imageWindow
+  // imports queryDatabase, updateRenderWindow, getAllImages, insertAndGetID
 
   const getPatentImages = () => {
     const DEFAULT_ROTATION = 90;
@@ -642,7 +597,7 @@ ipcMain.on('add_claimconstructions', async () => {
     width: 1440,
     height: 800,
     options: {
-      hidden: true
+      visible: false
     }
   });
   // and load the index.html of the app.
@@ -656,23 +611,6 @@ ipcMain.on('add_claimconstructions', async () => {
     // when you should delete the corresponding element.
     markmanwin = null;
   });
-  // when the user enters a potential application
-  // Load a list of patents, claims, claimID into patentsArray
-  // Load list of claim terms & TermID into termsArray
-  // Load list of constructions and ConstructID into constructArray
-  // when user selects a claim terms
-  // load past constructions & Patents, Claims and display on screen
-  // ... user selects a patent / claim
-  // ... user selects a constructions
-  // enable 'update' button
-  // when user selects 'update'
-  // check to see if patent/claim is selected and construction is connected
-  // update mtc table with TermID, ClaimID, ConstructID
-  // clear values
-  // disable 'update' button
-  // when user selects 'close window'
-  // confirm if update not applied
-  // close window
 });
 
 ipcMain.on('markman_ready', async event => {
@@ -690,6 +628,16 @@ ipcMain.on('get_file', async (e, client, ClientID) => {
   const { document, documentID } = await linkDocument(connectParams, dropboxPath, client, ClientID);
   markmanwin.webContents.send('got_file', document, documentID);
 })
+
+ipcMain.on('get_constructions', async (e, query) => {
+  //query has the form {<ClientID>, <TermID>, <ClaimID>}
+  //First get MarkmanTermConstruction matching any given ID coming in
+  const mtcList = await getTermConstructions(connectParams, query);
+  //send those off because we have them
+  markmanwin.webContents.send('got_termconstructions', [...mtcList]);
+  const constructionList = await getConstructions(connectParams, query);
+  markmanwin.webContents.send('got_constructions', [...constructionList]);
+});
 
 ipcMain.on('markman_write', async (e, list, record) => {
 

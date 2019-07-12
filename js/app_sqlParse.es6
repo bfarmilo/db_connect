@@ -101,6 +101,8 @@ const parseOutput = (mode, result, uriMode) => {
   // mode==='claims' for claim query, 'markman' for markman
 
   return result.length > 0 ? flatten(JSON.parse(result.join('')).map(record => {
+    if (mode === 'simple') return record;
+
     const { claims, ...join0 } = record;
     if (mode === 'claims') {
       // claims mode: FROM claims INNER JOIN patents ON patents.PatentID = claims.PatentID

@@ -242,9 +242,9 @@ class MarkmanEntry extends Component {
             <div>
                 {this.state.message ? <div class='messageModal'>{this.state.message}</div> : <div />}
                 <div class='firstpanel'>
-                    {this.state.lockTermAndConstruction ? <div class='term'>{this.state.term}</div> : <Dropdown editable={true} themeColor={config.markman.themeColor} data={this.state.terms} selected={this.state.term} contents={'term'} onChange={this.editEntry} />
-                    }
-                    <div style={{ gridArea: 'construction' }}>
+                    <label style={{ gridArea: 'term', display: 'flex', alignItems: 'center' }}>Term:{this.state.lockTermAndConstruction ? <div class='term'>{this.state.term}</div> : <Dropdown editable={true} themeColor={config.markman.themeColor} data={this.state.terms} selected={this.state.term} contents={'term'} onChange={this.editEntry} />
+                    }</label>
+                    <label style={{ gridArea: 'construction' }}>Construction:
                         <EditCell
                             editMode={this.state.constructionEditMode && !this.state.lockTermAndConstruction}
                             value={this.state.construction}
@@ -252,12 +252,12 @@ class MarkmanEntry extends Component {
                             clickSaveCancel={(e, action) => this.clickSaveCancel(e, 'construction', action)}
                             activateEditMode={(e) => this.activateEditMode(e)}
                             themeColor={config.markman.themeColor}
-                            selectedColor={config.markman.selectedColor}
+                            selectedColor={config.markman.themeColor}
                             boxHeight={100}
                         />
-                    </div>
+                    </label>
                     <div style={{ gridArea: 'document', display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}><div style={{ display: 'flex', color: 'grey', fontStyle: 'italic' }}>{!this.state.documentID ? 'Select a file containing the ruling' : this.state.document}</div><button style={{ display: 'flex', height: '2.5em' }} onClick={e => this.getFile(e)}>Browse to File</button></div>
-                    <Dropdown editable={false} themeColor={config.markman.themeColor} data={this.state.clients} selected={this.state.client} contents={'client'} onChange={this.editEntry} />
+                    <label style={{ gridArea: 'client', display: 'flex', alignItems: 'center' }}>Client:<Dropdown editable={false} themeColor={config.markman.themeColor} data={this.state.clients} selected={this.state.client} contents={'client'} onChange={this.editEntry} /></label>
                     <span style={{ gridArea: 'agreed', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                         <label style={{ display: 'flex', alignItems: 'center' }}>Agreed?<button style={{ display: 'flex', height: '2.5em' }} ><Icon name={this.state.agreed ? 'circleCheck' : 'circleX'} width='1.5em' height='1.5em' style={this.styles.Icon} handleClick={e => this.editEntry(e, 'agreed')} /></button></label>
                         <label style={{ display: 'flex', alignItems: 'center' }}>Page number for Construction:<input name='page' type='number' style={{ width: '4em', backgroundColor: config.markman.themeColor }} value={this.state.page || 0} onChange={e => this.editEntry(e, 'page')} default='Page' /></label>

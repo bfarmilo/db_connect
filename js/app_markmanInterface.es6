@@ -236,44 +236,6 @@ const linkDocument = (connectParams, DropboxPath, client, ClientID) => new Promi
     }
 });
 
-/*
-Need to insert
-mt: TermID, ClaimTerm
-clients: ClientID, ClientName, SugarID
-documents: DocumentID, DocumentPath, DocumentType, FileName, ClientSectorID, DateModified, Comments
-    ClientSector: ClientSectorID, ClientID, SectorID
-        Sector: SectorID, SectorName
-mc: ConstructID, Construction, DocumentID, MarkmanPage, Agreed (BOOL), Court
-mtc: TermID, ClaimID, ConstructID, ClientID
- 
-Sequence looks like:
-1) Get ClientID: SELECT ClientID, ClientName FROM clients to populate a dropdown
-If 'Other':
-    1.1) INSERT INTO clients (ClientName, SugarID) VALUES ([clientName], 99)
-    1.2) Get sector from user SELECT * FROM Sector to populate dropdown
-    1.3) SELECT ClientID from clients WHERE ClientName = [clientName] 
-    1.4) INSERT INTO ClientSector (ClientID, SectorID) VALUES ([clientID], [sectorID])
-2) Get DocumentID: SELECT DocumentID FROM documents WHERE DocumentPath=[documentPath]
-If not found:
-    2.1) Steps to insert a document
-3) Get ClaimID: SELECT ClaimID FROM claims INNER JOIN Patents AS patents ON patents:PatentID = claims:PatentID WHERE patents.PatentNumber=[patentNumber] AND claims.claimNumber=[claimNumber]
-4) Lookup TermID: SELECT * FROM mt WHERE ClaimTerm=[claimTerm]
-if new:
-    4.1) INSERT INTO mt (ClaimTerm) VALUES ([claimTerm])
-    4.2) SELECT TermID FROM mt WHERE ClaimTerm=[claimTerm]
-5) Enter Construction Data: INSERT INTO mc (Construction, DocumentID, MarkmanPage, Agreed, Court) VALUES ([construction], [documentID], [markmanPage], [agreed], [Court])
-6) Link term and construction: INSERT INTO mtc (TermID, ClaimID, ConstructID, ClientID) VALUES([termID], [claimID], [constructID], [clientID])
- 
-UI Assumes you're working through a document
-FilePath,  Court
-[ClaimTerm ->
-    [Patent, Claim 
-        [Client -> 
-            [Construction, MarkmanPage, Agreed]
-        ]
-    ]
-]
-*/
 
 module.exports = {
     initializeMarkman,
