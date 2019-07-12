@@ -7,7 +7,13 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Electron Main",
+            "name": "FormatClaim",
+            "program": "${workspaceFolder}/js/formatClaim.es6"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Readonly -- Electron Main",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
             "cwd": "${workspaceRoot}",
             "windows": {
@@ -23,6 +29,26 @@
             "env": {
                 "DEVTOOLS": "show",
                 "DBMODE": "readonly"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ReadWrite -- Electron Main",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
+            "cwd": "${workspaceRoot}",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+            },
+            "program": "${workspaceRoot}/main.es6",
+            "outFiles": [
+                "${workspaceRoot}/main.js"
+            ],
+            "protocol": "inspector",
+            "preLaunchTask": "npm: transpile-main",
+            "outputCapture": "std",
+            "env": {
+                "DEVTOOLS": "show"
             }
         },
         {
