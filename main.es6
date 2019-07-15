@@ -133,7 +133,7 @@ const createWindow = () => {
  * @param {String} basePath the path from the dropbox to the folder where the full PDF's of the patent are stored
  * @returns {Array{Object}} an array of objects ready for sending to TODO downloads, disk, insert or update.
  */
-const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
+const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, update) => {
   // create a map of hidden browser windows indexed by a patent number
   const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
 
@@ -155,7 +155,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
    * @param {Array<string>} claimText -> Should be an array of plain strings
    * @returns {Object} ready for insertion into the DB
    */
-  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode, claimText = false) => {
+  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode, claimText = []) => {
 
     //const activeWin = {...getPatentWindow.get(patentNumber)};
 
@@ -187,8 +187,8 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
         // Claims: condition claims to exclude JSON-ineligible characters
-        const Claims = claimText ? 
-          claimText.map(formatClaim) :
+        const Claims = claimText.length ? 
+          claimText.map(claim => formatClaim(claim.text, claim.status)) :
           result.Claims.filter(y => y.localName !== 'claim-statement')
           .map(x => ({
             ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
@@ -232,7 +232,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
     //TODO: Option to use inventor last name instead of patentRef
     for (let [patentNumber, browserWin] of getPatentWindow.entries()) {
       try {
-        patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
+        patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode, claimText));
         index++;
         update(patentNumber, 'scraped');
       } catch (err) {
@@ -255,7 +255,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
  * @param {String} storagePath -> Mount point on the dropbox to store PDF's
  * @param {boolean} downloadPats [opt] -> True if patents need to be downloaded
  */
-const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount) => {
+const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount, claimText) => {
   let addedList = [];
   const filterOptions = new Map([
     ['independent', { field: 'IsIndependentClaim', value: /true/g }],
@@ -277,7 +277,7 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
     }
     try {
       const currentSlice = patentList.slice(newStart, newStart + SLICE_SIZE);
-      const result = await getAllPatents(currentSlice, reference, storagePath, startCount + newStart, sendUpdate);
+      const result = await getAllPatents(currentSlice, reference, storagePath, startCount + newStart, claimText, sendUpdate);
       console.log(result.map(patent => `${patent.PatentNumber} (${patent.PMCRef})`));
       if (downloadPats) downloadPatents(result, dropboxPath, sendUpdate);
       addedList.push(await createPatentQuery(connectParams, result, sendUpdate, claimFilter));
@@ -364,7 +364,7 @@ ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
  * @returns {void}
  */
 const updateRenderWindow = (newData, targetWindow) => {
-  console.log(newData.working)
+  console.log(newData.hasOwnProperty('working') ? `sending data to window ${targetWindow.id}` : `sending message ${newData.working} to ${targetWindow.id}`);
   // ? 'sending working message to detail window' : 'sending state for patent', newData.PMCRef || newData[0].PatentID);
   targetWindow.webContents.send('state', newData);
   targetWindow.show();
