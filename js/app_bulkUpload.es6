@@ -115,13 +115,13 @@ const insertClaims = (connectParams, claim) => new Promise(async (resolve, rejec
     const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE Claim.PatentID=${claim.PatentID} AND Claim.ClaimNumber=${claim.ClaimNumber}`;
     let result = await queryNoPromises(connectParams, testSQL, paramList.filter(param => param.name === 'PatentID' || param.name === 'ClaimNumber'));
     const ClaimID = result && result[0] && result[0][0];
-    if (!ClaimID) {
-      // the ClaimID doesn't exist, so insert a new claim
-      const insertSQL = `INSERT INTO dbo.Claim (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
-      await queryNoPromises(connectParams, insertSQL, paramList);
-      result = await queryNoPromises(connectParams, testSQL, paramList);
-      if (!(result && result[0] && result[0][0])) return reject('can\'t find the record we just added!');
-    }
+    // if claim exists, update, otherwise, insert
+    const insertSQL = ClaimID ?
+      `UPDATE Claim SET (${keylist.map(key => `${key}=@${key}`).join(', ')}) WHERE Claim.ClaimID=${ClaimID}` :
+      `INSERT INTO dbo.Claim (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+    await queryNoPromises(connectParams, insertSQL, paramList);
+    result = await queryNoPromises(connectParams, testSQL, paramList);
+    if (!(result && result[0] && result[0][0])) return reject('can\'t find the record we just added!');
     return resolve({ PatentID: claim.PatentID, ClaimNumber: claim.ClaimNumber })
   } catch (err) {
     return reject(err)
