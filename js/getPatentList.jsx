@@ -55,7 +55,8 @@ class GetPatentList extends Component {
             downloadPats: true,
             updateStatus: new Map(),
             startIdx: 1,
-            filterOptions: 'claim1'
+            filterOptions: 'claim1',
+            claimPlainText: []
         }
         this.resetStatus = {
             isRequested: false,
@@ -70,13 +71,14 @@ class GetPatentList extends Component {
             ['scraped', 'isScraped'],
             ['downloaded', 'isDownloaded'],
             ['patent inserted', 'isPatentInserted'],
-            ['claim inserted', 'isClaimInserted'],
+            ['claims inserted', 'isClaimInserted'],
             ['error', 'isError']
         ])
         this.handleInput = this.handleInput.bind(this);
         this.handlePatentButton = this.handlePatentButton.bind(this);
         this.handleFolderSelect = this.handleFolderSelect.bind(this);
         this.handleFilterOptions = this.handleFilterOptions.bind(this);
+        this.handleAddClaimsOnly = this.handleAddClaimsOnly.bind(this);
     }
 
     componentWillMount() {
@@ -132,6 +134,13 @@ class GetPatentList extends Component {
         ipcRenderer.send('browse', this.state.storagePath);
     }
 
+    handleAddClaimsOnly(text, status) {
+        // claimText.text is the plain text of the claim
+        // claimText.status is an integer indicating the status of the claim
+        // concatenate this with the existing state to add to the array
+        this.setState({claimText: this.state.claimText.concat({text, status})});
+    }
+
     handlePatentButton(event) {
         if (this.state.patentList.length > 0) {
             console.log('sending data to Main:', this.state.patentList, this.state.reference, this.state.storagePath, this.state.downloadPats, this.state.filterOptions, this.state.startIdx);
@@ -142,7 +151,8 @@ class GetPatentList extends Component {
                 this.state.storagePath,
                 this.state.downloadPats,
                 this.state.filterOptions,
-                this.state.startIdx
+                this.state.startIdx,
+                this.state.claimText
             );
             // add list of patents to status, setting 'isRequested' to true
             const updateStatus = new Map(this.state.patentList.map(patent => ([parseInt(patent, 10), { ...this.resetStatus, isRequested: true }])));
@@ -152,7 +162,7 @@ class GetPatentList extends Component {
             this.setState({ updateStatus, patentList: [] });
         }
     }
-
+    // TODO: Add visible/invisible box for claim plain text entry. Claims should be separated by newlines only !
     render({ }, { }) {
         return (
             <div style={this.styles.getPatentList}>
@@ -185,6 +195,10 @@ class GetPatentList extends Component {
                         ))}
                     </div>
                 </div>
+                {/*TODO: Add Switchable block here which gives the manual claim interface
+                Need to specify single patent, and for each claim a Claim Status
+                Ideally would get the dropdown list of available statuses from the database
+                Make sure the event handler gets passed (text {Sting}, status{Number}) */}
                 <div style={this.styles.goArea}>
                     <button style={this.styles.buttonStyle} onClick={this.handlePatentButton}>Get Patents</button>
                 </div>
