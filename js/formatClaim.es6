@@ -1,21 +1,12 @@
-
-// const testClaim = ' 18.  A method of outputting a video presentation at a receiver station, said method comprising the steps of: receiving at least one information transmission at said receiver station, said at least one information transmission including a first discrete signal and a second discrete signal;  detecting said first discrete signal and said second discrete signal in said at least one information transmission;  passing said detected at least one first discrete signal and said second discrete signal to at least one processor;  organizing information included in said at least one first discrete signal with information included in said second discrete signal to provide an organized signal at said receiver station;  generating an image in response to said organized signal by processing at least one user specific subscriber datum, said at least one user specific subscriber datum being stored at said receiver station prior to said step of organizing and based on information supplied by a user of said receiver station, said generated image including at least some information content that does not include any information from said discrete signals;  and outputting said video presentation to said user, said video presentation comprising, firstly, a video image and, secondly, a coordinated display using said generated image and said video image, wherein said at least some information content of said generated image is displayed.';
-// const testClaim2 = '41. An apparatus for controlling a transmission of television programming, said apparatus comprising:a switch having at least one transmission input path and at least one transmission output path;a plurality of programming storage devices connected to said switch for storing and outputting said television programming, said switch connecting said storage devices selectively to said at least one transmission output path, wherein said television programming comprises a plurality of units received on different channels originating from one or more remote television programming sources;a receiver that receives schedule information originating from one or more sources separate from the remote television programming sources and stores said schedule information at said apparatus prior to receiving units of television programming at the apparatus, the schedule information designating for the television programming:a time for transmitting selected units of television programming to an addressable subscriber station; and said at least one transmission output path for transmitting the selected units of television programming to the addressable subscriber station; a transmitter, operatively connected to said at least one transmission output path, for transmitting said selected units of television programming to said addressable subscriber station at said time and over said at least one transmission output path; a computer operatively connected to said storage devices, said transmitter, and said switch, said computer controlling a selected storage device to locate and output selected television programming stored at said selected storage device, said computer controlling said switch to connect said selected storage device to said at least one transmission output path connected to said transmitter, with said computer controlling said selected storage device, said transmitter and said switch in response to a control instruction to transmit selected television programming to at least one of an addressable remote station and one of said plurality of programming storage devices for a scheduled transmission to said addressable remote station using said at least one transmission output path; and a detector operatively connected to said computer, said detector detecting said control instruction in an information transmission transmitted from a source different from a source of said television programming and inputting said control instruction to said computer.';
-
 /**
  * 
- * @param claimText [String] the plaintext claim
- * @returns [String] URI encoded Google Patents-style HTML
+ * @param {String} claimText a single plaintext claim
+ * @returns {Object} {ClaimNumber, ClaimHTML, IsMethodClaim, IsDocumented, IsIndependentClaim, ClaimStatus, PatentID} 
  */
-const formatClaim = claimText => {
+const formatClaim = (claimText, ClaimStatus = 1) => {
     // assume claim is formatted as per USPTO
     /*
-    8.  A method of controlling a video presentation at least one receiver station of a plurality of receiver stations, said method comprising the steps of: transmitting a signal from an origination transmitter to a remote intermediate transmitter
-    station, said signal including video and discrete signals for providing an instruct signal at said at least one receiver station, said instruct signal being operative at said at least one receiver station to instruct said at least one receiver station to
-    at least one of generate and output a locally generated portion of said video presentation based on data specific to a user of said receiver station for display coordinated with said video, said data specific to a user being stored at said at least one
-    receiver station prior to organizing information included in said discrete signals to provide said instruct signal, said locally generated portion including at least some information content that does not include any information from any of said signals,
-    said at least some information content being subsequently displayed;  and transmitting at least one control signal from said origination transmitter to said remote intermediate transmitter station before a specific time, wherein said at least one control
-    signal is effective at said remote intermediate transmitter station to control communication of said video and said instruct signal to said at least one receiver station.
+    8.  A method of controlling a video presentation at least one receiver station of a plurality of receiver stations, said method comprising the steps of: transmitting a signal from an origination transmitter to a remote intermediate transmitter station, said signal including video and discrete signals for providing an instruct signal at said at least one receiver station, said instruct signal being operative at said at least one receiver station to instruct said at least one receiver station to at least one of generate and output a locally generated portion of said video presentation based on data specific to a user of said receiver station for display coordinated with said video, said data specific to a user being stored at said at least one receiver station prior to organizing information included in said discrete signals to provide said instruct signal, said locally generated portion including at least some information content that does not include any information from any of said signals, said at least some information content being subsequently displayed;  and transmitting at least one control signal from said origination transmitter to said remote intermediate transmitter station before a specific time, wherein said at least one control signal is effective at said remote intermediate transmitter station to control communication of said video and said instruct signal to said at least one receiver station.
     */
     // return an array of claim records
     /*       ClaimNumber
@@ -26,7 +17,7 @@ const formatClaim = claimText => {
              ClaimStatus
              PatentID: 0 
     */
-    // return claim formatted in Google Patents form
+    // where ClaimHTML is URI-encoded and formatted in Google Patents form
     /* 
     <div class="claim[-dependent] style-scope patent-text">  
         <div id="CLM-00001" num="00001" class="claim style-scope patent-text">
@@ -49,7 +40,7 @@ const formatClaim = claimText => {
         const endTag = '</div>'
         const markup = bodyText
             .replace(/\n/g, ' ') //first clean out all linebreaks
-            .replace(/(.*;)\s*(.*)\:(.*;\s+and)\s*(.*?;)/g, `$1${tag}$2:${tag}$3$4${endTag}`) //mark out sub-lists with tags
+            .replace(/(.*;)\s*(.*)\:(.*;\s+and)\s*(.*?;)/g, `$1${tag}$2:${tag}$3$4${endTag}`) //mark out sub-lists with tags. Assumes there's and '; and' before the last line in the sublist, and it ends with a ';'
             .replace(/;\s+and/g, `; and${endTag}${tag}`) //mark the '; and' to put the break in the right place
             .replace(/;(?!\s+and)/g, `;${endTag}`) // mark the end tag for remaining paragraphs
             .replace(/(\<\/div\>)(?!\<)/g, `$1\n${tag}`) //insert start tags
@@ -77,7 +68,7 @@ const formatClaim = claimText => {
         IsMethodClaim: isDependent || linkWord.includes('step') ? true : false,
         IsDocumented: false,
         IsIndependentClaim: isDependent ? false : true,
-        ClaimStatus: 1,
+        ClaimStatus,
         PatentID: 0 
     });
 }
