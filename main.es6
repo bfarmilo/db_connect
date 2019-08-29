@@ -150,14 +150,13 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, u
   /** @private getNewPatent sets up the (hidden) patent retrieval window
    * pushes in Javascript, and returns a patent Record
    * @param {number} patentNumber
+   * @param {webContents} activeWin
    * @param {string} PMCRef
    * @param {boolean} uriMode
    * @param {Array<string>} claimText -> Should be an array of plain strings
    * @returns {Object} ready for insertion into the DB
    */
   const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode, claimText = []) => {
-
-    //const activeWin = {...getPatentWindow.get(patentNumber)};
 
     activeWin.loadURL(`https://patents.google.com/patent/US${patentNumber}/en`);
     activeWin.on('closed', () => {
@@ -187,7 +186,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, u
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
         // Claims: condition claims to exclude JSON-ineligible characters
-        const Claims = claimText.length ? 
+        const Claims = claimText && claimText.length ? 
           claimText.map(claim => formatClaim(claim.text, claim.status)) :
           result.Claims.filter(y => y.localName !== 'claim-statement')
           .map(x => ({
