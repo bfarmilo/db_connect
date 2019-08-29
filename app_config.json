@@ -247,6 +247,7 @@
                 "l": 50
             }
         },
+        "claimStartMatch": "<i>Claims",
         "startMatch": "<i>Description",
         "endMatch": "\\* \\* \\* \\* \\*",
         "breakMatch": " ?<BR><BR> ?",
