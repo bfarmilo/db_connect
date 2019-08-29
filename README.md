@@ -21,7 +21,7 @@ Currently very much a work-in-progress.
 
 ### Known TODOs:
 
-1. Update all refernces to ./jsx/
+1. ~~Update all refernces to ./jsx/~~
 2. ~~Make patent Full Text writing offline by choice~~
 3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
 4. Check for duplicate (claims, patents) before inserting
@@ -29,17 +29,19 @@ Currently very much a work-in-progress.
 6. Get Patent Detail window size right
 7. Migrate to React-Native
 8. DB Backend to SQLite for portablility
+  1. get rid of tedious-promises 
 9. Interface to allow addition and linking of markman terms to patents and constructions
 10. Better reporting for shortlisting, claim export
 11. Write back-end for Patent Summary updating
 12. Enable Expiry date estimation writing
 13. DB migration to cloud
 14. DB authentication and user tracking
-15. Support for US Applications
+15. ~~Support for US Applications~~
 16. Option to enable general PDF linking
 17. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
 18. Sort by author, or generally make table editable
 19. ~~Close docker container at app.close~~ 
+20. Search by author
 
 ### Build Notes:
 1. Docker code to start container:
