@@ -252,5 +252,6 @@
         "endMatch": "\\* \\* \\* \\* \\*",
         "breakMatch": " ?<BR><BR> ?",
         "stripMatch": "( ?<CENTER> ?| ?<\\/CENTER> ?|<HR>|<b>|<\\/b>|<i>|<\\/i>)"
-    }
+    },
+    "localSave": "/test/currentTable.json"
 }

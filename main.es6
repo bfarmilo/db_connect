@@ -13,7 +13,7 @@ const { getAllImages } = require('./jsx/getImages');
 const { initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman } = require('./jsx/app_markmanInterface');
 const { formatClaim } = require('./jsx/formatClaim');
 // configuration
-const { patentDB, patentParser } = require('./app_config.json');
+const { patentDB, patentParser, localSave } = require('./app_config.json');
 // developer
 // const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
@@ -186,17 +186,17 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, u
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
         // Claims: condition claims to exclude JSON-ineligible characters
-        const Claims = claimText && claimText.length ? 
+        const Claims = claimText && claimText.length ?
           claimText.map(claim => formatClaim(claim.text, claim.status)) :
           result.Claims.filter(y => y.localName !== 'claim-statement')
-          .map(x => ({
-            ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-            ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-            IsMethodClaim: x.innerText.includes('method'),
-            IsDocumented: false,
-            IsIndependentClaim: !x.className.includes('claim-dependent'),
-            PatentID: 0
-          }))
+            .map(x => ({
+              ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
+              ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+              IsMethodClaim: x.innerText.includes('method'),
+              IsDocumented: false,
+              IsIndependentClaim: !x.className.includes('claim-dependent'),
+              PatentID: 0
+            }))
         // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
         // InventorLastName: split name on ' ' and take the last element of the array
         return resolve(
@@ -724,16 +724,23 @@ ipcMain.on('json_update', async (event, oldItem, newItem) => {
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
 
-  const runQuery = newOffset => {
+  const runQuery = (newOffset, callback) => {
     queryDatabase(connectParams, mode === 'claims' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
       if (err) {
-        console.error(err);
+        //console.error(err);
+        return callback(err);
       } else {
-        // send the result after parsing properly 
-        win.webContents.send('json_result', parseOutput(mode, result, uriMode), totalCount, newOffset, appendMode);
+        // send the result after parsing properly. Also return it for saving if desired
+        const currentResult = parseOutput(mode, result, uriMode);
+        win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode);
+        // strip out xml tags for Excel-friendly output
+        const cleanResult = currentResult.map(entry => {
+            const ClaimHtml = entry.ClaimHtml.replace(/<.*?>/g, '').replace(/ +/g, ' ').replace(/ \n /g, '');
+            return {...entry, ClaimHtml};
+          });
+        return callback(null, cleanResult);
       }
-    })
-
+    });
   }
 
   //remove duplicates and create an array of ({field, value}) objects
@@ -752,7 +759,13 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
       } else {
         totalCount = count[0][0];
         console.log(totalCount);
-        runQuery(ROWS_TO_RETURN);
+        runQuery(ROWS_TO_RETURN, (err, result) => {
+          if (err) {
+            console.error(err)
+          } else {
+            fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+          }
+        });
       }
     })
   } else {
