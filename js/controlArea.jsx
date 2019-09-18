@@ -4,6 +4,9 @@ import { Icon } from './icons';
 // the main UI at the top of the table to run and filter queries
 
 const ControlArea = props => {
+
+    const config = props.config[props.displayMode];
+
     const styles = {
         ButtonArea: {
             display: 'flex',
@@ -27,7 +30,7 @@ const ControlArea = props => {
         },
         TableHeading: {
             display: 'grid',
-            gridTemplateColumns: props.config.gridTemplateColumns,
+            gridTemplateColumns: config.gridTemplateColumns,
             padding: '0.4em 0.5em 0.4em 0.5em',
             fontSize: 'large',
             color: 'white',
@@ -60,8 +63,8 @@ const ControlArea = props => {
     return (
         <div class="ControlArea">
             <div style={styles.ButtonArea}>
-                <div style={styles.ResultCount}>{`${props.resultCount} Matching ${props.displayMode === 'claims' ? 'Claim' : 'Construction'}${props.resultCount == 1 ? '' : 's'} Found`}</div>
-                {props.config.enabledButtons.length ? props.config.enabledButtons.map(button => (
+                <div style={styles.ResultCount}>{`${props.resultCount} Matching ${config.display}${props.resultCount == 1 ? '' : 's'} Found`}</div>
+                {config.enabledButtons.length ? config.enabledButtons.map(button => (
                     <button
                         key={button.field}
                         data-value={button.field}
@@ -80,7 +83,7 @@ const ControlArea = props => {
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
                 <button style={styles.FilterButton} onClick={props.changeMode}>
-                    View {props.displayMode === 'claims' ? 'Constructions' : 'Claims'}</button>
+                    View {props.config[config.next].display}s</button>
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}
@@ -89,7 +92,7 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {props.config.columns.map(column => {
+                {config.columns.map(column => {
                     return (
                         <div key={column.field}>
                             <div data-field={column.field} onClick={props.modifySortOrder} style={{ display: 'flex', justifyContent: 'space-between', paddingRight: '1em' }}>

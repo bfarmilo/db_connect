@@ -79,7 +79,7 @@ class PatentDetail extends Component {
 
     openClickHandler(event) {
         console.log('opening patent', this.state.result.PatentPath);
-        ipcRenderer.send('open_patent', this.state.result.PatentPath);
+        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, 1);
     }
 
     goBackClickHandler(event) {

@@ -104,7 +104,7 @@ const parseOutput = (mode, result, uriMode) => {
     if (mode === 'simple') return record;
 
     const { claims, ...join0 } = record;
-    if (mode === 'claims') {
+    if (mode === 'claims' || mode === 'priorArt') {
       // claims mode: FROM claims INNER JOIN patents ON patents.PatentID = claims.PatentID
       // order ['claims']
       return claims.map(claim => ({
@@ -112,7 +112,7 @@ const parseOutput = (mode, result, uriMode) => {
         ...claim,
         ClaimHtml: uriMode ? decodeURIComponent(claim.ClaimHtml) : claim.ClaimHtml
       }))
-    } else {
+    } else if (mode === 'markman') {
       // markman mode: FROM claims
       // order ['claims', 'mt', 'mc', 'documents', 'clients']
       return claims.map(claim => {

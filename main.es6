@@ -1,6 +1,5 @@
 const electron = require('electron');
 const fse = require('fs-extra');
-const spawn = require('child_process').spawn;
 // local modules
 const { getDropBoxPath } = require('./jsx/getDropBoxPath');
 const { queryDatabase } = require('./jsx/app_DBconnect');
@@ -70,17 +69,6 @@ const closeDB = () => {
   return closeDocker(connectParams);
 }
 
-/** openPDF will try to open a pdf file using the shell
- * 
- * @param {String} fullPath
- * @returns {void}
- */
-const openPDF = (fullPath, pageNo) => {
-  console.log(`trying shell: ${dropboxPath}${fullPath}`);
-  //TODO: replace with custom viewer, enable implementing page jumps
-  shell.openItem(`${dropboxPath}${fullPath}`);
-}
-
 /** createWindow launches the main window
  *  @returns {void}
  */
@@ -90,7 +78,7 @@ const createWindow = () => {
     if (err) {
       console.error(err);
     } else {
-      dropboxPath = dropbox;
+      dropboxPath = dropbox.replace(/\\/g, '/');
     }
   });
   // Create the browser window.
@@ -555,6 +543,52 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
   }
 })
 
+// listener to handle when a user clicks on a patent link
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 1) => {
+
+  /** openPDF will try to open a pdf file using the shell
+   * 
+   * @param {String} fullPath
+   * @returns {void}
+   */
+  const openPDF = (browserWin, fullPath, pageNo) => new Promise((resolve, reject) => {
+    return fse.pathExists(`${dropboxPath}${fullPath}`)
+      .then(exists => {
+        //TODO: repurpose patentImageView.jsx for this !!!
+        // return 'found' if found, otherwise calling function will update the DB
+        if (exists) return resolve(shell.openItem(`${dropboxPath}${fullPath}`) && 'found');
+        // Alternate -- create a map of imageData - Map(page#, {url, pageData}), showPage - page number to show, rotation - 0,90,180,270
+        dialog.showOpenDialog(browserWin,
+          {
+            defaultPath: `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0],
+            properties: ['openFile']
+          }, filePath => {
+            shell.openItem(`${[...filePath]}`);
+            // now create a RegEx to strip out the dropBox path for writing back to the DB
+            // just in case switch all backslashes to slashes before doing so
+            return resolve(`${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1]);
+          })
+      })
+      .catch(err => reject(err));
+  });
+
+  console.log(`received link click with path ${linkVal}`);
+  openPDF(detailWindow, linkVal, pageNo)
+    .then(fileResult => {
+      // fileResult is either 'found' if the DB is correct
+      // or a new filePath (not including dropbox) if not
+      if (fileResult !== 'found') {
+        console.log(`file selected ${fileResult}`);
+        //TODO update database with new path
+        insertAndGetID(connectParams, 'Patent', { PatentPath: fileResult, PatentID }, 'PatentID', { skipCheck: ['PatentPath'], updateFields: ['PatentPath'] })
+          .then(status => console.log(status))
+          .catch(err => console.error(err));
+        // use PatentID for this
+      }
+    })
+    .catch(err => console.error(err));
+});
+
 ipcMain.on('change_window_rotation', e => {
   // reset the window size to keep the image size constant
   const [height, width] = imageWindow.getContentSize();
@@ -577,12 +611,6 @@ ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
     .catch(err => console.error(err));
   // no need to re-query since the component updates its local copy also
 })
-
-// listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, pageNo = 1) => {
-  console.log(`received link click with path ${linkVal}`);
-  openPDF(linkVal, pageNo);
-});
 
 // Listener for manual closing of the patent window via X button
 ipcMain.on('close_patent_window', event => {
@@ -725,7 +753,7 @@ ipcMain.on('json_update', async (event, oldItem, newItem) => {
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
 
   const runQuery = (newOffset, callback) => {
-    queryDatabase(connectParams, mode === 'claims' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
+    queryDatabase(connectParams, mode !== 'markman' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
       if (err) {
         //console.error(err);
         return callback(err);
@@ -733,12 +761,16 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
         // send the result after parsing properly. Also return it for saving if desired
         const currentResult = parseOutput(mode, result, uriMode);
         win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode);
-        // strip out xml tags for Excel-friendly output
-        const cleanResult = currentResult.map(entry => {
+        if (mode !== 'markman' && Array.isArray(currentResult) && currentResult.length > 0) {
+          // write a temporary file for Excel export, but not for Markman table
+          // strip out xml tags for Excel-friendly output
+          const cleanResult = currentResult.map(entry => {
             const ClaimHtml = entry.ClaimHtml.replace(/<.*?>/g, '').replace(/ +/g, ' ').replace(/ \n /g, '');
-            return {...entry, ClaimHtml};
+            return { ...entry, ClaimHtml };
           });
-        return callback(null, cleanResult);
+          return callback(null, cleanResult);
+        }
+        return callback(null, currentResult);
       }
     });
   }
@@ -763,7 +795,7 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
           if (err) {
             console.error(err)
           } else {
-            fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+            if (mode !== 'markman') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
           }
         });
       }

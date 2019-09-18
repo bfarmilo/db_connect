@@ -124,7 +124,7 @@ const TableArea = props => {
                 )}
             </div>)
         )
-    } else {
+    } else if (props.displayMode === 'markman') {
         //markman
         // make use of Court and Agreed.
         tableLayout = [...props.resultList].map(([ID, item]) => (
@@ -147,15 +147,45 @@ const TableArea = props => {
             </div>
         )
         )
+    } else {
+        //prior art or target (not our) patent
+        //so don't need claims, and instead just insert inventor and title into that box
+        tableLayout = [...props.resultList].map(([claimID, item]) => {
+            //future -- just customize the query to return these two fields
+            return (
+                <div key={claimID} style={styles.TableRow}>
+                    <div>{item.PMCRef}</div>
+                    {patentNumberCell(item.PatentNumber, styles, e => props.getDetail(e, `${item.PatentNumber}`))}
+                    <div>{item.InventorLastName}</div>
+                    <div>{item.Title}</div>
+                    {["PotentialApplication", "WatchItems"].map(field => {
+                        // lookup the record contents and row height from activeRows, or set defaults
+                        const { record, height } = props.activeRows.has(`${claimID}-${field}`)
+                            ? props.activeRows.get(`${claimID}-${field}`)
+                            : { record: item[field], height: 100 };
+                        return (
+                            <EditCell
+                                editMode={props.activeRows.has(`${claimID}-${field}`)}
+                                value={record}
+                                editContent={(e) => props.editContent(e, claimID, field)}
+                                clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
+                                activateEditMode={(e) => props.editMode(e, claimID, field)}
+                                themeColor={props.config.themeColor}
+                                selectedColor={props.config.selectedColor}
+                                boxHeight={height}
+                            />)
+                    })}
+                </div>
+            )
+        });
     }
-
     return (
         <div class='TableArea'>
             <Throbber windowHeight={props.windowHeight} themeColor={props.config.themeColor} visible={props.working} />
             {tableLayout}
         </div>
     );
-};
+}
 
 module.exports = {
     TableArea

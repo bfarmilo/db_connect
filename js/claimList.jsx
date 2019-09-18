@@ -68,7 +68,7 @@ class ClaimTable extends Component {
                     resultList.clear();
                 }
                 data.map(item => {
-                    const key = this.state.displayMode === 'claims' ?
+                    const key = this.state.displayMode !== 'markman' ?
                         `${item.ClaimID}` :
                         `${Object.keys(item).filter(ID => /ID$/i.exec(ID)).map(ID => item[ID]).join('_')}`;
                     // debugging - why duplicates?
@@ -316,18 +316,23 @@ class ClaimTable extends Component {
     }
 
     /**
-     * Change from Claims to Constructions and vice-versa
+     * Change from Claims to Constructions to PriorArt and back
      */
     changeMode = e => {
+        const modeCycle = {
+            claims:'markman',
+            markman:'priorArt',
+            priorArt:'claims'
+        }
         const queryValues = this.clearQuery();
         const resultList = new Map();
-        this.setState({ displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims', resultList, queryValues });
+        this.setState({ displayMode: modeCycle[this.state.displayMode], resultList, queryValues });
         this.runQuery(null, NEW);
     }
 
     /** Handle call to open a PDF */
-    openFile = (e, filePath, pageNo) => {
-        ipcRenderer.send('open_patent', filePath, pageNo);
+    openFile = (e, filePath, patentID, pageNo) => {
+        ipcRenderer.send('open_patent', filePath, patentID, pageNo);
     }
     /**
      * Display the inventor and patent title modal on hover
@@ -349,7 +354,7 @@ class ClaimTable extends Component {
         return (
             <div class='FullTable'>
                 <ControlArea
-                    config={config[this.state.displayMode]}
+                    config={config}
                     displayMode={this.state.displayMode}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
