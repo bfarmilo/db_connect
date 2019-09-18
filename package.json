@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@babel/runtime": "^7.5.4",
+    "dompurify": "^2.0.0",
     "fs-extra": "^5.0.0",
     "marked": "^0.7.0",
     "node-fetch": "^2.6.0",
