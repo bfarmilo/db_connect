@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import marked from 'marked';
+import DOMPurify from 'dompurify';
 import { Icon } from './icons.js';
 
 /** A generic editable cell, using markdown. 
@@ -45,7 +46,6 @@ const EditCell = props => {
         }
     }
     const markdownOptions = {
-        sanitize: true,
         gfm: true,
         tables: true,
         breaks: true,
@@ -53,7 +53,7 @@ const EditCell = props => {
         smartypants: true,
         tasklist: true
     }
-    const markdownText = { __html: !props.value ? '' : marked(props.value, markdownOptions) };
+    const markdownText = { __html: !props.value ? '' : DOMPurify.sanitize(marked(props.value, markdownOptions)) };
     return (props.editMode ? (
         <div style={styles.EditableBox}>
             <textarea
