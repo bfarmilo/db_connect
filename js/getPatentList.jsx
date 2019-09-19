@@ -56,7 +56,9 @@ class GetPatentList extends Component {
             updateStatus: new Map(),
             startIdx: 1,
             filterOptions: 'claim1',
-            claimPlainText: []
+            claimPlainText: [],
+            docTitle: '',
+            docAuthor: ''
         }
         this.resetStatus = {
             isRequested: false,
@@ -118,7 +120,7 @@ class GetPatentList extends Component {
                 this.setState({ startIdx: parseInt(newValue, 10) });
                 break;
             default:
-                // 'reference', 'storagePath'
+                // 'reference', 'storagePath', 'docTitle', 'docAuthor'
                 this.setState({ [inputType]: newValue });
         }
     }
@@ -138,10 +140,21 @@ class GetPatentList extends Component {
         // claimText.text is the plain text of the claim
         // claimText.status is an integer indicating the status of the claim
         // concatenate this with the existing state to add to the array
-        this.setState({claimText: this.state.claimText.concat({text, status})});
+        this.setState({ claimText: this.state.claimText.concat({ text, status }) });
     }
 
     handlePatentButton(event) {
+
+        // helper function to create a hash(unique number signature) based on an input string
+        const hashify = str => {
+            let hash = 5381;
+
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash * 33) ^ str.charCodeAt(i);
+            }
+            return (hash >>> 0).toString(16).padStart(8, '0').toUpperCase();
+        }
+
         if (this.state.patentList.length > 0) {
             console.log('sending data to Main:', this.state.patentList, this.state.reference, this.state.storagePath, this.state.downloadPats, this.state.filterOptions, this.state.startIdx);
             ipcRenderer.send(
@@ -160,14 +173,42 @@ class GetPatentList extends Component {
 
             // update status and clear patentList box
             this.setState({ updateStatus, patentList: [] });
+        } else if (this.state.docTitle && this.state.docAuthor) {
+            const docNumber = hashify(`${this.state.docTitle}${this.state.docAuthor}`);
+            console.log('sending manual entered data to Main:', this.state.docTitle, this.state.docAuthor);
+            ipcRenderer.send('get_new_patents', [], '', '', false, 'claim1', '', [],
+                {
+                    PMCRef: `${this.state.reference} ${this.state.startIdx}`,
+                    PatentNumber: `D-${docNumber}`,
+                    PatentUri: `DOC.${docNumber}.A1`,
+                    Number: `${docNumber}`,
+                    Title: this.state.docTitle,
+                    InventorLastName: this.state.docAuthor,
+                    PatentHtml: '["Open PDF to view source document"]',
+                    PatentPath: '',
+                    Claims: [
+                        { ClaimNumber: 1, ClaimHTML: '', IsMethodClaim: false, IsDocumented: false, IsIndependentClaim: true, PatentID: 0 }
+                    ],
+                    ClaimsCount: 1,
+                    IndependentClaimsCount: 1,
+                    IsInIPR: false,
+                    TechnologySpaceID: 1,
+                    TechnologySubSpaceID: 1,
+                    CoreSubjectMatterID: 1,
+                    downloadLink: ''
+                }
+            );
         }
     }
     // TODO: Add visible/invisible box for claim plain text entry. Claims should be separated by newlines only !
+    // TODO: Form for manually entering (not-patent) reference. Need the following fields: Title, Author, Ref, Index
+
     render({ }, { }) {
+        const disablePatentList = !!(this.state.docTitle || this.state.docAuthor);
         return (
             <div style={this.styles.getPatentList}>
                 <div style={this.styles.textArea}>
-                    <textarea style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'patentList')} rows='5' value={this.state.patentList.join('\n')} placeholder='Enter List of Patents' />
+                    <textarea disabled={disablePatentList} style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'patentList')} rows='5' value={this.state.patentList.join('\n')} placeholder={disablePatentList ? 'Clear Title and Author to Enable' : 'Enter List of Patents'} />
                 </div>
                 <div style={this.styles.otherControls}>
                     <div style={{ display: 'flex' }}>
@@ -183,7 +224,7 @@ class GetPatentList extends Component {
                         <input id='storagePath' type='text' style={this.styles.inputStyle} onClick={this.handleFolderSelect} value={this.state.storagePath} />
                     </div>
                     <div style={{ display: 'flex' }}>
-                        <input style={this.styles.checkBoxStyle} type='checkbox' checked={this.state.downloadPats} id='downloadPats' onClick={e => this.handleInput(e, 'downloadPats')} />
+                        <input style={this.styles.checkBoxStyle} type='checkbox' checked={disablePatentList ? false : this.state.downloadPats} id='downloadPats' onClick={e => this.handleInput(e, 'downloadPats')} />
                         <label style={this.styles.labelStyle} htmlFor='downloadPats'>Download Patents</label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr 1fr', fontFamily: 'Arial', fontSize: 'smaller' }}>
@@ -193,6 +234,14 @@ class GetPatentList extends Component {
                                 <label for={item}>{item.includes('all') ? `${item}` : `${item} Only`}</label>
                             </div>
                         ))}
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                        <label style={this.styles.labelStyle} htmlFor='title'>Title: </ label>
+                        <input id='title' type='text' style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'docTitle')} value={this.state.docTitle} />
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                        <label style={this.styles.labelStyle} htmlFor='author'>Author: </ label>
+                        <input id='author' type='text' style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'docAuthor')} value={this.state.docAuthor} />
                     </div>
                 </div>
                 {/*TODO: Add Switchable block here which gives the manual claim interface

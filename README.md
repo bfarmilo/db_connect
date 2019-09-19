@@ -18,6 +18,7 @@ Node-based connector to db and publish query results. Latest version is for elec
 * closes docker container on app closing
 * *NEW* Patent View shows inventor and title
 * *NEW* If a PDF link is broken, causes the user to browse to a new PDF file
+* *NEW* Upload a generic document (into GeneralResearch DB Only) with Title and Author
 
 
 Currently very much a work-in-progress.
@@ -40,7 +41,7 @@ Currently very much a work-in-progress.
 13. DB migration to cloud
 14. DB authentication and user tracking
 15. ~~Support for US Applications~~
-16. Option to enable general PDF linking
+16. ~~Option to enable general PDF linking~~
 17. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
 18. ~~Sort by author, or generally make table editable~~
 19. ~~Close docker container at app.close~~ 

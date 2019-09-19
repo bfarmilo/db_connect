@@ -177,14 +177,18 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, u
         const Claims = claimText && claimText.length ?
           claimText.map(claim => formatClaim(claim.text, claim.status)) :
           result.Claims.filter(y => y.localName !== 'claim-statement')
-            .map(x => ({
-              ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-              ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-              IsMethodClaim: x.innerText.includes('method'),
-              IsDocumented: false,
-              IsIndependentClaim: !x.className.includes('claim-dependent'),
-              PatentID: 0
-            }))
+            .map((x, idx) => {
+              // catch places where Google is screwed up, throw in a placeholder claim number
+              const ClaimNumber = x.innerText.match(/(\d+)\./) && x.innerText.match(/(\d+)\./)[1] ? parseInt(x.innerText.match(/(\d+)\./)[1], 10) : (1001 + idx);
+              return {
+                ClaimNumber,
+                ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+                IsMethodClaim: x.innerText.includes('method'),
+                IsDocumented: false,
+                IsIndependentClaim: !x.className.includes('claim-dependent'),
+                PatentID: 0
+              }
+            })
         // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
         // InventorLastName: split name on ' ' and take the last element of the array
         return resolve(
@@ -241,8 +245,12 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, u
  * @param {String} reference -> PMCRef to apply to the new collection
  * @param {String} storagePath -> Mount point on the dropbox to store PDF's
  * @param {boolean} downloadPats [opt] -> True if patents need to be downloaded
+ * @param {Array<String>} filterClaims -> A string indicating which claims to download
+ * @param {Number} startCount -> Starting count for Reference Index
+ * @param {Array<String>} claimText -> [TODO] for manual entry of claim text
+ * @param {Object} manualEntry -> [opt] a fully formed entry ready for Database Writing 
  */
-const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount, claimText) => {
+const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount, claimText, manualEntry = false) => {
   let addedList = [];
   const filterOptions = new Map([
     ['independent', { field: 'IsIndependentClaim', value: /true/g }],
@@ -259,7 +267,7 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
   };
 
   const getNextSlice = async newStart => {
-    if (newStart > patentList.length) {
+    if (!patentList.length || newStart > patentList.length) {
       return;
     }
     try {
@@ -275,8 +283,14 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
   }
 
   try {
-    console.log('downloading data for patents', patentList);
-    await getNextSlice(0);
+    if (manualEntry) {
+      console.log('adding new non-patent document', manualEntry.Title);
+      // need to set PatentNumber, PatentUri, Number
+      addedList.push(await createPatentQuery(connectParams, [manualEntry], sendUpdate));
+    } else {
+      console.log('downloading data for patents', patentList);
+      await getNextSlice(0);
+    }
     win.webContents.send('new_patents_ready', addedList);
   } catch (err) {
     // send error to getPatent window
@@ -355,6 +369,9 @@ const updateRenderWindow = (newData, targetWindow) => {
   // ? 'sending working message to detail window' : 'sending state for patent', newData.PMCRef || newData[0].PatentID);
   targetWindow.webContents.send('state', newData);
   targetWindow.show();
+  if (process.env.DEVTOOLS === 'show') {
+    targetWindow.webContents.openDevTools();
+  }
   return targetWindow;
 }
 
@@ -555,18 +572,24 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 1) => {
     return fse.pathExists(`${dropboxPath}${fullPath}`)
       .then(exists => {
         //TODO: repurpose patentImageView.jsx for this !!!
-        // return 'found' if found, otherwise calling function will update the DB
-        if (exists) return resolve(shell.openItem(`${dropboxPath}${fullPath}`) && 'found');
+        // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
+        if (exists && fullPath) return resolve(shell.openItem(`${dropboxPath}${fullPath}`) && 'found');
         // Alternate -- create a map of imageData - Map(page#, {url, pageData}), showPage - page number to show, rotation - 0,90,180,270
+        const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
         dialog.showOpenDialog(browserWin,
           {
-            defaultPath: `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0],
+            defaultPath,
             properties: ['openFile']
           }, filePath => {
-            shell.openItem(`${[...filePath]}`);
-            // now create a RegEx to strip out the dropBox path for writing back to the DB
-            // just in case switch all backslashes to slashes before doing so
-            return resolve(`${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1]);
+            if (filePath) {
+              shell.openItem(`${[...filePath]}`);
+              // now create a RegEx to strip out the dropBox path for writing back to the DB
+              // just in case switch all backslashes to slashes before doing so
+              return resolve(`${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1]);
+            } else {
+              // user cancelled out of the process, pretend it's fine and don't update
+              return resolve('found');
+            }
           })
       })
       .catch(err => reject(err));
@@ -785,7 +808,7 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
   //in the case where a blank query is passed, default query is only show claim 1
   const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
   if (!appendMode) {
-    queryDatabase(connectParams, mode === 'claims' ? 'p_COUNT' : 'm_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
+    queryDatabase(connectParams, mode !== 'markman' ? 'p_COUNT' : 'm_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
       if (err) {
         console.error(err)
       } else {

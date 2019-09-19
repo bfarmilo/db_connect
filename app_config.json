@@ -176,6 +176,13 @@
                 "prefix": "",
                 "suffix": " LIKE ",
                 "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Title",
+                "table": "patents",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
             }
         ]
     },
