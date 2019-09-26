@@ -59,6 +59,13 @@ th, tr {
   font-size: smaller;
 }
 
+blockquote {
+	font-size: smaller;
+	border-left: 2px solid rgba(51, 121, 183,0.5);
+  padding-left: 3px;
+  margin-left: 4px;
+}
+
 /* style tags for innerHTML set*/
 
 .claim-text {
