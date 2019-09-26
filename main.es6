@@ -23,6 +23,7 @@ let win;
 let markmanwin;
 let detailWindow = null;
 let imageWindow = null;
+let documentWindow = null;
 let newPatentWindow;
 let timer;
 let manualResize = true;
@@ -110,6 +111,7 @@ const createWindow = () => {
     if (detailWindow) detailWindow.close();
     if (markmanwin) markmanwin.close();
     if (newPatentWindow) newPatentWindow.close();
+    if (documentWindow) documentWindow.close();
     win = null;
   });
 }
@@ -538,6 +540,8 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
       console.log('window ready, calling getPatentHtml');
       imageWindow.webContents.send('resize', { width: 650, height: 425 });
       getPatentImages();
+      // Open the DevTools.
+      if (process.env.DEVTOOLS === 'show') imageWindow.webContents.openDevTools();
       imageWindow.show();
     })
     imageWindow.on('resize', () => {
@@ -561,69 +565,140 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
 })
 
 // listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 1) => {
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 0) => {
+
+  const openFile = fileName => {
+    //return shell.openItem(fileName);
+    return fse.readFile(fileName);
+  }
+
+  const getFirstCol = PatentID => new Promise((resolve, reject) => {
+    queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
+      if (err) return reject(err);
+      if (!data || data.length===0) return resolve(1);
+      // if the query returns image data, check for the max image number,
+      const resultList = JSON.parse(data.join(''));
+      const { firstImage, lastImage } = resultList && resultList.reduce((extremes, current) => {
+        let { firstImage, lastImage } = extremes;
+        extremes.firstImage = current.PageNumber < firstImage ? current.PageNumber : firstImage;
+        extremes.lastImage = current.PageNumber > lastImage ? current.PageNumber : lastImage;
+        return extremes;
+      }, { firstImage: 999, lastImage: 0 });
+      return resolve(lastImage + 1);
+    })
+  });
+
 
   /** openPDF will try to open a pdf file using the shell
    * 
    * @param {String} fullPath
    * @returns {void}
    */
-  const openPDF = (browserWin, fullPath, pageNo) => new Promise((resolve, reject) => {
-    return fse.pathExists(`${dropboxPath}${fullPath}`)
-      .then(exists => {
-        //TODO: repurpose patentImageView.jsx for this !!!
-        // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
-        if (exists && fullPath) return resolve(shell.openItem(`${dropboxPath}${fullPath}`) && 'found');
-        // Alternate -- create a map of imageData - Map(page#, {url, pageData}), showPage - page number to show, rotation - 0,90,180,270
-        const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
-        dialog.showOpenDialog(browserWin,
-          {
-            defaultPath,
-            properties: ['openFile']
-          }, filePath => {
-            if (filePath) {
-              shell.openItem(`${[...filePath]}`);
-              // now create a RegEx to strip out the dropBox path for writing back to the DB
-              // just in case switch all backslashes to slashes before doing so
-              return resolve(`${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1]);
-            } else {
-              // user cancelled out of the process, pretend it's fine and don't update
-              return resolve('found');
-            }
-          })
-      })
+  const openPDF = (browserWin, fullPath) => new Promise((resolve, reject) => {
+    return fse.pathExists(`${dropboxPath}${fullPath}`).then(async exists => {
+      //TODO: repurpose patentImageView.jsx for this !!!
+      // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
+      if (exists && fullPath) {
+        return resolve({ status: 'found', data: await openFile(`${dropboxPath}${fullPath}`) });
+      }
+      // Alternate -- create a map of imageData - Map(page#, {url, pageData}), showPage - page number to show, rotation - 0,90,180,270
+      const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
+      dialog.showOpenDialog(browserWin,
+        {
+          defaultPath,
+          properties: ['openFile']
+        }, async filePath => {
+          if (filePath) {
+            // now create a RegEx to strip out the dropBox path for writing back to the DB
+            // just in case switch all backslashes to slashes before doing so
+            return resolve({ status: 'new', data: await openFile(`${[...filePath]}`), path: `${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1] })
+          } else {
+            // user cancelled out of the process, pretend it's fine and don't update
+            return resolve({ status: 'cancelled', data: null });
+          }
+        })
+    })
       .catch(err => reject(err));
   });
 
   console.log(`received link click with path ${linkVal}`);
-  openPDF(detailWindow, linkVal, pageNo)
-    .then(fileResult => {
-      // fileResult is either 'found' if the DB is correct
-      // or a new filePath (not including dropbox) if not
-      if (fileResult !== 'found') {
-        console.log(`file selected ${fileResult}`);
-        //TODO update database with new path
-        insertAndGetID(connectParams, 'Patent', { PatentPath: fileResult, PatentID }, 'PatentID', { skipCheck: ['PatentPath'], updateFields: ['PatentPath'] })
+  openPDF(detailWindow, linkVal)
+    .then(async fileResult => {
+      // fileResult.status is either 'found' if the DB is correct
+      // or a 'new' if a new filePath (not including dropbox) has been set
+      // or 'cancelled' if the user x'd out of it
+      if (fileResult.status === 'new') {
+        console.log(`file selected ${fileResult.path}`);
+        insertAndGetID(connectParams, 'Patent', { PatentPath: fileResult.path, PatentID }, 'PatentID', { skipCheck: ['PatentPath'], updateFields: ['PatentPath'] })
           .then(status => console.log(status))
           .catch(err => console.error(err));
-        // use PatentID for this
+      }
+      if (fileResult.status !== 'cancelled') {
+        const startPage = pageNo || await getFirstCol(PatentID);
+        // now create the document window and send the data to it
+        if (documentWindow === null) {
+          const [x, y] = detailWindow.getPosition();
+          const [xSize, ySize] = detailWindow.getSize();
+          documentWindow = new BrowserWindow({
+            width: 425,
+            height: 650,
+            y,
+            x: x + xSize + 10,
+            show: false
+          });
+          documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
+          // Open the DevTools.
+          documentWindow.on('closed', () => {
+            documentWindow = null;
+          });
+          documentWindow.on('ready-to-show', () => {
+            console.log('window ready, sending pdf data', fileResult.data);
+            documentWindow.show();
+            if (process.env.DEVTOOLS === 'show') documentWindow.webContents.openDevTools();
+            documentWindow.webContents.send('resize', { width: 425, height: 650 })
+            //documentWindow.webContents.send('available_offline', true);
+            documentWindow.webContents.send('generic', fileResult.data, startPage);
+          })
+          documentWindow.on('resize', () => {
+            if (manualResize) {
+              // only send update if manualResize = true
+              clearTimeout(timer);
+              timer = setTimeout(() => {
+                console.log('document Window size changed, sending new size');
+                const [width, height] = documentWindow.getContentSize();
+                documentWindow.webContents.send('resize', { width, height })
+              }, 500);
+            } else {
+              // reset to listen for mouse events
+              manualResize = true;
+            }
+          });
+        } else {
+          // send new data to existing window
+          documentWindow.webContents.send('available_offline', true);
+          documentWindow.webContents.send('generic', fileResult.data);
+        }
       }
     })
     .catch(err => console.error(err));
 });
 
-ipcMain.on('change_window_rotation', e => {
+ipcMain.on('change_window_rotation', (e, isImageWindow) => {
+  const targetWindow = isImageWindow ? imageWindow : documentWindow;
   // reset the window size to keep the image size constant
-  const [height, width] = imageWindow.getContentSize();
-  imageWindow.setContentSize(width, height);
-  imageWindow.webContents.send('resize', { width, height });
+  const [height, width] = targetWindow.getContentSize();
+  targetWindow.setContentSize(width, height);
+  // now report back to the window it's new dimensions
+  targetWindow.webContents.send('resize', { width, height });
 })
 
-ipcMain.on('request_resize', (e, width, height) => {
+ipcMain.on('request_resize', (e, width, height, isImageWindow) => {
+  // target window has requested a new size, so set it up
+  const targetWindow = isImageWindow ? imageWindow : documentWindow;
   manualResize = false;
   const newWidth = Math.round(width) + 1;
   const newHeight = Math.round(height) + 1;
-  imageWindow.setContentSize(newWidth, newHeight);
+  targetWindow.setContentSize(newWidth, newHeight);
 })
 
 ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
