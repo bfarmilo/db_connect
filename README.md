@@ -19,6 +19,8 @@ Node-based connector to db and publish query results. Latest version is for elec
 * *NEW* Patent View shows inventor and title
 * *NEW* If a PDF link is broken, causes the user to browse to a new PDF file
 * *NEW* Upload a generic document (into GeneralResearch DB Only) with Title and Author
+* *NEW* PDF native view (mostly) working
+* *NEW* Experimental feature that writes a Importable JSON version of claim table for Excel import
 
 
 Currently very much a work-in-progress.
@@ -34,8 +36,8 @@ Currently very much a work-in-progress.
 7. Migrate to React-Native
 8. DB Backend to SQLite for portablility
   1. get rid of tedious-promises 
-9. Interface to allow addition and linking of markman terms to patents and constructions
-10. Better reporting for shortlisting, claim export
+9. ~~Interface to allow addition and linking of markman terms to patents and constructions~~
+10. Better reporting for shortlisting, claim export - Improve experimental save-as feature
 11. Write back-end for Patent Summary updating
 12. Enable Expiry date estimation writing
 13. DB migration to cloud
@@ -46,6 +48,7 @@ Currently very much a work-in-progress.
 18. ~~Sort by author, or generally make table editable~~
 19. ~~Close docker container at app.close~~ 
 20. ~~Search by author~~
+21. Lazy loading and overall better handling of PDF documents - see reportViewer?
 
 ### Build Notes:
 1. Docker code to start container:
