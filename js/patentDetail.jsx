@@ -6,6 +6,8 @@ import { Throbber } from './jsx/Throbber';
 
 /** @jsx h */
 
+const DEFAULT_PAGE_NO = 0;
+
 class PatentDetail extends Component {
 
     constructor(props) {
@@ -79,7 +81,7 @@ class PatentDetail extends Component {
 
     openClickHandler(event) {
         console.log('opening patent', this.state.result.PatentPath);
-        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, 1);
+        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, DEFAULT_PAGE_NO);
     }
 
     goBackClickHandler(event) {
