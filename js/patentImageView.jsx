@@ -30,8 +30,17 @@ class PatentImage extends Component {
         }
     }
 
+    componentDidUpdate(prevProps) {
+        if (this.props.isImage && prevProps.imageData.get(prevProps.showPage) !== this.props.imageData.get(this.props.showPage)) {
+            pdfJsLib.getDocument({ data: atob(this.props.imageData.get(this.props.showPage).pageData) }).promise.then(pdf => {
+                this.setState({ pdf });
+            });
+        }
+    }
+
     render() {
         const portraitMode = this.props.rotation == 0 || this.props.rotation == 180;
+        // TODO: Switch between single page w. resizing and multi-canvas with fixed width
         if (this.props.showPage && this.state.pdf) {
             console.log('showing page', this.props.showPage);
             const rotation = this.props.rotation;
