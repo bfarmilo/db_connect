@@ -49,9 +49,20 @@ let uriMode; // flag that indicates if claim HTML is uri-encoded or not, default
 process.on('uncaughtException', e => {
   console.error(e);
   console.error('fatal error, exiting app');
-  if (win) win.close();
-  if (app) app.quit();
+  dialog.showMessageBox(null, {
+    type: 'error',
+    message: e.code,
+    detail: e.message
+  }).then(response => {
+    if (win) win.close();
+    if (app) app.quit();
+  }).catch(err => {
+    console.error(err);
+    if (win) win.close();
+    if (app) app.quit();
+  });
 });
+
 
 // connect to the sql server
 const connectToDB = async () => {
@@ -471,7 +482,7 @@ ipcMain.on('store_fulltext', (event, PatentHtml, PatentID) => {
   })
 })
 
-ipcMain.on('show_images', (event, PatentID, patentNo) => {
+ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
   // uses connectParams, imageWindow
   // imports queryDatabase, updateRenderWindow, getAllImages, insertAndGetID
 
@@ -530,12 +541,16 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
       height: 425,
       y,
       x: x + xSize + 10,
-      show: false
+      show: false,
+      title
     });
     imageWindow.loadURL(`file://${__dirname}/patentfigures.html`);
     imageWindow.on('closed', () => {
       imageWindow = null;
     });
+    imageWindow.on('page-title-updated', (e, title, explicitSet) => {
+      e.preventDefault();
+    })
     imageWindow.on('ready-to-show', () => {
       console.log('window ready, calling getPatentHtml');
       imageWindow.webContents.send('resize', { width: 650, height: 425 });
@@ -565,7 +580,7 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
 })
 
 // listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 0) => {
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
 
   const openFile = fileName => {
     //return shell.openItem(fileName);
@@ -575,7 +590,7 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 0) => {
   const getFirstCol = PatentID => new Promise((resolve, reject) => {
     queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
       if (err) return reject(err);
-      if (!data || data.length===0) return resolve(1);
+      if (!data || data.length === 0) return resolve(1);
       // if the query returns image data, check for the max image number,
       const resultList = JSON.parse(data.join(''));
       const { firstImage, lastImage } = resultList && resultList.reduce((extremes, current) => {
@@ -644,10 +659,12 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, pageNo = 0) => {
             height: 650,
             y,
             x: x + xSize + 10,
-            show: false
+            show: false,
+            title
           });
           documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
           // Open the DevTools.
+          documentWindow.on('page-title-updated', e => e.preventDefault());
           documentWindow.on('closed', () => {
             documentWindow = null;
           });

@@ -81,7 +81,7 @@ class PatentDetail extends Component {
 
     openClickHandler(event) {
         console.log('opening patent', this.state.result.PatentPath);
-        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, DEFAULT_PAGE_NO);
+        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, `${this.state.result.PatentNumber} (${this.state.result.InventorLastName})`, DEFAULT_PAGE_NO);
     }
 
     goBackClickHandler(event) {
@@ -132,34 +132,43 @@ class PatentDetail extends Component {
 
     //TODO: Highlight the word in the paragraph
     changeSearchTerm(event) {
-        const searchTerm = new RegExp(event.target.value, 'i');
-        // paraList stores an array of paragraph indexes where the regex is found
-        const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
-        // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
-        console.log(paraList);
-        const highlightList = new Map([...paraList.map(index => [index, {}])]);
-        console.log('searching for', searchTerm);
-        if (highlightList.size > 0) {
-            console.log('set initial highlightList', highlightList);
-            // hack so the first click of 'down' goes to the first instance
-            const currentScroll = paraList[paraList.length - 1];
-            const scrollNavigation = new Map([...paraList.map((val, idx) => {
-                const nav = {
-                    next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
-                    prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
-                };
-                return [val, nav]
-            })]);
-            console.log('set navigation', scrollNavigation)
-            console.log('set currentScroll', currentScroll)
-            this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+        if (event.target.value.length > 1) {
+            const searchTerm = new RegExp(event.target.value, 'i');
+            // paraList stores an array of paragraph indexes where the regex is found
+            const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
+            // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
+            console.log(paraList);
+            const highlightList = new Map([...paraList.map(index => [index, {}])]);
+            console.log('searching for', searchTerm);
+            if (highlightList.size > 0) {
+                console.log('set initial highlightList', highlightList);
+                // hack so the first click of 'down' goes to the first instance
+                const currentScroll = paraList[paraList.length - 1];
+                const scrollNavigation = new Map([...paraList.map((val, idx) => {
+                    const nav = {
+                        next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
+                        prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
+                    };
+                    return [val, nav]
+                })]);
+                console.log('set navigation', scrollNavigation)
+                console.log('set currentScroll', currentScroll)
+                this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+            } else {
+                // not found, so reset everything
+                this.setState({
+                    searchTerm: event.currentTarget.value,
+                    highlightList: new Map(),
+                    scrollNavigation: new Map(),
+                    currentScroll: 0
+                })
+            }
         } else {
-            // not found, so reset everything
+            // search field is blank or 1 character long
             this.setState({
-                searchTerm: event.currentTarget.value,
+                searchTerm: '',
                 highlightList: new Map(),
-                scrollNavigation: new Map(),
-                currentScroll: 0
+                scrollNavigation: new Map()
             })
         }
     }
@@ -192,7 +201,7 @@ class PatentDetail extends Component {
 
     showImages = e => {
         console.log('got request to show images for patent ID', this.state.result.PatentID);
-        ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber);
+        ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber, `${this.state.result.PatentNumber} - Images`);
     }
 
     makeOffline = e => {

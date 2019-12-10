@@ -30,7 +30,7 @@ Currently very much a work-in-progress.
 1. ~~Update all refernces to ./jsx/~~
 2. ~~Make patent Full Text writing offline by choice~~
 3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
-4. Check for duplicate (claims, patents) before inserting
+4. ~~Check for duplicate (claims, patents) before inserting~~ -- basic URI match now checked
 5. Update components to include react hooks
 6. Get Patent Detail window size right
 7. Migrate to React-Native
@@ -45,10 +45,16 @@ Currently very much a work-in-progress.
 15. ~~Support for US Applications~~
 16. ~~Option to enable general PDF linking~~
 17. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
-18. ~~Sort by author, or generally make table editable~~
-19. ~~Close docker container at app.close~~ 
-20. ~~Search by author~~
-21. Lazy loading and overall better handling of PDF documents - see reportViewer?
+18. ~~Sort by author~~
+19. generally make table editable -- repurpose Markman input for main tables ??
+20. ~~Close docker container at app.close~~ 
+21. ~~Search by author~~
+22. Lazy loading and overall better handling of PDF documents - see reportViewer?
+23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
+  - use % of scroll to estimate position in PDF based on text start & end?
+  - use page load architecture from reportviewer rather than zoom based imageview
+24. For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected
+25. Change 'ChangeDB' and mode toggles to drop-selects
 
 ### Build Notes:
 1. Docker code to start container:
