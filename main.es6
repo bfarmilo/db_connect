@@ -582,8 +582,8 @@ ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
 // listener to handle when a user clicks on a patent link
 ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
 
-  const openFile = fileName => {
-    //return shell.openItem(fileName);
+  const openFile = (fileName, mode = 'window') => {
+    if (mode === 'shell') return shell.openItem(fileName);
     return fse.readFile(fileName);
   }
 
@@ -772,12 +772,13 @@ ipcMain.on('get_file', async (e, client, ClientID) => {
 })
 
 ipcMain.on('get_constructions', async (e, query) => {
-  //query has the form {<ClientID>, <TermID>, <ClaimID>}
+  //query has the form {<ClientID>, <TermID>, <ClaimID>, <DocumentID>}
   //First get MarkmanTermConstruction matching any given ID coming in
   const mtcList = await getTermConstructions(connectParams, query);
   //send those off because we have them
   markmanwin.webContents.send('got_termconstructions', [...mtcList]);
-  const constructionList = await getConstructions(connectParams, query);
+  //now just load all of the constructions we have in the DB
+  const constructionList = await getConstructions(connectParams, query.DocumentID ? query : {});
   markmanwin.webContents.send('got_constructions', [...constructionList]);
 });
 
@@ -786,7 +787,7 @@ ipcMain.on('markman_write', async (e, list, record) => {
   // map a term to a term table query
   const termRecord = { ClaimTerm: record.term }
   // if no TermID is sent, it is a new term. So write and store the termID
-  const TermID = record.termID || await addMarkman(connectParams, 'term', termRecord);
+  const TermID = record.termID || (await addMarkman(connectParams, 'term', termRecord)).TermID;
 
   // map a construction to a construction table query
   const constructionRecord = {
@@ -797,15 +798,15 @@ ipcMain.on('markman_write', async (e, list, record) => {
     Court: record.court
   }
   // if no ConstructID is sent, it is a new construction, so write & store the constructID
-  const ConstructID = record.constructID || await addMarkman(connectParams, 'construction', constructionRecord);
+  const ConstructID = record.constructionID || (await addMarkman(connectParams, 'construction', constructionRecord)).ConstructID;
 
   // map the term, construction, and client to the claim
   const linkRecord = list.map(([key, value]) => {
     const returnRecord = {
       TermID,
       ConstructID,
-      ClaimID: value.claimID,
-      ClientID: value.clientID
+      ClaimID: value.ClaimID,
+      ClientID: value.ClientID
     }
     // if it contains a termConstructID it is an existing link record, so add it
     if (Object.keys(value).includes('termConstructID')) {
@@ -815,7 +816,7 @@ ipcMain.on('markman_write', async (e, list, record) => {
   })
 
   // now write the new links and collect the constructionID's for resending
-  const TermConstructIDList = Promise.all(linkRecord.map(entry => {
+  const TermConstructIDList = await Promise.all(linkRecord.map(entry => {
     // if the record has a TermConstructID then just modify the record and return the TermConstructID
     if (entry.TermConstructID) {
       return modifyMarkman(connectParams, {
@@ -829,8 +830,8 @@ ipcMain.on('markman_write', async (e, list, record) => {
   }));
 
   // finally, send the new termConstructionIDs back to the renderer in place
-  markmanwin.webContents.send('write_complete', TermConstructIDList.map((TermConstructID, index) => {
-    list[index][1].TermConstructID = TermConstructID;
+  markmanwin.webContents.send('write_complete', TermConstructIDList.map((newID, index) => {
+    list[index][1].TermConstructID = parseInt(newID.TermConstructionID, 10);
     return list[index];
   }))
 })
@@ -910,7 +911,7 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
           if (err) {
             console.error(err)
           } else {
-            if (mode !== 'markman') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+            if (mode !== 'markman' && process.env.DEVTOOLS === 'show') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
           }
         });
       }

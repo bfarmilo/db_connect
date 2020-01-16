@@ -22,6 +22,7 @@ class MarkmanEntry extends Component {
             construction: '',
             court: '',
             patent: '',
+            page: 0,
             selectedClaims: new Map(),
             client: '',
             document: '',
@@ -51,8 +52,11 @@ class MarkmanEntry extends Component {
             this.setState({ terms, clients, patents })
         })
         ipcRenderer.on('got_claims', (e, claimList) => {
+            // load the claims, sorted into ascending order
             const claims = new Map([...claimList].sort((a, b) => a[0] - b[0]));
-            this.setState({ claims });
+            // to deal with the bug where selecting only claim 1 causes it to freeze,
+            // default to selecting the first claim
+            this.setState({ claims, selectedClaims: new Map([[1, claims.get(1)]]) });
         })
         ipcRenderer.on('got_constructions', (e, constructionList) => {
             const constructions = new Map(constructionList);
@@ -68,7 +72,7 @@ class MarkmanEntry extends Component {
         })
         ipcRenderer.on('write_complete', (e, list) => {
             const termConstructions = new Map(list);
-            this.setState({ termConstructions });
+            this.setState({ termConstructions, term: '', termID: 0, construction: '', constructionID: 0, lockTermAndConstruction: false });
             this.showMessage('Database Updated');
         })
     }
@@ -79,7 +83,7 @@ class MarkmanEntry extends Component {
 
     editEntry = (event, entryType) => {
         /** getQueryRecord is a helper function to compose a query
-         * @returns {Object} -> {<ClientID>, <TermID>, <ClaimID>}
+         * @returns {Object} -> {<ClientID>, <TermID>, <ClaimID>, <DocumentID>}
          */
         const getQueryRecord = () => {
             const lookup = {
@@ -88,13 +92,14 @@ class MarkmanEntry extends Component {
                 claim: { value: 'claim', list: 'claims', id: 'ClaimID' },
                 construction: { value: 'construction', list: 'constructions', id: 'ConstructionID' }
             }
-            return ['client', 'term', 'claim'].reduce((query, type) => {
+            //console.log(this.state.terms, this.state.constructions);
+            return ['client', 'term', 'claim', 'construction'].reduce((query, type) => {
                 // go through each data type, and add the <Type>ID if it is found
                 if (this.state[lookup[type].list].has(this.state[lookup[type].value])) {
                     query[lookup[type].id] = this.state[lookup[type].list].get(this.state[lookup[type].value])
                 }
                 return query;
-            }, {})
+            }, this.state.documentID ? { DocumentID: this.state.documentID } : {})
         }
 
         if (entryType === 'claim') {
@@ -171,7 +176,7 @@ class MarkmanEntry extends Component {
                     applyToList.set(key, { PatentID, patentNumber, ClaimID, claimNumber: claim, ClientID, clientName })
                 }
             });
-            this.setState({ applyToList, lockTermAndConstruction: true });
+            this.setState({ applyToList });
         }
     }
 
@@ -189,24 +194,36 @@ class MarkmanEntry extends Component {
     }
 
     sendNewValues = (event, mode) => {
-        if (mode !== 'clear') {
-            const termID = this.state.terms.has(this.state.term) ? this.state.terms.get(this.state.term) : null;
-            const constructionID = this.state.constructions.has(this.state.construction) ? this.state.constructions.get(this.state.construction) : null;
+        const { court, page, documentID, term, construction, agreed } = this.state;
+        if (mode !== 'clear' && court && page && documentID && term && construction) {
+            const termID = this.state.terms.has(term) ? this.state.terms.get(term) : null;
+            const constructionKey = `${construction}:${documentID}:${page}:${agreed}:${court}`;
+            const constructionID = this.state.constructions.has(constructionKey) ? this.state.constructions.get(constructionKey) : null;
             // send the applytoList to main for writing
             const staticRecord = {
-                term: this.state.term,
+                term,
                 termID,
-                construction: this.state.construction,
+                construction,
                 constructionID,
-                court: this.state.court,
-                page: this.state.page,
-                documentID: this.state.documentID,
-                agreed: this.state.agreed
+                court,
+                page,
+                documentID,
+                agreed
             }
             console.log('sending records to main process', [...this.state.applyToList], staticRecord);
             ipcRenderer.send('markman_write', [...this.state.applyToList], staticRecord)
         } else {
-            // clear all variables
+            // clear Term and construction
+            if (mode === 'clear') {
+                this.setState({ term: '', termID: 0, construction: '', constructionID: 0, lockTermAndConstruction: false });
+            } else {
+                // missing some data, identify which one
+                const missingEntries = ['court', 'page', 'documentID', 'term', 'construction'].map(item => {
+                    if (!this.state[item]) return item;
+                    return '';
+                }).join(',');
+                this.showMessage(`Missing ${missingEntries}. Please enter a value and select 'Apply' again`);
+            }
         }
     }
 

@@ -176,7 +176,7 @@ const addMarkman = async (connectParams, mode, data) => {
 const modifyMarkman = async (connectParams, record) => {
     const { terms, constructions } = tableSchema;
     const recordKeys = Object.keys(record);
-    if (!passesSchema('modify', data)) throw('data does not have the required keys');
+    if (!passesSchema('modify', data)) throw ('data does not have the required keys');
     // figure out which tables need to change based on contents of record
     // term -- MarkmanTerm
     if (recordKeys.includes('ClaimTerm')) {
@@ -205,32 +205,37 @@ const modifyMarkman = async (connectParams, record) => {
 }
 
 const linkDocument = (connectParams, DropboxPath, client, ClientID) => new Promise(async (resolve, reject) => {
+
+    let document;
+    //TODO does this return an array or a single value?
+    const clientSectorIDs = await insertAndGetID(connectParams, 'ClientSector', { ClientID }, 'ClientSectorID', { readOnly: true });
+    // really only care about one
+    const { ClientSectorID } = clientSectorIDs !== 'not found' ? clientSectorIDs : { ClientSectorID: 1 };
+
+    const fileOpened = async ([filePath]) => {
+        // note - force DropboxPath and filePath to use back slashes so we get a legitimate match
+        const [ignore, DocumentPath, FileName] = filePath.replace(/\//g, '\\').split(DropboxPath.replace(/\//g, '\\'))[1].match(/(.*\\(.*))/);
+        const DateModified = (new Date(fs.statSync(`${DropboxPath}${DocumentPath}`).mtimeMs)).toISOString();
+        document = FileName;
+        // now return the documentID, or write a new one if needed
+        // when checking if it exists, just use documentpath
+        // if writing a new one, skip the 'Comments' field
+        const docResult = await insertAndGetID(
+            connectParams,
+            tableSchema.documents.table,
+            { DocumentPath, FileName, DateModified, DocumentTypeID: DOCTYPE_PLACEHOLDER, ClientSectorID },
+            tableSchema.documents.index,
+            { skipWrite: ['Comments'], skipCheck: ['DateModified', 'DocumentTypeID', 'ClientSectorID', 'FileName'] }
+        );
+        return resolve({ documentID: docResult[tableSchema.documents.index], document });
+    };
+
     try {
-        let document;
-        //TODO does this return an array or a single value?
-        const clientSectorIDs = await insertAndGetID(connectParams, 'ClientSector', { ClientID }, 'ClientSectorID', { readOnly: true });
-        // really only care about one
-        const { ClientSectorID } = clientSectorIDs !== 'not found' ? clientSectorIDs : { ClientSectorID: 1 };
         dialog.showOpenDialog({
             title: 'Select a Ruling',
             defaultPath: `${DropboxPath}PMC Public\\PMC ASSETS\\PMC Patents\\Claim Construction`,
             properties: ['openFile']
-        }, async ([filePath]) => {
-            const [fullPath, DocumentPath, FileName] = filePath.split(DropboxPath)[1].match(/(.*\\(.*))/);
-            const DateModified = (new Date(fs.statSync(`${DropboxPath}${DocumentPath}`).mtimeMs)).toISOString();
-            document = FileName;
-            // now return the documentID, or write a new one if needed
-            // when checking if it exists, just use documentpath
-            // if writing a new one, skip the 'Comments' field
-            const docResult = await insertAndGetID(
-                connectParams,
-                tableSchema.documents.table,
-                { DocumentPath, FileName, DateModified, DocumentTypeID: DOCTYPE_PLACEHOLDER, ClientSectorID },
-                tableSchema.documents.index,
-                { skipWrite: ['Comments'], skipCheck: ['DateModified', 'DocumentTypeID', 'ClientSectorID', 'FileName'] }
-            );
-            return resolve({ documentID: docResult[tableSchema.documents.index], document });
-        })
+        }, fileOpened)
     } catch (err) {
         return reject(err)
     }

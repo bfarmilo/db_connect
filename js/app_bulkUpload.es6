@@ -234,7 +234,7 @@ const getMarkmanDropdowns = connectParams => new Promise((resolve, reject) => {
   // clients -- A map of client: clientID
   // sectors -- A map of sectors: sectorID
   return Promise.all(
-    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}`))
+    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}${table==='Client'? ' ORDER BY ClientName ASC' : ''}`))
   )
     .then(([claimTerms, clients, sectors, patents]) => resolve({
       claimTerms: new Map(claimTerms.map(([ID, term]) => [term, ID])),
@@ -266,31 +266,38 @@ const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reje
 });
 
 const getTermConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
-  const { keyList, paramList } = getParams(queryRecord)
+  const { keyList, paramList } = getParams(queryRecord, queryRecord.DocumentID ? ['DocumentID'] : []);
   return queryNoPromises(connectParams,
     `SELECT * FROM dbo.MarkmanTermConstruction AS mtc WHERE ${keyList.map(key => `mtc.${key}=@${key}`).join(' AND ')} FOR JSON AUTO`,
     paramList)
     .then(result => {
+      if (!result.length) return resolve(new Map());
       const output = [parseOutput('simple', result).map(entry => {
         const { TermConstructionID, ...rest } = entry;
         return [rest, TermConstructionID]
       })];
-      return resolve(new Map(output))
+      return resolve(new Map(output[0]));
     })
     .catch(err => reject(err))
 })
 
 const getConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
-  const { keyList, paramList } = getParams(queryRecord)
+  // return a table of constructions given either 
+  // 1) no query
+  // 2) a documentID
+  const { keyList, paramList } = getParams(queryRecord, ['TermID', 'ClientID']);
+  const hasQuery = queryRecord.DocumentID ? `WHERE ${keyList.map(key => `mc.${key}=@${key}`).join(' AND ')}` : '';
   return queryNoPromises(connectParams,
-    `SELECT mc.* FROM dbo.MarkmanConstructions AS mc INNER JOIN dbo.MarkmanTermConstruction AS mtc ON mc.ConstructID=mtc.ConstructID WHERE ${keyList.map(key => `mtc.${key}=@${key}`).join(' AND ')} FOR JSON AUTO`,
-    paramList)
+    `SELECT mc.* FROM dbo.MarkmanConstructions AS mc ${hasQuery} FOR JSON AUTO`,
+    hasQuery !== '' ? paramList : [])
     .then(result => {
+      if (!result.length) return resolve(new Map());
       const output = [parseOutput('simple', result).map(entry => {
         const { ConstructID, ...rest } = entry;
-        return [rest, ConstructID]
+        // Send with the key as a flat string, not an Object !
+        return [Object.keys(rest).map(key => rest[key]).join(':'), ConstructID];
       })];
-      return resolve(new Map(output))
+      return resolve(new Map(output[0]))
     })
     .catch(err => reject(err))
 })
