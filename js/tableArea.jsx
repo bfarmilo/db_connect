@@ -133,7 +133,7 @@ const TableArea = props => {
                     if (column.field === 'FileName') {
                         return <div
                             style={styles.FileName}
-                            onClick={e => props.openFile(e, item.DocumentPath, item.MarkmanPage)}>
+                            onClick={e => props.openFile(e, item.DocumentPath, item.DocumentID, item.MarkmanPage)}>
                             <Icon name='jumpFile' width='1em' height='2em' style={styles.Icon} />
                             <div style={{ paddingLeft: '7px' }}>{item[column.field]}</div>
                         </div>
