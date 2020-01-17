@@ -579,14 +579,35 @@ ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
   }
 })
 
-// listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
+/** listener to handle when a user clicks on a pdf link
+ * @param {Event} opEvent -> not used
+ * @param {String} linkVal -> Full path to the file
+ * @param {Number} PatentID -> Either a patentID or documentID depending
+ * @param {String} title -> The title for the opened window
+ * @param {String} sourceWindow -> 'markman' or 'patentDetail' depending on who initiated the call
+ * @param {Number} pageNo <Optional> -> The page number to jump to
+ * 
+ * */
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, pageNo = 0) => {
 
+  /** openFile handles the opening of the file
+   * 
+   * @param {String} fileName full path and file name to be loaded
+   * @param {String} mode <optional> 'window' to open in local window, 'shell' to use the default PDF viewer
+   * @returns {Buffer | Boolean} in shell mode, returns true if opened or false if failed, in window mode returns a Buffer of the file contents
+   */
   const openFile = (fileName, mode = 'window') => {
+    // in shell mode, let the command shell process the file using the default system PDF application
     if (mode === 'shell') return shell.openItem(fileName);
+    // otherwise return a buffer of the file contents for processing with our own file
     return fse.readFile(fileName);
   }
 
+  /** getFirstCol returns the page of the first text column in the document based on the page number of the last image
+   * 
+   * @param {Number} PatentID the patent ID for which we will retrieve the PDF data of the images 
+   * @returns {Promise} resolves to the page number of the first page of text
+   */
   const getFirstCol = PatentID => new Promise((resolve, reject) => {
     queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
       if (err) return reject(err);
@@ -604,19 +625,21 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
   });
 
 
-  /** openPDF will try to open a pdf file using the shell
+  /** openPDF will try to open a pdf file
    * 
-   * @param {String} fullPath
-   * @returns {void}
+   * @param {BrowserWindow} browserWin - the window which called for the PDF to be opened
+   * @param {String} fullPath - path to the PDF in the filesystem
+   * @returns {Promise -> {status:String, data:null|Buffer}} resolves to 'found' + data of the file, 'new'+ the data of the file + the pathe of the file, or 'cancelled' + null
    */
-  const openPDF = (browserWin, fullPath) => new Promise((resolve, reject) => {
+  const openPDF = (browserWin, fullPath) => new Promise(async (resolve, reject) => {
+    // when called from the main table, just use the shell to open any PDF in the system default application
+    if (sourceWindow === 'markman') return resolve({ status: 'opened', data: await openFile(`${dropboxPath}${fullPath}`, 'shell') });
+    // otherwise it is called from the detail window, so search and update the DB with the PatentPath
     return fse.pathExists(`${dropboxPath}${fullPath}`).then(async exists => {
-      //TODO: repurpose patentImageView.jsx for this !!!
       // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
       if (exists && fullPath) {
         return resolve({ status: 'found', data: await openFile(`${dropboxPath}${fullPath}`) });
       }
-      // Alternate -- create a map of imageData - Map(page#, {url, pageData}), showPage - page number to show, rotation - 0,90,180,270
       const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
       dialog.showOpenDialog(browserWin,
         {
@@ -637,7 +660,8 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
   });
 
   console.log(`received link click with path ${linkVal}`);
-  openPDF(detailWindow, linkVal)
+  // pass the window that called it, either detailWindow or the main table (win)
+  openPDF(sourceWindow === 'patentDetail' ? detailWindow : win, linkVal)
     .then(async fileResult => {
       // fileResult.status is either 'found' if the DB is correct
       // or a 'new' if a new filePath (not including dropbox) has been set
@@ -648,9 +672,11 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
           .then(status => console.log(status))
           .catch(err => console.error(err));
       }
-      if (fileResult.status !== 'cancelled') {
+      // in either 'found' or 'new', open the document to the first column 
+      if (fileResult.status === 'found' || fileResult.status === 'new') {
         const startPage = pageNo || await getFirstCol(PatentID);
         // now create the document window and send the data to it
+        // alt - figure out to use the scrollable patent API to make this work !!
         if (documentWindow === null) {
           const [x, y] = detailWindow.getPosition();
           const [xSize, ySize] = detailWindow.getSize();
@@ -696,6 +722,11 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, pageNo = 0) => {
           documentWindow.webContents.send('generic', fileResult.data);
         }
       }
+      if (fileResult.status === 'opened') {
+        // it's been opened by shell, if fileResult.data ===
+        if (!fileResult.data) throw new Error('system failed to open PDF file');
+      }
+      //fileResult.status==='cancelled' -- no action needed
     })
     .catch(err => console.error(err));
 });
