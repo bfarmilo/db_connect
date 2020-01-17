@@ -151,6 +151,7 @@ class PatentImages extends Component {
                         imageData={this.state.patentImages}
                         showPage={this.state.currentImage}
                         windowSize={this.state.windowSize}
+                        startPage={this.state.firstImage}
                         controlAreaHeight={CONTROL_HEIGHT}
                         rotation={this.state.rotation}
                         reportViewport={this.reportViewport}
