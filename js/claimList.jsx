@@ -331,8 +331,8 @@ class ClaimTable extends Component {
     }
 
     /** Handle call to open a PDF */
-    openFile = (e, filePath, docID, pageNo) => {
-        ipcRenderer.send('open_patent', filePath, docID, pageNo);
+    openFile = (e, filePath, docID, type, pageNo) => {
+        ipcRenderer.send('open_patent', filePath, docID, type, pageNo);
     }
     /**
      * Display the inventor and patent title modal on hover

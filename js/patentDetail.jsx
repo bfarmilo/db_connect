@@ -81,7 +81,7 @@ class PatentDetail extends Component {
 
     openClickHandler(event) {
         console.log('opening patent', this.state.result.PatentPath);
-        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, `${this.state.result.PatentNumber} (${this.state.result.InventorLastName})`, DEFAULT_PAGE_NO);
+        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, `${this.state.result.PatentNumber} (${this.state.result.InventorLastName})`, 'patentDetail', DEFAULT_PAGE_NO);
     }
 
     goBackClickHandler(event) {
@@ -137,6 +137,7 @@ class PatentDetail extends Component {
             // paraList stores an array of paragraph indexes where the regex is found
             const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
             // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
+            // IDEA -- replace all instances of searchTerm with **$1**
             console.log(paraList);
             const highlightList = new Map([...paraList.map(index => [index, {}])]);
             console.log('searching for', searchTerm);
@@ -164,7 +165,7 @@ class PatentDetail extends Component {
                 })
             }
         } else {
-            // search field is blank or 1 character long
+            // search field is blank or 1 character long, so clear all highlights
             this.setState({
                 searchTerm: '',
                 highlightList: new Map(),
@@ -333,7 +334,7 @@ const FullText = (props) => {
                     <div key={index}>
                         {highlight ?
                             <div class='Highlight' ref={elem => props.addNewRef(index, elem)}>
-                                <button>Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}</button> {paragraph}
+                                <button>Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}</button> {paragraph /*idea: split on **text** and span them*/}
                             </div>
                             : <div class={header ? 'PatentParagraph PatentHeader' : 'PatentParagraph'}>
                                 {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}
