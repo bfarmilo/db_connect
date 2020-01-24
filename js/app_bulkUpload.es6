@@ -41,16 +41,19 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
     // listener for connect
     connection.on('connect', err => {
       if (err) {
+        console.log('connect error', err);
         connection.close();
         return reject(err)
       };
       // console.log('good connection, creating request %s', sqlString);
       const request = new Request(sqlString, (err2, rowCount) => {
         if (err2) {
+          console.log('request error for query %s', sqlString);
+          console.log('parameter dump', request.parametersByName);
           connection.close();
           return reject(err2)
         };
-        connection.close();
+        //connection.close();
         return resolve(returnResults);
       });
       // listener for rows returned
@@ -58,15 +61,22 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
         returnResults.push(data.map(item => item.value))
         return;
       });
+      request.on('error', err3 => {
+        console.log('request event error', err3)
+        return reject(err3)
+      });
       // add parameters one by one to the request
       const expandVals = values.length > 0 ? values.map(item => {
         request.addParameter(item.name, item.type, item.val);
         return { name: item.name, type: item.type.type, val: item.val };
       }) : false;
       // run it !
-      // console.log('with parameters: ', expandVals && expandVals.map(item => `${item.name}: ${item.val.length > MAX_CHARS_TO_SHOW ? `${item.val.slice(0, MAX_CHARS_TO_SHOW - 1)}...` : item.val}`));
+      //console.log('with parameters: ', expandVals && expandVals.map(item => `${item.name}: ${item.val.length > MAX_CHARS_TO_SHOW ? `${item.val.slice(0, MAX_CHARS_TO_SHOW - 1)}...` : item.val}`));
       connection.execSql(request);
     });
+    connection.on('error', err => {
+      return reject(err);
+    })
   });
 }
 
@@ -234,7 +244,7 @@ const getMarkmanDropdowns = connectParams => new Promise((resolve, reject) => {
   // clients -- A map of client: clientID
   // sectors -- A map of sectors: sectorID
   return Promise.all(
-    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}${table==='Client'? ' ORDER BY ClientName ASC' : ''}`))
+    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}${table === 'Client' ? ' ORDER BY ClientName ASC' : ''}`))
   )
     .then(([claimTerms, clients, sectors, patents]) => resolve({
       claimTerms: new Map(claimTerms.map(([ID, term]) => [term, ID])),

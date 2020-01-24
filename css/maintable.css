@@ -55,13 +55,13 @@ button {
 }
 
 th, tr {
-  border-bottom: 1px solid rgba(51, 121, 183,1);
+  border-bottom: 1px solid rgba(51, 121, 183, 1);
   font-size: smaller;
 }
 
 blockquote {
-	font-size: smaller;
-	border-left: 2px solid rgba(51, 121, 183,0.5);
+  font-size: smaller;
+  border-left: 2px solid rgba(51, 121, 183, 0.5);
   padding-left: 3px;
   margin-left: 4px;
 }
@@ -91,3 +91,19 @@ blockquote {
 }
 
 /*used by dependent claims to reference the independent they depend from */
+
+.amended {
+  font-style: italic;
+}
+
+.removed {
+  font-weight: bold;
+}
+
+.removed::before {
+  content: "[";
+}
+
+.removed::after {
+  content: "]";
+}

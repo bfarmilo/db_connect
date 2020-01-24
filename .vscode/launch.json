@@ -87,6 +87,13 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}\\main.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ReExam Upload",
+            "program": "${workspaceFolder}\\js\\reExamUpload.es6",
+            "args":["../../../../Desktop/examined.csv", "examined"]
         }
     ]
 }
