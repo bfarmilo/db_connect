@@ -108,9 +108,10 @@ class GetPatentList extends Component {
         console.log('received change to %s, setting new value %s', inputType, newValue);
         switch (inputType) {
             case 'patentList':
-                // strip out 'US', commas, slashes and spaces, filter out things <7 digits long, convert to an array of strings by splitting on \n
+                // strip out 'US', commas, slashes and spaces, filter out things <7 digits long unless they start with RE, convert to an array of strings by splitting on \n
+                // allowed patterns: 7+ digits long, RE followed by 5+ digits
                 // format as {patentNumber:Ref}
-                const patentList = newValue.replace(/(US|,|\/| )/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}/));
+                const patentList = newValue.replace(/(US|,|\/| )/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}|(R|r)(E|e)\d{5}/));
                 this.setState({ patentList });
                 break;
             case 'downloadPats':
