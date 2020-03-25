@@ -50,10 +50,7 @@ module.exports = {
             themeColor: 'rgba(102, 0, 102, 1)',
             selectedColor: 'rgba(183, 130, 51, 0.8)',
             borderColor: 'rgba(41, 94, 141, 0.8)',
-            enabledButtons: [
-                { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
-                { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
-            ],
+            enabledButtons: [],
             columns: [
                 { display: 'Reference', field: 'PMCRef' },
                 { display: 'Patent', field: 'PatentNumber' },
