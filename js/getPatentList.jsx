@@ -85,10 +85,11 @@ class GetPatentList extends Component {
 
     componentWillMount() {
         ipcRenderer.on('new_folder', (e, storagePath) => {
+            console.log('received new folder path %s from main', storagePath);
             this.setState({ storagePath });
         })
         ipcRenderer.on('new_patents_ready', (e, [patent, statusMessage]) => {
-            const patentNumber = parseInt(patent, 10);
+            const patentNumber = parseInt(patent, 10) || parseInt(patent.slice(2), 10); //some patents might be RExxxxx
             console.log('received update for patent %s, with value %s', `${patentNumber}`, statusMessage)
             const updateStatus = new Map(this.state.updateStatus);
             const newStatus = { ...updateStatus.get(patentNumber) };
