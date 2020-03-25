@@ -68,7 +68,7 @@ class ClaimTable extends Component {
                     resultList.clear();
                 }
                 data.map(item => {
-                    const key = this.state.displayMode !== 'markman' ?
+                    const key = this.state.displayMode === 'claims' ?
                         `${item.ClaimID}` :
                         `${Object.keys(item).filter(ID => /ID$/i.exec(ID)).map(ID => item[ID]).join('_')}`;
                     // debugging - why duplicates?
@@ -199,7 +199,7 @@ class ClaimTable extends Component {
         const field = event.currentTarget.getAttribute('data-field');
         const sortOrder = new Map(this.state.sortOrder);
         // since maps order by key entry, for claims mode remove the 'claimNumber' key then add at the end
-        if (this.state.displayMode === 'claims') sortOrder.delete('ClaimNumber');
+        if (this.state.displayMode === 'claims' || this.state.displayMode === 'priorArt') sortOrder.delete('ClaimNumber');
         // Logic is this: none -> Ascending -> Descending -> none
         if (!sortOrder.has(field)) {
             // none -> Ascending
@@ -217,6 +217,8 @@ class ClaimTable extends Component {
         }
         // for claims mode, add claim back in and set it ascending
         if (this.state.displayMode === 'claims') sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
+        // for prior art mode, if no sort order is set default to PMCRef
+        if (this.state.displayMode === 'priorArt' && !sortOrder.size) sortOrder.set('PMCRef', { field: 'PMCRef', ascending: true })
         this.setState({ sortOrder }, () => this.runQuery(null, NEW));
 
     }
@@ -293,25 +295,26 @@ class ClaimTable extends Component {
      * 
      * @param {*} event 
      */
-    clickSaveCancel(event, claimID, field, action) {
-        console.log('detected %s event in %s for claim ID %s', action, field, claimID);
+    clickSaveCancel(event, recordID, field, action) {
+        console.log('detected %s event in %s for record ID %s', action, field, recordID);
         const activeRows = new Map(this.state.activeRows);
         console.log(activeRows);
         if (action === 'save') {
             // send off an updateQuery to the database
-            console.log(this.state.resultList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`).record);
+            console.log(this.state.resultList.get(recordID)[field], this.state.activeRows.get(`${recordID}-${field}`).record);
             ipcRenderer.send(
                 'json_update',
-                { field, claimID, value: this.state.resultList.get(claimID)[field] },
-                { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`).record }
+                { field, recordID, value: this.state.resultList.get(recordID)[field] },
+                { field, recordID, value: this.state.activeRows.get(`${recordID}-${field}`).record },
+                this.state.displayMode
             )
             // splice in the record and update the main table
             const resultList = new Map(this.state.resultList);
-            resultList.set(claimID, { ...resultList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`).record })
+            resultList.set(recordID, { ...resultList.get(recordID), [field]: this.state.activeRows.get(`${recordID}-${field}`).record })
             this.setState({ resultList })
         }
         // clear out and update activeRows
-        activeRows.delete(`${claimID}-${field}`);
+        activeRows.delete(`${recordID}-${field}`);
         this.setState({ activeRows })
     }
 
@@ -320,14 +323,27 @@ class ClaimTable extends Component {
      */
     changeMode = e => {
         const modeCycle = {
-            claims:'markman',
-            markman:'priorArt',
-            priorArt:'claims'
+            claims: 'markman',
+            markman: 'priorArt',
+            priorArt: 'claims'
+        }
+        const sortOrder = {
+            claims: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
+            ]),
+            markman: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
+            ]),
+            priorArt: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }]
+            ])
         }
         const queryValues = this.clearQuery();
         const resultList = new Map();
-        this.setState({ displayMode: modeCycle[this.state.displayMode], resultList, queryValues });
-        this.runQuery(null, NEW);
+        const displayMode = modeCycle[this.state.displayMode];
+        this.setState({ displayMode, sortOrder: sortOrder[displayMode], resultList, queryValues }, () => this.runQuery(null, NEW));
     }
 
     /** Handle call to open a PDF */
