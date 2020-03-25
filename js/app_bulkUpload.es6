@@ -8,6 +8,7 @@ const MAX_CHARS_TO_SHOW = 10;
  * @returns {*} a properly formatted value
 */
 const mapType = value => {
+  if (value instanceof Date) return TYPES.DateTime2;
   if (typeof value === 'boolean') return TYPES.Bit;
   if (typeof value === 'number') return TYPES.Numeric;
   return TYPES.NVarChar;

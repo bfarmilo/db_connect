@@ -89,6 +89,8 @@ const parseOrder = (orderBy, offset, fetch) => {
   return 'ORDER BY '.concat(orderBy.map(element => {
     const table = patentDB.fieldMap.filter(val => val.name === element.field)[0].table;
     const direction = element.ascending ? 'ASC' : 'DESC';
+    // special case of patent number, since its a varchar. sort by the numeric part of the field  - fails since Patent Numbers are not all numbers
+    //return `${element.field === 'PatentNumber' ? `CAST(SUBSTRING(PatentNumber, PATINDEX('%[0-9]%', PatentNumber), LEN(PatentNumber)) AS numeric)` : `${table}.${element.field}`} ${direction}`;
     return `${table}.${element.field} ${direction}`;
   }).join(', ')).concat(` OFFSET ${offset} ROWS FETCH NEXT ${fetch} ROWS ONLY`);
 }
@@ -103,8 +105,18 @@ const parseOutput = (mode, result, uriMode) => {
   return result.length > 0 ? flatten(JSON.parse(result.join('')).map(record => {
     if (mode === 'simple') return record;
 
+    if (mode === 'priorArt') {
+      const { summaries, ...join0 } = record;
+      // prior art mode FROM patents ON patents.PatentID = claims.Patent ID OUTER JOIN summaries
+      // order ['summaries']
+      return summaries.map(summary => ({
+        ...join0,
+        ...summary
+      }));
+    }
+
     const { claims, ...join0 } = record;
-    if (mode === 'claims' || mode === 'priorArt') {
+    if (mode === 'claims') {
       // claims mode: FROM claims INNER JOIN patents ON patents.PatentID = claims.PatentID
       // order ['claims']
       return claims.map(claim => ({
