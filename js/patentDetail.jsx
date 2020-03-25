@@ -126,7 +126,7 @@ class PatentDetail extends Component {
         }
         // finished updating, inserting, or cancelled, so clear out activeSummary
         activeSummary.delete(summaryID);
-        // note, could update patentSummaries here and refresh page
+        // note, TODO  update patentSummaries here and refresh page
         this.setState({ activeSummary }, () => ipcRenderer.send('view_patentdetail', this.state.result.PatentNumber));
     }
 
