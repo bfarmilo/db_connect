@@ -59,7 +59,7 @@ module.exports = {
                 { display: 'Patent', field: 'PatentNumber' },
                 { display: 'Inventor', field: 'InventorLastName' },
                 { display: 'Title', field: 'Title' },
-                { display: 'Notes', field: 'PotentialApplication' },
+                { display: 'Summary', field: 'PatentSummaryText' },
                 { display: 'Watch', field: 'WatchItems' }
             ]
         },
