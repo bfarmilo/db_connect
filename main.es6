@@ -888,8 +888,8 @@ ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
   // or recordID, field, value in priorArt mode
 
   const modeSettings = {
-    claims: { data: 'u_UPDATE', index: 'ClaimID' },
-    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID' }
+    claims: { data: 'u_UPDATE', index: 'ClaimID', table: 'Claim', idField: 'ClaimID', options: { skipCheck: [newItem.field], updateFields: [newItem.field] } },
+    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID', table: 'PatentSummary',  idField: 'PatentSummaryID', options: { skipCheck: ['DateModified'], updateFields: ['PatentSummaryText', 'DateModified'] } }
   }
 
   let changeLog = { changes: [] };
@@ -899,23 +899,23 @@ ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
     console.error('changeLog not found, creating new file');
   }
   changeLog.changes.push({ datetime: Date.now(), from: oldItem.value, to: newItem.value });
-  // TODO: Updating summary needs to insert if the record doesn't exist
   // need to supply AuthorID = 2 (Bill), DateModified, PatentID
   fse.writeJSON('./changeLog.json', changeLog, 'utf8')
-    .then(() => queryDatabase(connectParams, modeSettings[mode].data, `${newItem.field}=@0 ${mode === 'priorArt' ? 'WHERE EXISTS (SELECT * FROM PatentSummary WHERE PatentID=@1)' : `WHERE ${modeSettings[mode].index}=@1`}`, [newItem.value, parseInt(newItem.recordID, 10)], '', (err2, result) => {
-      if (err2) {
-        dialog.showErrorBox('Query Error', `Error with update query ${err2}`);
-      } else {
-        // result == true - there are rows 
-        console.log('%s %s', newItem.field, result);
-        if (!result.length) {
-          // result == false - need to add it
-          insertAndGetID(connectParams, 'PatentSummary', { PatentSummaryText: newItem.value, PatentID: parseInt(newItem.recordID, 10), AuthorID: parseInt(2, 10), DateModified: new Date() }, 'PatentSummaryID', { skipCheck: ['DateModified'] })
-            .then(newSummaryID => console.log(`inserted new summary with ID ${newSummaryID.recordID}`))
-            .catch(inserterr => dialog.showErrorBox('Query Error', `Error inserting patent summary ${inserterr}`))
-        }
+    .then(() => {
+      const record = {
+        [modeSettings[mode].index]: parseInt(newItem.recordID, 10),
+        [newItem.field]: newItem.value
+      };
+
+      if (mode === 'priorArt') {
+        record.AuthorID = 2; // Bill, for now
+        record.DateModified = new Date();
       }
-    }))
+
+      insertAndGetID(connectParams, modeSettings[mode].table, record, modeSettings[mode].idField, modeSettings[mode].options)
+        .then(newID => console.log(`${newID.type} ${newItem.field} with ID ${newID[modeSettings[mode].idField]}`))
+        .catch(inserterr => dialog.showErrorBox('Query Error', `Error inserting patent summary ${inserterr}`))
+    })
     .catch(err => console.error(err));
 })
 

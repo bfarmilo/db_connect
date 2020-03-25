@@ -28,7 +28,7 @@
         "u_UPDATE": "UPDATE Claim SET ",
         "u_UPDATE_IMAGES": "UPDATE Images SET ",
         "u_UPDATE_SUMMARY": "UPDATE PatentSummary SET ",
-        "p_PATENT_COUNT": "SELECT COUNT (*) FROM Patent AS patents ",
+        "p_PATENT_COUNT": "SELECT COUNT (*) FROM PatentSummary AS summaries RIGHT OUTER JOIN Patent AS patents ON patents.PatentID = summaries.PatentID ",
         "p_COUNT": "SELECT COUNT (*) FROM Claim AS claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
         "m_COUNT": "SELECT COUNT (*) FROM Claim AS claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
         "fieldMap": [
@@ -124,11 +124,11 @@
                 "notSuffix": " NOT LIKE "
             },
             {
-                "name": "Summary",
-                "table": "PatentSummary",
+                "name": "PatentSummaryText",
+                "table": "summaries",
                 "prefix": "",
-                "suffix": "=",
-                "notSuffix": "!="
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
             },
             {
                 "name": "InventorLastName",
