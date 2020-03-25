@@ -38,8 +38,8 @@ Currently very much a work-in-progress.
   1. get rid of tedious-promises 
 9. ~~Interface to allow addition and linking of markman terms to patents and constructions~~
 10. Better reporting for shortlisting, claim export - Improve experimental save-as feature
-11. Write back-end for Patent Summary updating
-26. OR For Patent View, use Patent Summary for notes entry, and remove it from full-text view
+11. ~~Write back-end for Patent Summary updating~~
+26. ~~OR For Patent View, use Patent Summary for notes entry, and remove it from full-text view~~
 12. Enable Expiry date estimation writing
 13. DB migration to cloud
 14. DB authentication and user tracking
@@ -54,7 +54,7 @@ Currently very much a work-in-progress.
 23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
   - use % of scroll to estimate position in PDF based on text start & end?
   - use page load architecture from reportviewer rather than zoom based imageview
-24. For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected
+24. ~~For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected~~
 25. Change 'ChangeDB' and mode toggles to drop-selects
 
 

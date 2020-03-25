@@ -60,6 +60,31 @@ const ControlArea = props => {
             display: 'flex'
         }
     }
+
+    let specialButton;
+
+    switch (props.displayMode) {
+        case 'claims': {
+            specialButton = (<button
+                style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
+                data-claimid='all'
+                onClick={props.toggleExpand}
+            >
+                {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
+            </button>);
+        }
+            break;
+        case 'markman': {
+            specialButton = (<button style={styles.FilterButton} onClick={props.newConstruction}>Enter New Construction</button>);
+        }
+            break;
+        case 'priorArt': {
+            specialButton = (<button style={!props.compactView ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton} onClick={props.toggleCompact}>{props.compactView ? 'Expand Summaries' : 'Collapse Summaries'}</button>);
+        }
+            break;
+        default: specialButton = <div />;
+    }
+
     return (
         <div class="ControlArea">
             <div style={styles.ButtonArea}>
@@ -73,13 +98,7 @@ const ControlArea = props => {
                         style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     >{button.display}</button>
                 )) : ''}
-                {props.displayMode === 'claims' ? <button
-                    style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
-                    data-claimid='all'
-                    onClick={props.toggleExpand}
-                >
-                    {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
-                </button> : <button style={styles.FilterButton} onClick={props.newConstruction}>Enter New Construction</button>}
+                {specialButton}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
                 <button style={styles.FilterButton} onClick={props.changeMode}>

@@ -125,6 +125,7 @@ const TableArea = props => {
                         <EditCell
                             editMode={props.activeRows.has(`${claimID}-${field}`)}
                             value={record}
+                            compactView={false}
                             editContent={(e) => props.editContent(e, claimID, field)}
                             clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
                             activateEditMode={(e) => props.editMode(e, claimID, field)}
@@ -178,6 +179,7 @@ const TableArea = props => {
                         return (
                             <EditCell
                                 editMode={props.activeRows.has(`${patentID}-${field}`)}
+                                compactView={props.compactView}
                                 value={record}
                                 editContent={(e) => props.editContent(e, patentID, field)}
                                 clickSaveCancel={(e, action) => props.clickSaveCancel(e, patentID, field, action)}

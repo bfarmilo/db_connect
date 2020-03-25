@@ -36,7 +36,8 @@ class ClaimTable extends Component {
             offset: 0,
             scrollTop: 0,
             modalContent: { inventor: '', title: '', claimID: '' },
-            displayMode: 'claims'
+            displayMode: 'claims',
+            compactView: true
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -53,6 +54,7 @@ class ClaimTable extends Component {
         this.getNewPatents = this.getNewPatents.bind(this);
         this.showInventor = this.showInventor.bind(this);
         this.newConstruction = this.newConstruction.bind(this);
+        this.toggleCompact = this.toggleCompact.bind(this);
     }
 
     // lifecycle Methods
@@ -366,6 +368,11 @@ class ClaimTable extends Component {
         }
     }
 
+    toggleCompact(e) {
+        const compactView = !this.state.compactView;
+        this.setState({ compactView });
+    }
+
     render({ props }, { state }) {
         return (
             <div class='FullTable'>
@@ -376,10 +383,12 @@ class ClaimTable extends Component {
                     resultCount={this.state.resultCount}
                     sortOrder={this.state.sortOrder}
                     expandAll={this.state.expandAll}
+                    compactView={this.state.compactView}
                     runQuery={this.runQuery}
                     editQuery={this.editQuery}
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
+                    toggleCompact={this.toggleCompact}
                     changeDB={this.changeDB}
                     styles={config[this.state.displayMode]}
                     modifySortOrder={this.modifySortOrder}
@@ -402,6 +411,7 @@ class ClaimTable extends Component {
                     >
                         <TableArea
                             displayMode={this.state.displayMode}
+                            compactView={this.state.compactView}
                             config={config[this.state.displayMode]}
                             resultList={this.state.resultList}
                             activeRows={this.state.activeRows}

@@ -53,7 +53,8 @@ const EditCell = props => {
         smartypants: true,
         tasklist: true
     }
-    const markdownText = { __html: !props.value ? '' : DOMPurify.sanitize(marked(props.value, markdownOptions)) };
+    const compactView = !!props.compactView; // if not specified, default to false
+    const markdownText = { __html: !props.value ? '' : DOMPurify.sanitize(marked(compactView && props.value.length > 100 ? `${props.value.slice(0,100)}...` : props.value, markdownOptions)) };
     return (props.editMode ? (
         <div style={styles.EditableBox}>
             <textarea
