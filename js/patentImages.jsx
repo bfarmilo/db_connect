@@ -136,6 +136,27 @@ class PatentImages extends Component {
     }
 
     render({ }, { }) {
+
+        // idea - handle generic documents more like Markman documents -- record their path and just load them through the PDF src attribute
+        const viewer = this.state.genericMode ? <MyPdfViewer
+            fileOffset={0} //since the exhibit may be an array, this indicates the index of the file in the array
+            pages={this.state.pages} //highest page number currently loaded
+            rootpath={__dirname} // combined with fileToLoad to get the PDF src attribute
+            exhibit={this.state.patentImage} //only care about exhibit.file which is filename
+            startpage={this.state.firstImage} //the page number to start displaying
+            getPages={this.getTotalPages} //callback to report number of pages
+            onNewHeight={this.reportViewport} //callback to report new viewer height required
+        /> : < PatentImage
+                imageData={this.state.patentImages}
+                showPage={this.state.currentImage}
+                windowSize={this.state.windowSize}
+                startPage={this.state.firstImage}
+                controlAreaHeight={CONTROL_HEIGHT}
+                rotation={this.state.rotation}
+                reportViewport={this.reportViewport}
+                updatePageCount={this.setLastPage}
+                isImage={!this.state.genericMode}
+            />;
         return (
             <div>
                 <div class="controlArea" style={{ height: `${CONTROL_HEIGHT}px` }}>
@@ -147,17 +168,7 @@ class PatentImages extends Component {
                     <button disabled={!this.state.enableOffline} onClick={this.makeOffline}>Make available offline</button>
                 </div>
                 <div class="imageArea" style={{ paddingTop: `${CONTROL_HEIGHT}px` }}>
-                    {this.state.currentImage ? < PatentImage
-                        imageData={this.state.patentImages}
-                        showPage={this.state.currentImage}
-                        windowSize={this.state.windowSize}
-                        startPage={this.state.firstImage}
-                        controlAreaHeight={CONTROL_HEIGHT}
-                        rotation={this.state.rotation}
-                        reportViewport={this.reportViewport}
-                        updatePageCount={this.setLastPage}
-                        isImage={!this.state.genericMode}
-                    /> : <div />
+                    {this.state.currentImage ? { viewer } : <div />
                     /* Experimental stateless version - not working -- 
                     this.state.currentImage ? < GenericPdf
                         pdfData={this.state.patentImages}
