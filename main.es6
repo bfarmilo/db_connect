@@ -29,12 +29,12 @@ let timer;
 let manualResize = true;
 
 // globals
-let totalCount = 0;
 let dropboxPath = ''; // keeps the path to the local dropbox
 
 // global constants
 const ROWS_TO_RETURN = 200;
 const SLICE_SIZE = 3;
+const PDF_MODE = 'shell';
 const databases = {
   PMCDB: { uriMode: false, next: "NextIdea" },
   NextIdea: { uriMode: true, next: "GeneralResearch" },
@@ -97,6 +97,7 @@ const createWindow = () => {
   win = new BrowserWindow({
     width: 1440,
     height: 800,
+    webPreferences: { nodeIntegration: true }
   });
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
@@ -136,7 +137,7 @@ const createWindow = () => {
  */
 const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, update) => {
   // create a map of hidden browser windows indexed by a patent number
-  const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
+  const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } })]));
 
   const scrapeCode = `
   const ipc = require('electron').ipcRenderer;
@@ -315,7 +316,7 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
 /** getNewPatentUI sets up the interface to accept new patents */
 const getNewPatentUI = () => {
   if (!newPatentWindow) {
-    newPatentWindow = new BrowserWindow();
+    newPatentWindow = new BrowserWindow({ webPreferences: { nodeIntegration: true } });
     newPatentWindow.loadURL(`file://${__dirname}/getNewPatentUI.html`);
     if (process.env.DEVTOOLS === 'show') newPatentWindow.webContents.openDevTools();
     newPatentWindow.on('closed', () => {
@@ -360,13 +361,15 @@ ipcMain.on('get_new_patents', (event, ...args) => writeNewPatents(...args));
 
 // Listener for selecting a new browse point for saving new patents
 ipcMain.on('browse', (e, startFolder) => {
-  console.log(`${dropboxPath}${startFolder}`);
+  console.log(`request to browse to ${dropboxPath}${startFolder}`);
   dialog.showOpenDialog(newPatentWindow,
     {
       defaultPath: `${dropboxPath}${startFolder}`,
       properties: ['openDirectory']
-    }, folder => {
-      newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
+    }).then(result => {
+
+      console.log('user selected folder', result.filePaths[0].replace(/\\/g, '/'));
+      newPatentWindow.webContents.send('new_folder', result.filePaths[0].replace(/\\/g, '/').split(dropboxPath)[1]);
     })
 })
 
@@ -430,7 +433,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
       height: 1000,
       x: x + 20,
       y,
-      show: false
+      show: false,
+      webPreferences: { nodeIntegration: true }
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
     detailWindow.on('closed', () => {
@@ -542,7 +546,8 @@ ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
       y,
       x: x + xSize + 10,
       show: false,
-      title
+      title,
+      webPreferences: { nodeIntegration: true }
     });
     imageWindow.loadURL(`file://${__dirname}/patentfigures.html`);
     imageWindow.on('closed', () => {
@@ -598,7 +603,7 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
    */
   const openFile = (fileName, mode = 'window') => {
     // in shell mode, let the command shell process the file using the default system PDF application
-    if (mode === 'shell') return shell.openItem(fileName);
+    if (mode === 'shell') shell.openItem(fileName);
     // otherwise return a buffer of the file contents for processing with our own file
     return fse.readFile(fileName);
   }
@@ -638,18 +643,18 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
     return fse.pathExists(`${dropboxPath}${fullPath}`).then(async exists => {
       // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
       if (exists && fullPath) {
-        return resolve({ status: 'found', data: await openFile(`${dropboxPath}${fullPath}`) });
+        return resolve({ status: 'found', data: await openFile(`${dropboxPath}${fullPath}`, PDF_MODE) });
       }
       const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
       dialog.showOpenDialog(browserWin,
         {
           defaultPath,
           properties: ['openFile']
-        }, async filePath => {
-          if (filePath) {
+        }).then(async result => {
+          if (result.filePaths) {
             // now create a RegEx to strip out the dropBox path for writing back to the DB
             // just in case switch all backslashes to slashes before doing so
-            return resolve({ status: 'new', data: await openFile(`${[...filePath]}`), path: `${[...filePath]}`.replace(/\\/g, '/').split(dropboxPath)[1] })
+            return resolve({ status: 'new', data: await openFile(`${[...result.filePaths]}`, PDF_MODE), path: `${[...result.filePaths]}`.replace(/\\/g, '/').split(dropboxPath)[1] })
           } else {
             // user cancelled out of the process, pretend it's fine and don't update
             return resolve({ status: 'cancelled', data: null });
@@ -673,7 +678,7 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
           .catch(err => console.error(err));
       }
       // in either 'found' or 'new', open the document to the first column 
-      if (fileResult.status === 'found' || fileResult.status === 'new') {
+      if (PDF_MODE === 'window' && (fileResult.status === 'found' || fileResult.status === 'new')) {
         const startPage = pageNo || await getFirstCol(PatentID);
         // now create the document window and send the data to it
         // alt - figure out to use the scrollable patent API to make this work !!
@@ -686,7 +691,8 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
             y,
             x: x + xSize + 10,
             show: false,
-            title
+            title,
+            webPreferences: { nodeIntegration: true }
           });
           documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
           // Open the DevTools.
@@ -771,7 +777,8 @@ ipcMain.on('add_claimconstructions', async () => {
     height: 800,
     options: {
       visible: false
-    }
+    },
+    webPreferences: { nodeIntegration: true }
   });
   // and load the index.html of the app.
   markmanwin.loadURL(`file://${__dirname}/markman.html`);
@@ -876,8 +883,15 @@ ipcMain.on('change_db', event => {
 })
 
 // Listener for a call to update PotentialApplication or WatchItems
-ipcMain.on('json_update', async (event, oldItem, newItem) => {
-  // items have structure patentNumber, index, claimID, field, value
+ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
+  // items have structure patentNumber, index, claimID, field, value in claims mode
+  // or recordID, field, value in priorArt mode
+
+  const modeSettings = {
+    claims: { data: 'u_UPDATE', index: 'ClaimID' },
+    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID' }
+  }
+
   let changeLog = { changes: [] };
   try {
     changeLog = await fse.readJSON('./changeLog.json');
@@ -885,12 +899,21 @@ ipcMain.on('json_update', async (event, oldItem, newItem) => {
     console.error('changeLog not found, creating new file');
   }
   changeLog.changes.push({ datetime: Date.now(), from: oldItem.value, to: newItem.value });
+  // TODO: Updating summary needs to insert if the record doesn't exist
+  // need to supply AuthorID = 2 (Bill), DateModified, PatentID
   fse.writeJSON('./changeLog.json', changeLog, 'utf8')
-    .then(() => queryDatabase(connectParams, 'u_UPDATE', ` ${newItem.field}=@0 WHERE ClaimID=@1`, [newItem.value, parseInt(newItem.claimID, 10)], '', (err2, result) => {
+    .then(() => queryDatabase(connectParams, modeSettings[mode].data, `${newItem.field}=@0 ${mode === 'priorArt' ? 'WHERE EXISTS (SELECT * FROM PatentSummary WHERE PatentID=@1)' : `WHERE ${modeSettings[mode].index}=@1`}`, [newItem.value, parseInt(newItem.recordID, 10)], '', (err2, result) => {
       if (err2) {
-        console.error(dialog.showErrorBox('Query Error', `Error with update query ${err2}`));
+        dialog.showErrorBox('Query Error', `Error with update query ${err2}`);
       } else {
+        // result == true - there are rows 
         console.log('%s %s', newItem.field, result);
+        if (!result.length) {
+          // result == false - need to add it
+          insertAndGetID(connectParams, 'PatentSummary', { PatentSummaryText: newItem.value, PatentID: parseInt(newItem.recordID, 10), AuthorID: parseInt(2, 10), DateModified: new Date() }, 'PatentSummaryID', { skipCheck: ['DateModified'] })
+            .then(newSummaryID => console.log(`inserted new summary with ID ${newSummaryID.recordID}`))
+            .catch(inserterr => dialog.showErrorBox('Query Error', `Error inserting patent summary ${inserterr}`))
+        }
       }
     }))
     .catch(err => console.error(err));
@@ -899,8 +922,17 @@ ipcMain.on('json_update', async (event, oldItem, newItem) => {
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
 
+  let totalCount = 0;
+
+  const queryMode = {
+    simple: { data: 'p_SELECTJSON', count: 'p_COUNT' },
+    claims: { data: 'p_SELECTJSON', count: 'p_COUNT' },
+    markman: { data: 'm_MARKMANALL', count: 'm_COUNT' },
+    priorArt: { data: 'p_PATENTJSON', count: 'p_PATENT_COUNT' }
+  }
+
   const runQuery = (newOffset, callback) => {
-    queryDatabase(connectParams, mode !== 'markman' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
+    queryDatabase(connectParams, queryMode[mode].data, `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
       if (err) {
         //console.error(err);
         return callback(err);
@@ -908,7 +940,7 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
         // send the result after parsing properly. Also return it for saving if desired
         const currentResult = parseOutput(mode, result, uriMode);
         win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode);
-        if (mode !== 'markman' && Array.isArray(currentResult) && currentResult.length > 0) {
+        if (mode === 'claims' && Array.isArray(currentResult) && currentResult.length > 0) {
           // write a temporary file for Excel export, but not for Markman table
           // strip out xml tags for Excel-friendly output
           const cleanResult = currentResult.map(entry => {
@@ -929,10 +961,11 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
   if (uriMode && fieldList.ClaimHtml) {
     fieldList.ClaimHtml = encodeURIComponent(fieldList.ClaimHtml).replace(/\'/g, '%27').replace('%', '[%]');
   }
-  //in the case where a blank query is passed, default query is only show claim 1
-  const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
+  //in the case where a blank query is passed, default query is show everything
+  const genericField = mode === 'priorArt' ? 'patents.PatentNumber' : 'claims.ClaimNumber';
+  const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: `${genericField} LIKE @0`, param: ['%'] };
   if (!appendMode) {
-    queryDatabase(connectParams, mode !== 'markman' ? 'p_COUNT' : 'm_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
+    queryDatabase(connectParams, queryMode[mode].count, `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
       if (err) {
         console.error(err)
       } else {
@@ -949,6 +982,12 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
     })
   } else {
     // append mode, figure out the next offset
-    runQuery(offset + ROWS_TO_RETURN <= totalCount ? offset + ROWS_TO_RETURN : offset);
+    runQuery(offset + ROWS_TO_RETURN <= totalCount ? offset + ROWS_TO_RETURN : offset, (err, result) => {
+      if (err) {
+        console.error(err)
+      } else {
+        if (mode !== 'markman' && process.env.DEVTOOLS === 'show') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+      }
+    });
   }
 });
