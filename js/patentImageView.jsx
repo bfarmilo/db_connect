@@ -142,6 +142,21 @@ class newPatentImage extends Component {
     }
 }
 
+/**
+ * props
+ *    imageData={this.state.patentImages}
+ *    showPage={this.state.currentImage}
+ *    windowSize={this.state.windowSize}
+ *    startPage={this.state.firstImage}
+ *    controlAreaHeight={CONTROL_HEIGHT}
+ *    rotation={this.state.rotation}
+ *    reportViewport={this.reportViewport}
+ *    updatePageCount={this.setLastPage}
+ *    reportStatus={this.reportStatus}
+ *    isImage={true}
+ *    numPagesToShow
+ */
+
 class PatentImage extends Component {
 
     constructor(props) {
@@ -189,21 +204,22 @@ class PatentImage extends Component {
     loadDocument = () => {
         // update status, reset pages & log
         this.setState({ pdfPages: new Map(), status: 'loading' });
-        console.log('loadDocument', this.state.status, !!this.pdf);
+        console.log('loadDocument', this.state.status, !!this.pdf, this.canvas);
         // TODO deal with multi-page PDF's
         const data = atob(this.props.imageData.get(this.props.showPage).pageData);
         const loadingTask = pdfJsLib.getDocument({ data });
         // update status to processing and store pdf data
         loadingTask.promise.then(pdf => {
-            const totalPages = pdf.numPages;
-            console.log(`pdf loaded with ${totalPages} pages`);
+            const allPages = pdf.numPages;
+            const totalPages = Math.min(this.props.numPagesToShow, allPages);
+            console.log(`pdf loaded with ${allPages} pages, processing ${totalPages}`);
             this.pdf = pdf;
             this.setState({ status: 'processing', totalPages }, () => this.loadPage())
         })
     }
 
     loadPage = () => {
-        console.log('loadPage', this.state.status, !!this.pdf);
+        console.log('loadPage', this.state.status, !!this.pdf, this.canvas);
         const pdfPages = new Map([...this.state.pdfPages]);
         console.log('loadPage', pdfPages);
         const pageArray = (new Array(this.state.totalPages)).fill(0).map((val, index) => index + 1);
@@ -232,7 +248,9 @@ class PatentImage extends Component {
             console.log('width', this.props.windowSize.width, viewport.width);
             console.log('height', this.props.windowSize.height, viewport.height);
             // report viewport data to potentially get new window sizes
-            pdfPages.set(pdfPage, { ...pageProps, viewport });
+            // also add the canvas here since we've got the count right
+            const canvas = this.canvas.get(pdfPage);
+            pdfPages.set(pdfPage, { ...pageProps, viewport, canvas });
         })
         const { width, height } = pdfPages.get(this.state.currentPdfPage).viewport;
         this.props.reportViewport(width, height);
@@ -246,10 +264,11 @@ class PatentImage extends Component {
         const pdfPages = new Map([...this.state.pdfPages]);
 
         const renderGroup = start => {
-            return Promise.all([...pdfPages].slice(start, start + 2).map(([pdfPage, pageProps]) => {
-                console.log('rendering pages ', start, Math.min(start + 2, pdfPages.size-1));
-                const canvas = this.canvas.get(pdfPage);
-                const viewport = pageProps.viewport;
+            console.log('rendering pages ', start + 1, Math.min(start + 3, pdfPages.size));
+            console.log(this.canvas, [...pdfPages]);
+            return Promise.all([...pdfPages].slice(start, start + 3).map(([pdfPage, pageProps]) => {
+                const {canvas, viewport}  = pageProps;
+                console.log('rendering page', pdfPage, 'to canvas', canvas);
                 const canvasContext = canvas.getContext('2d');
                 canvas.height = viewport.height;
                 canvas.width = viewport.width;
@@ -261,11 +280,11 @@ class PatentImage extends Component {
                 const renderTask = pageProps.page.render(renderContext);
                 return renderTask.promise;
             })).then(() => {
-                this.props.reportStatus('ready');
+                //this.props.reportStatus('ready');
                 if (start + 3 < this.state.totalPages) return renderGroup(start + 3);
             });
         }
-
+        this.props.reportStatus('busy');
         renderGroup(0)
             .then(() => {
                 this.setState({ status: 'ready' });
@@ -280,7 +299,7 @@ class PatentImage extends Component {
         if (this.props.showPage && this.state.status === 'ready' && !this.pdf) this.loadDocument();
         const pdfPages = new Map([...this.state.pdfPages]);
         console.log(pdfPages);
-        return (<div>{[...pdfPages].map(([pdfPage, pageEntry]) => <canvas key={pdfPage} ref={(canvas) => { this.canvas.set(pdfPage, canvas) }} />)}</div>)
+        return (<div>{[...pdfPages].map(([pdfPage, pageEntry], index) => <canvas key={pdfPage} ref={(canvas) => { this.canvas.set(index+1, canvas) }} />)}</div>)
     }
 }
 /** Experimental -- not working GenericPDF stateless component
