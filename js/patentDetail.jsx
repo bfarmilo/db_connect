@@ -41,6 +41,7 @@ class PatentDetail extends Component {
             showPDF: false,
             enableImageButton: true
         };
+        this.deferredHeight = 0;
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
         this.editContent = this.editContent.bind(this);
@@ -72,7 +73,7 @@ class PatentDetail extends Component {
                     scrollNavigation: new Map(),
                     working: false,
                     showPDF: noFullText
-                }, () => ipcRenderer.send('request_resize', this.state.windowSize.width, (this.state.windowSize.height + this.headerDiv.offsetHeight + 40)*1.1, 'patentDetail'));
+                }, () => ipcRenderer.send('request_resize', this.state.windowSize.width, (this.state.windowSize.height + this.headerDiv.offsetHeight + 40) * 1.1, 'patentDetail'));
                 if (noFullText) {
                     console.log('no full text found, requesting PDF data')
                     ipcRenderer.send('open_patent', result.PatentPath, result.PatentID, `${result.PatentNumber} (${result.InventorLastName})`, 'patentDetail', DEFAULT_PAGE_NO, !NEW_WINDOW);
@@ -86,7 +87,11 @@ class PatentDetail extends Component {
                 const newHeight = height - this.headerDiv.offsetHeight - 40 - height / 10;
                 console.log(`window height: ${height}, header height ${this.headerDiv.offsetHeight}, setting textDiv to ${newHeight}`)
                 this.textDiv.style.height = `${newHeight}px`;
-                this.setState({ windowSize: { width, height: newHeight } })
+                if (this.state.busy) {
+                    this.deferredHeight = newHeight;
+                } else {
+                    this.setState({ windowSize: { width, height: newHeight } })
+                }
             }
         });
         ipcRenderer.on('available_offline', (event, isOffline) => {
@@ -235,11 +240,19 @@ class PatentDetail extends Component {
 
     reportStatus = status => {
         console.log('got status', status);
-        if (status === 'ready') this.setState({ working: false });
+        if (status === 'ready' && this.state.working) this.setState({ working: false });
+        if (status === 'ready' && this.state.busy) {
+            console.log('window ready, updating deferred size')
+            const windowSize = {};
+            windowSize.height = this.deferredHeight || this.state.windowSize.height;
+            windowSize.width = this.state.windowSize.width;
+            this.setState({busy:false, windowSize })
+        }
+        if (status === 'busy' && !this.state.busy) this.setState({ busy: true });
     }
 
 
-    render({ }, { result }) {
+    render({ }, { }) {
         console.log('calling render with state', this.state.result, this.state.patentSummaries)
         return (
             <div>
@@ -281,6 +294,7 @@ class PatentDetail extends Component {
                                     updatePageCount={null}
                                     isImage={true}
                                     reportStatus={this.reportStatus}
+                                    numPagesToShow={10}
                                 /> : <FullText
                                     patentHtml={JSON.parse(this.state.result.PatentHtml)}
                                     highlightList={this.state.highlightList}
