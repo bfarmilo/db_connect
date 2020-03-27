@@ -44,7 +44,7 @@ class PatentImages extends Component {
                 extremes.lastImage = current.PageNumber > lastImage ? current.PageNumber : lastImage;
                 return extremes;
             }, { firstImage: 999, lastImage: 0 });
-            console.log(firstImage, lastImage);
+            console.log(`first image page is ${firstImage}, last image page is ${lastImage}`);
             const images = data.map(image => [image.PageNumber, { imageID: image.ImageID, url: image.ImageURL, pageData: image.PageData, rotation: image.Rotation }]);
             const patentImages = images && new Map(images);
             this.setState({
@@ -56,9 +56,10 @@ class PatentImages extends Component {
                 genericMode: false
             });
         });
-        ipcRenderer.on('generic', (event, patentImages, currentImage) => {
+        ipcRenderer.on('generic', (event, data, currentImage) => {
             // handler for generic PDF data, where num pages not known
-            console.log(`received local PDF file data`, patentImages);
+            console.log(`received local PDF file data`);
+            const patentImages = data && new Map([[currentImage, { imageID: 1, pageData: data, rotation: 0 }]]);
             this.setState({
                 patentImages,
                 firstImage: 1,
@@ -127,7 +128,7 @@ class PatentImages extends Component {
     reportViewport = (width, height) => {
         console.log(`viewport wants new width:${width} and height:${height}`);
         console.log(`requesting new size ${width} x ${height + CONTROL_HEIGHT + 5}`);
-        ipcRenderer.send('request_resize', width, height + CONTROL_HEIGHT + 5, !this.state.genericMode);
+        ipcRenderer.send('request_resize', width, height + CONTROL_HEIGHT + 5, this.state.genericMode ? 'pdfWindow' : 'imageWindow');
     }
 
     makeOffline = e => {
@@ -135,28 +136,34 @@ class PatentImages extends Component {
         ipcRenderer.send('store_images', [...this.state.patentImages]);
     }
 
+    reportStatus = (e, status) => {
+        if (status === 'ready') console.log('rendering complete')
+    }
+
     render({ }, { }) {
 
         // idea - handle generic documents more like Markman documents -- record their path and just load them through the PDF src attribute
-        const viewer = this.state.genericMode ? <MyPdfViewer
-            fileOffset={0} //since the exhibit may be an array, this indicates the index of the file in the array
-            pages={this.state.pages} //highest page number currently loaded
-            rootpath={__dirname} // combined with fileToLoad to get the PDF src attribute
-            exhibit={this.state.patentImage} //only care about exhibit.file which is filename
-            startpage={this.state.firstImage} //the page number to start displaying
-            getPages={this.getTotalPages} //callback to report number of pages
-            onNewHeight={this.reportViewport} //callback to report new viewer height required
-        /> : < PatentImage
-                imageData={this.state.patentImages}
-                showPage={this.state.currentImage}
-                windowSize={this.state.windowSize}
-                startPage={this.state.firstImage}
-                controlAreaHeight={CONTROL_HEIGHT}
-                rotation={this.state.rotation}
-                reportViewport={this.reportViewport}
-                updatePageCount={this.setLastPage}
-                isImage={!this.state.genericMode}
-            />;
+        const viewer = < PatentImage
+            imageData={this.state.patentImages}
+            showPage={this.state.currentImage}
+            windowSize={this.state.windowSize}
+            startPage={this.state.firstImage}
+            controlAreaHeight={CONTROL_HEIGHT}
+            rotation={this.state.rotation}
+            reportViewport={this.reportViewport}
+            updatePageCount={this.setLastPage}
+            reportStatus={this.reportStatus}
+            isImage={true}
+        />;
+        /* this.state.genericMode ? <MyPdfViewer
+               fileOffset={0} //since the exhibit may be an array, this indicates the index of the file in the array
+               pages={this.state.pages} //highest page number currently loaded
+               rootpath={__dirname} // combined with fileToLoad to get the PDF src attribute
+               exhibit={this.state.patentImage} //only care about exhibit.file which is filename
+               startpage={this.state.firstImage} //the page number to start displaying
+               getPages={this.getTotalPages} //callback to report number of pages
+               onNewHeight={this.reportViewport} //callback to report new viewer height required
+           /> : */
         return (
             <div>
                 <div class="controlArea" style={{ height: `${CONTROL_HEIGHT}px` }}>
@@ -168,16 +175,7 @@ class PatentImages extends Component {
                     <button disabled={!this.state.enableOffline} onClick={this.makeOffline}>Make available offline</button>
                 </div>
                 <div class="imageArea" style={{ paddingTop: `${CONTROL_HEIGHT}px` }}>
-                    {this.state.currentImage ? { viewer } : <div />
-                    /* Experimental stateless version - not working -- 
-                    this.state.currentImage ? < GenericPdf
-                        pdfData={this.state.patentImages}
-                        showPage={this.state.currentImage}
-                        windowSize={this.state.windowSize}
-                        controlAreaHeight={CONTROL_HEIGHT}
-                        rotation={this.state.rotation}
-                        reportViewport={this.reportViewport}
-                    /> : <div /> */}
+                    {viewer}
                 </div>
             </div>
         );

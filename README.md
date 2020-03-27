@@ -16,11 +16,16 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Markman view for claim constructions if applicable
 * In Markman view clicking on the page number will launch the order in your native PDF viewer (assuming dropbox folders properly connected)
 * closes docker container on app closing
-* *NEW* Patent View shows inventor and title
-* *NEW* If a PDF link is broken, causes the user to browse to a new PDF file
-* *NEW* Upload a generic document (into GeneralResearch DB Only) with Title and Author
-* *NEW* PDF native view (mostly) working
-* *NEW* Experimental feature that writes a Importable JSON version of claim table for Excel import
+* Patent View shows inventor and title
+* If a PDF link is broken, causes the user to browse to a new PDF file
+* Upload a generic document (into GeneralResearch DB Only) with Title and Author
+* ~~PDF native view (mostly) working~~
+* Experimental feature that writes a Importable JSON version of claim table for Excel import
+* *NEW* Compact view in Patent mode
+* *NEW* Patent mode updates and inserts patent summaries
+* *NEW* Updated to latest version of electron / tedious
+* *NEW* Multi-page PDF in native viewer
+* *NEW* PDF preview for non-patent documents
 
 
 Currently very much a work-in-progress.
@@ -31,8 +36,8 @@ Currently very much a work-in-progress.
 2. ~~Make patent Full Text writing offline by choice~~
 3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
 4. ~~Check for duplicate (claims, patents) before inserting~~ -- basic URI match now checked
-5. Update components to include react hooks
-6. Get Patent Detail window size right
+5. Update components to include react hooks: NOT SUPPORTED
+6. ~~Get Patent Detail window size right~~
 7. Migrate to React-Native
 8. DB Backend to SQLite for portablility
   1. get rid of tedious-promises 
@@ -50,7 +55,7 @@ Currently very much a work-in-progress.
 19. generally make table editable -- repurpose Markman input for main tables ??
 20. ~~Close docker container at app.close~~ 
 21. ~~Search by author~~
-22. Lazy loading and overall better handling of PDF documents - see reportViewer?
+22. **PRIORITY** Lazy loading and overall better handling of PDF documents - see reportViewer?
 23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
   - use % of scroll to estimate position in PDF based on text start & end?
   - use page load architecture from reportviewer rather than zoom based imageview

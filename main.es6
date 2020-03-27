@@ -34,7 +34,7 @@ let dropboxPath = ''; // keeps the path to the local dropbox
 // global constants
 const ROWS_TO_RETURN = 200;
 const SLICE_SIZE = 3;
-const PDF_MODE = 'shell';
+const PDF_MODE = 'window';
 const databases = {
   PMCDB: { uriMode: false, next: "NextIdea" },
   NextIdea: { uriMode: true, next: "GeneralResearch" },
@@ -593,7 +593,7 @@ ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
  * @param {Number} pageNo <Optional> -> The page number to jump to
  * 
  * */
-ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, pageNo = 0) => {
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, pageNo = 0, isNewWindow) => {
 
   /** openFile handles the opening of the file
    * 
@@ -680,59 +680,65 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
       // in either 'found' or 'new', open the document to the first column 
       if (PDF_MODE === 'window' && (fileResult.status === 'found' || fileResult.status === 'new')) {
         const startPage = pageNo || await getFirstCol(PatentID);
-        // now create the document window and send the data to it
-        // alt - figure out to use the scrollable patent API to make this work !!
-        if (documentWindow === null) {
-          const [x, y] = detailWindow.getPosition();
-          const [xSize, ySize] = detailWindow.getSize();
-          documentWindow = new BrowserWindow({
-            width: 425,
-            height: 650,
-            y,
-            x: x + xSize + 10,
-            show: false,
-            title,
-            webPreferences: { nodeIntegration: true }
-          });
-          documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
-          // Open the DevTools.
-          documentWindow.on('page-title-updated', e => e.preventDefault());
-          documentWindow.on('closed', () => {
-            documentWindow = null;
-          });
-          documentWindow.on('ready-to-show', () => {
-            console.log('window ready, sending pdf data', fileResult.data);
-            documentWindow.show();
-            if (process.env.DEVTOOLS === 'show') documentWindow.webContents.openDevTools();
-            documentWindow.webContents.send('resize', { width: 425, height: 650 })
-            //documentWindow.webContents.send('available_offline', true);
-            documentWindow.webContents.send('generic', fileResult.data, startPage);
-          })
-          documentWindow.on('resize', () => {
-            if (manualResize) {
-              // only send update if manualResize = true
-              clearTimeout(timer);
-              timer = setTimeout(() => {
-                console.log('document Window size changed, sending new size');
-                const [width, height] = documentWindow.getContentSize();
-                documentWindow.webContents.send('resize', { width, height })
-              }, 500);
-            } else {
-              // reset to listen for mouse events
-              manualResize = true;
-            }
-          });
-        } else {
-          // send new data to existing window
-          documentWindow.webContents.send('available_offline', true);
-          documentWindow.webContents.send('generic', fileResult.data);
+        if (isNewWindow) {
+          // now create the document window and send the data to it
+          // alt - figure out to use the scrollable patent API to make this work !!
+          if (documentWindow === null) {
+            const [x, y] = detailWindow.getPosition();
+            const [xSize, ySize] = detailWindow.getSize();
+            documentWindow = new BrowserWindow({
+              width: 425,
+              height: 650,
+              y,
+              x: x + xSize + 10,
+              show: false,
+              title,
+              webPreferences: { nodeIntegration: true }
+            });
+            documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
+            // Open the DevTools.
+            documentWindow.on('page-title-updated', e => e.preventDefault());
+            documentWindow.on('closed', () => {
+              documentWindow = null;
+            });
+            documentWindow.on('ready-to-show', () => {
+              console.log('window ready, sending pdf data', fileResult.data.toString('base64').slice(0, 1000));
+              documentWindow.show();
+              if (process.env.DEVTOOLS === 'show') documentWindow.webContents.openDevTools();
+              documentWindow.webContents.send('resize', { width: 425, height: 650 })
+              //documentWindow.webContents.send('available_offline', true);
+              documentWindow.webContents.send('generic', fileResult.data.toString('base64'), startPage);
+            })
+            documentWindow.on('resize', () => {
+              if (manualResize) {
+                // only send update if manualResize = true
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                  console.log('document Window size changed, sending new size');
+                  const [width, height] = documentWindow.getContentSize();
+                  documentWindow.webContents.send('resize', { width, height })
+                }, 500);
+              } else {
+                // reset to listen for mouse events
+                manualResize = true;
+              }
+            });
+          } else {
+            // send new data to existing window
+            documentWindow.webContents.send('available_offline', true);
+            documentWindow.webContents.send('generic', fileResult.data.toString('base64'));
+          }
+        }
+        if (fileResult.status === 'opened') {
+          // it's been opened by shell
+          if (!fileResult.data) throw new Error('system failed to open PDF file');
+        }
+        //fileResult.status==='cancelled' -- no action needed
+        if (!isNewWindow) {
+          //Patent Detail is calling, and it needs a generic send
+          if (detailWindow) detailWindow.webContents.send('generic', fileResult.data.toString('base64'));
         }
       }
-      if (fileResult.status === 'opened') {
-        // it's been opened by shell, if fileResult.data ===
-        if (!fileResult.data) throw new Error('system failed to open PDF file');
-      }
-      //fileResult.status==='cancelled' -- no action needed
     })
     .catch(err => console.error(err));
 });
@@ -746,9 +752,14 @@ ipcMain.on('change_window_rotation', (e, isImageWindow) => {
   targetWindow.webContents.send('resize', { width, height });
 })
 
-ipcMain.on('request_resize', (e, width, height, isImageWindow) => {
+ipcMain.on('request_resize', (e, width, height, windowName) => {
+  const windowLookup = {
+    patentDetail: detailWindow,
+    pdfWindow: documentWindow,
+    imageWindow: imageWindow
+  }
   // target window has requested a new size, so set it up
-  const targetWindow = isImageWindow ? imageWindow : documentWindow;
+  const targetWindow = windowLookup[windowName];
   manualResize = false;
   const newWidth = Math.round(width) + 1;
   const newHeight = Math.round(height) + 1;
@@ -889,7 +900,7 @@ ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
 
   const modeSettings = {
     claims: { data: 'u_UPDATE', index: 'ClaimID', table: 'Claim', idField: 'ClaimID', options: { skipCheck: [newItem.field], updateFields: [newItem.field] } },
-    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID', table: 'PatentSummary',  idField: 'PatentSummaryID', options: { skipCheck: ['DateModified'], updateFields: ['PatentSummaryText', 'DateModified'] } }
+    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID', table: 'PatentSummary', idField: 'PatentSummaryID', options: { skipCheck: ['DateModified'], updateFields: ['PatentSummaryText', 'DateModified'] } }
   }
 
   let changeLog = { changes: [] };
