@@ -5,7 +5,7 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Docker container running sql server express (min)
 
 ### Current Version features:
-* Search by 5 different fields
+* Search by 7 different fields
 * Use | & ! in search for OR AND NOT respectively
 * Update the 'Application Area' and 'Watch Items' through markdown-enabled edit boxes
 * clicking on the patent will open a patent Detail view with full text, pulled from the USPTO if not already in the DB
@@ -15,31 +15,53 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Cycle between multiple databases hosted by the sql server
 * Markman view for claim constructions if applicable
 * In Markman view clicking on the page number will launch the order in your native PDF viewer (assuming dropbox folders properly connected)
-* *NEW* closes docker container on app closing
+* closes docker container on app closing
+* Patent View shows inventor and title
+* If a PDF link is broken, causes the user to browse to a new PDF file
+* Upload a generic document (into GeneralResearch DB Only) with Title and Author
+* ~~PDF native view (mostly) working~~
+* Experimental feature that writes a Importable JSON version of claim table for Excel import
+* *NEW* Compact view in Patent mode
+* *NEW* Patent mode updates and inserts patent summaries
+* *NEW* Updated to latest version of electron / tedious
+* *NEW* Multi-page PDF in native viewer
+* *NEW* PDF preview for non-patent documents
+
 
 Currently very much a work-in-progress.
 
 ### Known TODOs:
 
-1. Update all refernces to ./jsx/
-2. Make patent Full Text writing offline by choice
+1. ~~Update all refernces to ./jsx/~~
+2. ~~Make patent Full Text writing offline by choice~~
 3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
-4. Check for duplicate (claims, patents) before inserting
-5. Update components to include react hooks
-6. Get Patent Detail window size right
+4. ~~Check for duplicate (claims, patents) before inserting~~ -- basic URI match now checked
+5. Update components to include react hooks: NOT SUPPORTED
+6. ~~Get Patent Detail window size right~~
 7. Migrate to React-Native
 8. DB Backend to SQLite for portablility
-9. Interface to allow addition and linking of markman terms to patents and constructions
-10. Better reporting for shortlisting, claim export
-11. Write back-end for Patent Summary updating
+  1. get rid of tedious-promises 
+9. ~~Interface to allow addition and linking of markman terms to patents and constructions~~
+10. Better reporting for shortlisting, claim export - Improve experimental save-as feature
+11. ~~Write back-end for Patent Summary updating~~
+26. ~~OR For Patent View, use Patent Summary for notes entry, and remove it from full-text view~~
 12. Enable Expiry date estimation writing
 13. DB migration to cloud
 14. DB authentication and user tracking
-15. Support for US Applications
-16. Option to enable general PDF linking
+15. ~~Support for US Applications~~
+16. ~~Option to enable general PDF linking~~
 17. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
-18. Sort by author, or generally make table editable
-19. ~~Close docker container at app.close~~ 
+18. ~~Sort by author~~
+19. generally make table editable -- repurpose Markman input for main tables ??
+20. ~~Close docker container at app.close~~ 
+21. ~~Search by author~~
+22. **PRIORITY** Lazy loading and overall better handling of PDF documents - see reportViewer?
+23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
+  - use % of scroll to estimate position in PDF based on text start & end?
+  - use page load architecture from reportviewer rather than zoom based imageview
+24. ~~For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected~~
+25. Change 'ChangeDB' and mode toggles to drop-selects
+
 
 ### Build Notes:
 1. Docker code to start container:

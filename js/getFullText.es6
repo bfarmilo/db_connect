@@ -11,6 +11,10 @@ const cleanHTML = (text) => {
     const fullText = text.replace(/\n/g, ' ');
     // now split out everything from just after 'Description' to '* * * * *', 
     // strip extra tags, split on lineBreaks into an array
+
+    //TODO: Pull out claims here into an array and pass them to formatClaim !!!
+    // const claimStart = new RegExp(uspto.startClaimMatch, 'i');
+    
     return fullText.slice((fullText.match(start).index + uspto.startMatch.length), fullText.match(end).index).replace(strip, '').split(lineBreak);
 }
 

@@ -4,6 +4,7 @@ import { Scrollbars } from 'preact-custom-scrollbars';
 import { ControlArea } from './jsx/controlArea';
 import { TableArea } from './jsx/tableArea';
 import { Throbber } from './jsx/throbber';
+import { config } from './jsx/config'
 
 // import 'preact/devtools';
 
@@ -12,56 +13,7 @@ const RESIZE_THRESHOLD = 50;
 const NEW = false;
 const APPEND = true;
 
-const config =
-{
-    claims: {
-        gridTemplateColumns: '1fr 1fr 5fr 2fr 2fr',
-        themeColor: 'rgba(51, 122, 183, 1)',
-        selectedColor: 'rgba(183, 130, 51, 0.8)',
-        borderColor: 'rgba(41, 94, 141, 0.8)',
-        enabledButtons: [
-            { display: 'App. Only', field: 'IsMethodClaim', setValue: '0' },
-            { display: `Doc'd Only`, field: 'IsDocumented', setValue: '1' },
-            { display: 'IPR Only', field: 'IsInIPR', setValue: '1' },
-            { display: 'Claim 1 Only', field: 'ClaimNumber', setValue: '1' },
-            { display: 'Ind. Only', field: 'IsIndependentClaim', setValue: '1' }
-        ],
-        columns: [
-            { display: 'Reference', field: 'PMCRef' },
-            { display: 'Patent', field: 'PatentNumber' },
-            { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
-            { display: 'Notes', field: 'PotentialApplication' },
-            { display: 'Watch', field: 'WatchItems' }
-        ]
-    },
-    markman: {
-        gridTemplateColumns: '1fr 1fr 0.5fr 2fr 3fr 0.5fr 2fr 1fr 1fr',
-        themeColor: 'rgba(12, 84, 0, 1)',
-        selectedColor: 'rgba(183, 130, 51, 0.8)',
-        borderColor: 'rgba(41, 94, 141, 0.8)',
-        enabledButtons: [],
-        columns: [
-            { display: 'Reference', field: 'PMCRef' },
-            { display: 'Patent', field: 'PatentNumber' },
-            { display: 'Clm.', field: 'ClaimNumber' },
-            { display: 'Claim Term', field: 'ClaimTerm' },
-            { display: 'Construction', field: 'Construction' },
-            { display: 'Pg.', field: 'MarkmanPage' },
-            { display: 'Ruling', field: 'FileName' },
-            { display: 'Court', field: 'Court' },
-            { display: 'Case', field: 'ClientName' }
-        ]
-    },
-    databaseOptions: {
-        PMCDB: {
-            hideColumns: [
-                { field: 'InventorLastName' },
-                { field: 'Title' }
-            ],
-            enableConstructions: true
-        }
-    }
-};
+
 
 const sortOrder = new Map([
     ['PatentNumber', { field: 'PatentNumber', ascending: true }],
@@ -84,7 +36,8 @@ class ClaimTable extends Component {
             offset: 0,
             scrollTop: 0,
             modalContent: { inventor: '', title: '', claimID: '' },
-            displayMode: 'claims'
+            displayMode: 'claims',
+            compactView: true
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -100,6 +53,8 @@ class ClaimTable extends Component {
         this.handleScroll = this.handleScroll.bind(this);
         this.getNewPatents = this.getNewPatents.bind(this);
         this.showInventor = this.showInventor.bind(this);
+        this.newConstruction = this.newConstruction.bind(this);
+        this.toggleCompact = this.toggleCompact.bind(this);
     }
 
     // lifecycle Methods
@@ -246,7 +201,7 @@ class ClaimTable extends Component {
         const field = event.currentTarget.getAttribute('data-field');
         const sortOrder = new Map(this.state.sortOrder);
         // since maps order by key entry, for claims mode remove the 'claimNumber' key then add at the end
-        if (this.state.displayMode === 'claims') sortOrder.delete('ClaimNumber');
+        if (this.state.displayMode === 'claims' || this.state.displayMode === 'priorArt') sortOrder.delete('ClaimNumber');
         // Logic is this: none -> Ascending -> Descending -> none
         if (!sortOrder.has(field)) {
             // none -> Ascending
@@ -264,6 +219,8 @@ class ClaimTable extends Component {
         }
         // for claims mode, add claim back in and set it ascending
         if (this.state.displayMode === 'claims') sortOrder.set('ClaimNumber', { field: 'ClaimNumber', ascending: true });
+        // for prior art mode, if no sort order is set default to PMCRef
+        if (this.state.displayMode === 'priorArt' && !sortOrder.size) sortOrder.set('PMCRef', { field: 'PMCRef', ascending: true })
         this.setState({ sortOrder }, () => this.runQuery(null, NEW));
 
     }
@@ -291,13 +248,22 @@ class ClaimTable extends Component {
     }
     /** send view_patentdetail to main to cause a new window to open with patent details
      * 
-     * @param {Event} event 
+     * @param {Event} event
+     * @param {Number} patentNumber 
      */
     getPatentDetail(event, patentNumber) {
         console.log('getting detail for patent', patentNumber);
         ipcRenderer.send('view_patentdetail', patentNumber);
     }
 
+    /** send view_markman to main to cause a new window to open for markman entry
+     * @param {Event} event
+     */
+
+    newConstruction(event) {
+        console.log('launching Markman entry window');
+        ipcRenderer.send('add_claimconstructions');
+    }
     /** switch into Edit Mode for an editable field
      * 
      * @param {*} event 
@@ -331,41 +297,60 @@ class ClaimTable extends Component {
      * 
      * @param {*} event 
      */
-    clickSaveCancel(event, claimID, field, action) {
-        console.log('detected %s event in %s for claim ID %s', action, field, claimID);
+    clickSaveCancel(event, recordID, field, action) {
+        console.log('detected %s event in %s for record ID %s', action, field, recordID);
         const activeRows = new Map(this.state.activeRows);
         console.log(activeRows);
         if (action === 'save') {
             // send off an updateQuery to the database
-            console.log(this.state.resultList.get(claimID)[field], this.state.activeRows.get(`${claimID}-${field}`).record);
+            console.log(this.state.resultList.get(recordID)[field], this.state.activeRows.get(`${recordID}-${field}`).record);
             ipcRenderer.send(
                 'json_update',
-                { field, claimID, value: this.state.resultList.get(claimID)[field] },
-                { field, claimID, value: this.state.activeRows.get(`${claimID}-${field}`).record }
+                { field, recordID, value: this.state.resultList.get(recordID)[field] },
+                { field, recordID, value: this.state.activeRows.get(`${recordID}-${field}`).record },
+                this.state.displayMode
             )
             // splice in the record and update the main table
             const resultList = new Map(this.state.resultList);
-            resultList.set(claimID, { ...resultList.get(claimID), [field]: this.state.activeRows.get(`${claimID}-${field}`).record })
+            resultList.set(recordID, { ...resultList.get(recordID), [field]: this.state.activeRows.get(`${recordID}-${field}`).record })
             this.setState({ resultList })
         }
         // clear out and update activeRows
-        activeRows.delete(`${claimID}-${field}`);
+        activeRows.delete(`${recordID}-${field}`);
         this.setState({ activeRows })
     }
 
     /**
-     * Change from Claims to Constructions and vice-versa
+     * Change from Claims to Constructions to PriorArt and back
      */
     changeMode = e => {
+        const modeCycle = {
+            claims: 'markman',
+            markman: 'priorArt',
+            priorArt: 'claims'
+        }
+        const sortOrder = {
+            claims: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
+            ]),
+            markman: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
+            ]),
+            priorArt: new Map([
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }]
+            ])
+        }
         const queryValues = this.clearQuery();
         const resultList = new Map();
-        this.setState({ displayMode: this.state.displayMode === 'claims' ? 'markman' : 'claims', resultList, queryValues });
-        this.runQuery(null, NEW);
+        const displayMode = modeCycle[this.state.displayMode];
+        this.setState({ displayMode, sortOrder: sortOrder[displayMode], resultList, queryValues }, () => this.runQuery(null, NEW));
     }
 
     /** Handle call to open a PDF */
-    openFile = (e, filePath, pageNo) => {
-        ipcRenderer.send('open_patent', filePath, pageNo);
+    openFile = (e, filePath, docID, type, pageNo) => {
+        ipcRenderer.send('open_patent', filePath, docID, type, pageNo);
     }
     /**
      * Display the inventor and patent title modal on hover
@@ -383,25 +368,33 @@ class ClaimTable extends Component {
         }
     }
 
+    toggleCompact(e) {
+        const compactView = !this.state.compactView;
+        this.setState({ compactView });
+    }
+
     render({ props }, { state }) {
         return (
             <div class='FullTable'>
                 <ControlArea
-                    config={config[this.state.displayMode]}
+                    config={config}
                     displayMode={this.state.displayMode}
                     queryValues={this.state.queryValues}
                     resultCount={this.state.resultCount}
                     sortOrder={this.state.sortOrder}
                     expandAll={this.state.expandAll}
+                    compactView={this.state.compactView}
                     runQuery={this.runQuery}
                     editQuery={this.editQuery}
                     toggleExpand={this.toggleExpand}
                     toggleFilter={this.toggleFilter}
+                    toggleCompact={this.toggleCompact}
                     changeDB={this.changeDB}
                     styles={config[this.state.displayMode]}
                     modifySortOrder={this.modifySortOrder}
                     getNewPatents={this.getNewPatents}
                     changeMode={this.changeMode}
+                    newConstruction={this.newConstruction}
                 />
                 {this.state.working && this.state.resultList.size === 0 ? <Throbber
                     visible={true}
@@ -418,6 +411,7 @@ class ClaimTable extends Component {
                     >
                         <TableArea
                             displayMode={this.state.displayMode}
+                            compactView={this.state.compactView}
                             config={config[this.state.displayMode]}
                             resultList={this.state.resultList}
                             activeRows={this.state.activeRows}

@@ -1,0 +1,231 @@
+html {
+    box-sizing: border-box;
+}
+
+ul {
+    padding: 0px 0px 0px 10px;
+}
+
+.App {
+    text-align: center;
+    background: #222;
+}
+
+.App-logo {
+    animation: App-logo-spin infinite 20s linear;
+    height: 80px;
+}
+
+.Display-area {
+    display: flex;
+    margin: 0px 0px -10px 0px;
+    max-width: 1366px;
+    background: #FFF;
+}
+
+.Pdf-area {
+    display: flex;
+    position: relative;
+    z-index: 10;
+    flex-direction: column;
+    margin: 0px 0px 0px 300px;
+    width: 1066px;
+}
+
+.Pdf-controls {
+    background: #222;
+    position: fixed;
+    flex-direction: row;
+    width: 1066px;
+    height: 45px;
+    margin: 0px 0px 0px 0px;
+    padding: 0px -10px 0px 0px;
+}
+
+.Pdf-control-buttons {
+    display: flex;
+    flex-flow: row wrap;
+    justify-content: space-around;
+    list-style: none;
+    padding: 4px 0px 0px 0px;
+}
+
+.Pdf-control-buttons li {
+    flex: 0 1 auto;
+    height: 20px;
+    background-color: #222;
+    color: #FFF;
+    margin: -15px;
+    padding: 9px 30px 5px 30px;
+    text-align: center;
+}
+
+.Pdf-control-buttons li:hover {
+    cursor: pointer;
+    background-color: hsla(0, 0%, 35%, 0.9);
+}
+
+.pdf-context {
+    text-align: center;
+    justify-content: center;
+    margin: 0px 0px 0px 0px;
+}
+
+.Edit-top {
+    position: fixed;
+    background: #222;
+    color: white;
+    width: 300px;
+    height: 30px;
+    z-index: 5;
+    padding: 15px 0px 0px 0px;
+}
+
+.Editor {
+    display: flex;
+    position: fixed;
+    background: #222;
+    color: white;
+    width: 300px;
+    padding: 42px 0px 0px 0px;
+    height: 95vh;
+    overflow-y: scroll;
+}
+
+.Editor ul li {
+    margin: 0px;
+    padding: 2px;
+    text-align: left;
+    list-style: none;
+}
+
+
+/**
+ * Tooltip Styles
+ */
+
+
+/* Base styles for the element that has a tooltip */
+
+[data-tip],
+.tooltip {
+    position: relative;
+    cursor: pointer;
+}
+
+
+/* Base styles for the entire tooltip */
+
+[data-tip]:before,
+[data-tip]:after,
+.tooltip:before,
+.tooltip:after {
+    position: absolute;
+    visibility: hidden;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=0)";
+    filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=0);
+    opacity: 0;
+    /*
+    -webkit-transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, -webkit-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -moz-transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, -moz-transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    transition: opacity 0.2s ease-in-out, visibility 0.2s ease-in-out, transform 0.2s cubic-bezier(0.71, 1.7, 0.77, 1.24);
+    -webkit-transform: translate3d(0, 0, 0);
+    -moz-transform: translate3d(0, 0, 0);
+    transform: translate3d(0, 0, 0);
+    */
+    pointer-events: none;
+}
+
+
+/* Show the entire tooltip on hover and focus */
+
+[data-tip]:hover:before,
+[data-tip]:hover:after,
+[data-tip]:focus:before,
+[data-tip]:focus:after,
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after {
+    visibility: visible;
+    -ms-filter: "progid:DXImageTransform.Microsoft.Alpha(Opacity=100)";
+    filter: progid: DXImageTransform.Microsoft.Alpha(Opacity=100);
+    opacity: 1;
+}
+
+
+/* Base styles for the tooltip's directional arrow */
+
+.tooltip:before,
+[data-tip]:before {
+    z-index: 1001;
+    border: 6px solid transparent;
+    background: transparent;
+    content: "";
+}
+
+
+/* Base styles for the tooltip's content area */
+
+.tooltip:after,
+[data-tip]:after {
+    z-index: 1000;
+    padding: 8px;
+    width: 174px;
+    background-color: #000;
+    background-color: hsla(0, 0%, 35%, 0.9);
+    color: #fff;
+    content: attr(data-tip);
+    font-size: 14px;
+    line-height: 1.2;
+}
+
+
+/* Right */
+
+.tooltip:before,
+.tooltip:after {
+    bottom: 50%;
+    left: 100%;
+}
+
+.tooltip:before {
+    margin-bottom: 0;
+    margin-left: -12px;
+    border-top-color: transparent;
+    border-right-color: #000;
+    border-right-color: hsla(0, 0%, 35%, 0.9);
+}
+
+.tooltip:hover:before,
+.tooltip:hover:after,
+.tooltip:focus:before,
+.tooltip:focus:after {
+    -webkit-transform: translateX(12px);
+    -moz-transform: translateX(12px);
+    transform: translateX(12px);
+}
+
+
+/* Move directional arrows down a bit for left/right tooltips */
+
+.tooltip:before {
+    top: 3px;
+}
+
+
+/* Vertically center tooltip content for right tooltips */
+
+.tooltip:after {
+    margin-left: 0;
+    margin-bottom: -16px;
+}
+
+@keyframes App-logo-spin {
+    from {
+        transform: rotate(0deg);
+    }
+    to {
+        transform: rotate(360deg);
+    }
+}

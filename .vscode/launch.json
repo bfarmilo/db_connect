@@ -7,11 +7,38 @@
         {
             "type": "node",
             "request": "launch",
-            "name": "Debug Electron Main",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
+            "name": "FormatClaim",
+            "program": "${workspaceFolder}/js/formatClaim.es6"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "Readonly -- Electron Main",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
             "cwd": "${workspaceRoot}",
             "windows": {
-                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron"
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+            },
+            "program": "${workspaceRoot}/main.es6",
+            "outFiles": [
+                "${workspaceRoot}/main.js"
+            ],
+            "protocol": "inspector",
+            "preLaunchTask": "npm: transpile-main",
+            "outputCapture": "std",
+            "env": {
+                "DEVTOOLS": "show",
+                "DBMODE": "readonly"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ReadWrite -- Electron Main",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
+            "cwd": "${workspaceRoot}",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
             },
             "program": "${workspaceRoot}/main.es6",
             "outFiles": [
@@ -37,7 +64,7 @@
                 "--colors",
                 "--reporter",
                 "mochawesome",
-                "${workspaceFolder}//test//?(11_*)"
+                "${workspaceFolder}//test//?(2_*)"
             ],
             "preLaunchTask": "npm: transpile",
             // "postDebugTask": "npm: openTestReport",
@@ -60,6 +87,13 @@
             "request": "launch",
             "name": "Launch Program",
             "program": "${workspaceFolder}\\main.js"
+        },
+        {
+            "type": "node",
+            "request": "launch",
+            "name": "ReExam Upload",
+            "program": "${workspaceFolder}\\js\\reExamUpload.es6",
+            "args":["../../../../Desktop/examined.csv", "examined"]
         }
     ]
 }

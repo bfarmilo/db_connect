@@ -1,6 +1,5 @@
 const electron = require('electron');
 const fse = require('fs-extra');
-const spawn = require('child_process').spawn;
 // local modules
 const { getDropBoxPath } = require('./jsx/getDropBoxPath');
 const { queryDatabase } = require('./jsx/app_DBconnect');
@@ -8,10 +7,12 @@ const { connectDocker, closeDocker } = require('./jsx/connectDocker');
 const { getFullText } = require('./jsx/getFullText');
 const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
 const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
-const { insertAndGetID } = require('./jsx/app_bulkUpload');
+const { insertAndGetID, getTermConstructions, getConstructions } = require('./jsx/app_bulkUpload');
 const { getAllImages } = require('./jsx/getImages');
+const { initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman } = require('./jsx/app_markmanInterface');
+const { formatClaim } = require('./jsx/formatClaim');
 // configuration
-const { patentDB, patentParser } = require('./app_config.json');
+const { patentDB, patentParser, localSave } = require('./app_config.json');
 // developer
 // const { default: installExtension, REACT_DEVELOPER_TOOLS } = require('electron-devtools-installer');
 // other constants
@@ -22,17 +23,18 @@ let win;
 let markmanwin;
 let detailWindow = null;
 let imageWindow = null;
+let documentWindow = null;
 let newPatentWindow;
 let timer;
 let manualResize = true;
 
 // globals
-let totalCount = 0;
 let dropboxPath = ''; // keeps the path to the local dropbox
 
 // global constants
 const ROWS_TO_RETURN = 200;
 const SLICE_SIZE = 3;
+const PDF_MODE = 'window';
 const databases = {
   PMCDB: { uriMode: false, next: "NextIdea" },
   NextIdea: { uriMode: true, next: "GeneralResearch" },
@@ -47,9 +49,20 @@ let uriMode; // flag that indicates if claim HTML is uri-encoded or not, default
 process.on('uncaughtException', e => {
   console.error(e);
   console.error('fatal error, exiting app');
-  if (win) win.close();
-  if (app) app.quit();
+  dialog.showMessageBox(null, {
+    type: 'error',
+    message: e.code,
+    detail: e.message
+  }).then(response => {
+    if (win) win.close();
+    if (app) app.quit();
+  }).catch(err => {
+    console.error(err);
+    if (win) win.close();
+    if (app) app.quit();
+  });
 });
+
 
 // connect to the sql server
 const connectToDB = async () => {
@@ -68,17 +81,6 @@ const closeDB = () => {
   return closeDocker(connectParams);
 }
 
-/** openPDF will try to open a pdf file using the shell
- * 
- * @param {String} fullPath
- * @returns {void}
- */
-const openPDF = (fullPath, pageNo) => {
-  console.log(`trying shell: ${dropboxPath}${fullPath}`);
-  //TODO: replace with custom viewer, enable implementing page jumps
-  shell.openItem(`${dropboxPath}${fullPath}`);
-}
-
 /** createWindow launches the main window
  *  @returns {void}
  */
@@ -88,13 +90,14 @@ const createWindow = () => {
     if (err) {
       console.error(err);
     } else {
-      dropboxPath = dropbox;
+      dropboxPath = dropbox.replace(/\\/g, '/');
     }
   });
   // Create the browser window.
   win = new BrowserWindow({
     width: 1440,
     height: 800,
+    webPreferences: { nodeIntegration: true }
   });
   // and load the index.html of the app.
   win.loadURL(`file://${__dirname}/claimtable.html`);
@@ -120,6 +123,7 @@ const createWindow = () => {
     if (detailWindow) detailWindow.close();
     if (markmanwin) markmanwin.close();
     if (newPatentWindow) newPatentWindow.close();
+    if (documentWindow) documentWindow.close();
     win = null;
   });
 }
@@ -131,9 +135,9 @@ const createWindow = () => {
  * @param {String} basePath the path from the dropbox to the folder where the full PDF's of the patent are stored
  * @returns {Array{Object}} an array of objects ready for sending to TODO downloads, disk, insert or update.
  */
-const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
+const getAllPatents = (patentList, patentRef, outputPath, startIdx, claimText, update) => {
   // create a map of hidden browser windows indexed by a patent number
-  const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false })]));
+  const getPatentWindow = new Map(patentList.map(patent => [patent, new BrowserWindow({ show: false, webPreferences: { nodeIntegration: true } })]));
 
   const scrapeCode = `
   const ipc = require('electron').ipcRenderer;
@@ -148,13 +152,13 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
   /** @private getNewPatent sets up the (hidden) patent retrieval window
    * pushes in Javascript, and returns a patent Record
    * @param {number} patentNumber
+   * @param {webContents} activeWin
    * @param {string} PMCRef
    * @param {boolean} uriMode
+   * @param {Array<string>} claimText -> Should be an array of plain strings
    * @returns {Object} ready for insertion into the DB
    */
-  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode) => {
-
-    //const activeWin = {...getPatentWindow.get(patentNumber)};
+  const getNewPatent = (patentNumber, activeWin, PMCRef, uriMode, claimText = []) => {
 
     activeWin.loadURL(`https://patents.google.com/patent/US${patentNumber}/en`);
     activeWin.on('closed', () => {
@@ -177,13 +181,28 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
       ipcMain.on('scraping_error', (e, error) => {
         return reject(error);
       })
-      ipcMain.once('result_ready', (e, result) => {
+      ipcMain.once('result_ready', async (e, result) => {
         console.log('received result event')
         activeWin.close();
         // Number: formatted as US:AABBBCC, reformat to AA/BBB,CCC
         // PatentUri: formatted as USXYYYZZZBB, reformat to US.XYYYZZZ.BB
         // Title: trim whitespace
-        // Claims: condition claims to exclude JSON-ineligible characters 
+        // Claims: condition claims to exclude JSON-ineligible characters
+        const Claims = claimText && claimText.length ?
+          claimText.map(claim => formatClaim(claim.text, claim.status)) :
+          result.Claims.filter(y => y.localName !== 'claim-statement')
+            .map((x, idx) => {
+              // catch places where Google is screwed up, throw in a placeholder claim number
+              const ClaimNumber = x.innerText.match(/(\d+)\./) && x.innerText.match(/(\d+)\./)[1] ? parseInt(x.innerText.match(/(\d+)\./)[1], 10) : (1001 + idx);
+              return {
+                ClaimNumber,
+                ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
+                IsMethodClaim: x.innerText.includes('method'),
+                IsDocumented: false,
+                IsIndependentClaim: !x.className.includes('claim-dependent'),
+                PatentID: 0
+              }
+            })
         // IndependentClaims: select all claims then count all top-level divs where class !== claim-dependent
         // InventorLastName: split name on ' ' and take the last element of the array
         return resolve(
@@ -193,15 +212,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
             PatentUri: result.PatentUri.replace(/(US)(\d{7})(\w+)/, '$1.$2.$3'),
             Title: result.Title.trim().split('\n')[0],
             InventorLastName: result.InventorLastName.split(' ')[result.InventorLastName.split(' ').length - 1],
-            Claims: result.Claims.filter(y => y.localName !== 'claim-statement')
-              .map(x => ({
-                ClaimNumber: parseInt(x.innerText.match(/(\d+)\./)[1], 10),
-                ClaimHTML: uriMode ? encodeURIComponent(x.outerHTML.trim()).replace(/\'/g, '%27') : x.outerHTML,
-                IsMethodClaim: x.innerText.includes('method'),
-                IsDocumented: false,
-                IsIndependentClaim: !x.className.includes('claim-dependent'),
-                PatentID: 0
-              })),
+            Claims,
             IndependentClaimsCount: result.Claims.filter(y => y.localName !== 'claim-statement' && !y.className.includes('claim-dependent')).length,
             ClaimsCount: result.Claims.length,
             PatentNumber: patentNumber,
@@ -226,7 +237,7 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
     //TODO: Option to use inventor last name instead of patentRef
     for (let [patentNumber, browserWin] of getPatentWindow.entries()) {
       try {
-        patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode));
+        patentRecords.push(await getNewPatent(patentNumber, browserWin, `${patentRef} ${startIdx + index}`, uriMode, claimText));
         index++;
         update(patentNumber, 'scraped');
       } catch (err) {
@@ -248,8 +259,12 @@ const getAllPatents = (patentList, patentRef, outputPath, startIdx, update) => {
  * @param {String} reference -> PMCRef to apply to the new collection
  * @param {String} storagePath -> Mount point on the dropbox to store PDF's
  * @param {boolean} downloadPats [opt] -> True if patents need to be downloaded
+ * @param {Array<String>} filterClaims -> A string indicating which claims to download
+ * @param {Number} startCount -> Starting count for Reference Index
+ * @param {Array<String>} claimText -> [TODO] for manual entry of claim text
+ * @param {Object} manualEntry -> [opt] a fully formed entry ready for Database Writing 
  */
-const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount) => {
+const writeNewPatents = async (patentList, reference, storagePath, downloadPats, filterClaims, startCount, claimText, manualEntry = false) => {
   let addedList = [];
   const filterOptions = new Map([
     ['independent', { field: 'IsIndependentClaim', value: /true/g }],
@@ -266,12 +281,12 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
   };
 
   const getNextSlice = async newStart => {
-    if (newStart > patentList.length) {
+    if (!patentList.length || newStart > patentList.length) {
       return;
     }
     try {
       const currentSlice = patentList.slice(newStart, newStart + SLICE_SIZE);
-      const result = await getAllPatents(currentSlice, reference, storagePath, startCount + newStart, sendUpdate);
+      const result = await getAllPatents(currentSlice, reference, storagePath, startCount + newStart, claimText, sendUpdate);
       console.log(result.map(patent => `${patent.PatentNumber} (${patent.PMCRef})`));
       if (downloadPats) downloadPatents(result, dropboxPath, sendUpdate);
       addedList.push(await createPatentQuery(connectParams, result, sendUpdate, claimFilter));
@@ -282,10 +297,17 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
   }
 
   try {
-    console.log('downloading data for patents', patentList);
-    await getNextSlice(0);
+    if (manualEntry) {
+      console.log('adding new non-patent document', manualEntry.Title);
+      // need to set PatentNumber, PatentUri, Number
+      addedList.push(await createPatentQuery(connectParams, [manualEntry], sendUpdate));
+    } else {
+      console.log('downloading data for patents', patentList);
+      await getNextSlice(0);
+    }
     win.webContents.send('new_patents_ready', addedList);
   } catch (err) {
+    // send error to getPatent window
     console.error(err);
   }
 };
@@ -294,7 +316,7 @@ const writeNewPatents = async (patentList, reference, storagePath, downloadPats,
 /** getNewPatentUI sets up the interface to accept new patents */
 const getNewPatentUI = () => {
   if (!newPatentWindow) {
-    newPatentWindow = new BrowserWindow();
+    newPatentWindow = new BrowserWindow({ webPreferences: { nodeIntegration: true } });
     newPatentWindow.loadURL(`file://${__dirname}/getNewPatentUI.html`);
     if (process.env.DEVTOOLS === 'show') newPatentWindow.webContents.openDevTools();
     newPatentWindow.on('closed', () => {
@@ -332,77 +354,23 @@ app.on('activate', () => {
   }
 });
 
+/** EVENT LISTENERS */
+
 //Listener for getting a patent and loading the DB, optionally downloading it
 ipcMain.on('get_new_patents', (event, ...args) => writeNewPatents(...args));
 
 // Listener for selecting a new browse point for saving new patents
 ipcMain.on('browse', (e, startFolder) => {
-  console.log(`${dropboxPath}${startFolder}`);
+  console.log(`request to browse to ${dropboxPath}${startFolder}`);
   dialog.showOpenDialog(newPatentWindow,
     {
       defaultPath: `${dropboxPath}${startFolder}`,
       properties: ['openDirectory']
-    }, folder => {
-      newPatentWindow.webContents.send('new_folder', folder[0].split(dropboxPath)[1]);
+    }).then(result => {
+
+      console.log('user selected folder', result.filePaths[0].replace(/\\/g, '/'));
+      newPatentWindow.webContents.send('new_folder', result.filePaths[0].replace(/\\/g, '/').split(dropboxPath)[1]);
     })
-})
-
-// Listener for Markman updating
-ipcMain.on('markman_entry', e => {
-  /*  table reference
-  mt: TermID, ClaimTerm
-  clients: ClientID, ClientName, SugarID
-  documents: DocumentID, DocumentPath, DocumentType, FileName, ClientSectorID, DateModified, Comments
-      ClientSector: ClientSectorID, ClientID, SectorID
-          Sector: SectorID, SectorName
-  mc: ConstructID, Construction, DocumentID, MarkmanPage, Agreed (BOOL), Court
-  mtc: TermID, ClaimID, ConstructID, ClientID
-  */
-
-  /*
-  Write Sequence
-  1) -done- Get ClientID: SELECT ClientID, ClientName FROM clients to populate a dropdown
-  If 'Other':
-      1.1) INSERT INTO clients (ClientName, SugarID) VALUES ([clientName], 99)
-      1.2) Get sector from user SELECT * FROM Sector to populate dropdown
-      1.3) SELECT ClientID from clients WHERE ClientName = [clientName] 
-      1.4) INSERT INTO ClientSector (ClientID, SectorID) VALUES ([clientID], [sectorID])
-  2) -done- Get DocumentID: SELECT DocumentID FROM documents WHERE FileName=[fileName] AND DocumentPath=[documentPath]
-  If not found:
-      2.1) TODO: Steps to insert a document
-  3) Get ClaimID: SELECT ClaimID FROM claims INNER JOIN Patents AS patents ON patents:PatentID = claims:PatentID WHERE patents.PatentNumber=[patentNumber] AND claims.claimNumber=[claimNumber]
-  4) -done- select from dropdown for TermID: SELECT * FROM mt WHERE ClaimTerm=[claimTerm]
-      4.1) INSERT INTO mt (ClaimTerm) VALUES ([claimTerm])
-      4.2) SELECT TermID FROM mt WHERE ClaimTerm=[claimTerm]
-  5) -avail- Enter Construction Data: INSERT INTO mc (Construction, DocumentID, MarkmanPage, Agreed, Court) VALUES ([construction], [documentID], [markmanPage], [agreed], [Court])
-  6) -avail- Link term and construction: INSERT INTO mtc (TermID, ClaimID, ConstructID, ClientID) VALUES([termID], [claimID], [constructID], [clientID])
-  */
-
-  /*
-  UI Notes:
-  UI Assumes you're working through a document
-  FilePath+FileName,  Court
-  [ClaimTerm ->
-      [Patent, Claim 
-          [Client -> 
-              [ClaimTerm -> Construction, MarkmanPage, Agreed]
-          ]
-      ]
-  ]
-  a) Select path to file, and a court *Go* (b)
-  b) *Add Claim Term* - Select from dropdown (c) or *New* (mt: INSERT & GET_ID)
-  c) *Add Patent & Claim* - Enter Patent Number, default: last selected, and Claim Number (multiselect or comma separated list ?), default: last selected 
-  d) *Add Client* - Select from dropdown, default: Last selected
-  e) *Add Construction* - Enter Construction, MarkmanPage default:last selected, Agreed: false (mc: INSERT & GET_ID, mtc:INSERT)
-  g) All steps also have 'EDIT' which UPDATES mt (term change) | mc (any other change, including court)
-  h) Any changes to Client, Claim also need to update mtc
-  
-  Dropdowns: ClaimTerm, Clients, Claims, <Sector>
-  FileReader: DocumentPath, FileName
-  Checkbox: Agreed
-  EditBox: Construction
-  TextBox: PatentNumber, ClaimTerm(new) <Clients(new)>
-  */
 })
 
 // Listener for launching new Patent retrieval UI
@@ -413,9 +381,13 @@ ipcMain.on('new_patent_retrieval', (e) => getNewPatentUI());
  * @returns {void}
  */
 const updateRenderWindow = (newData, targetWindow) => {
-  console.log('sending state for patent', newData.PMCRef || newData[0].PatentID);
+  console.log(newData.hasOwnProperty('working') ? `sending data to window ${targetWindow.id}` : `sending message ${newData.working} to ${targetWindow.id}`);
+  // ? 'sending working message to detail window' : 'sending state for patent', newData.PMCRef || newData[0].PatentID);
   targetWindow.webContents.send('state', newData);
   targetWindow.show();
+  if (process.env.DEVTOOLS === 'show') {
+    targetWindow.webContents.openDevTools();
+  }
   return targetWindow;
 }
 
@@ -425,6 +397,7 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
    * @returns {void}
    */
   const getPatentHtml = () => {
+    updateRenderWindow({ working: true }, detailWindow);
     console.log('got call for patent detail view with patent number', patentNumber);
     queryDatabase(connectParams, 'p_PATENT', `WHERE PatentNumber=@0`, [patentNumber], ' FOR JSON AUTO, WITHOUT_ARRAY_WRAPPER', async (err, data) => {
       if (err) {
@@ -436,21 +409,16 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
         const state = JSON.parse(data.reduce((accum, item) => accum.concat(item), ''));
         if (!state.PatentHtml) {
           console.log('no PatentHtml found, querying USPTO for patent Full Text');
+          detailWindow.webContents.send('available_offline', false);
           getFullText(patentNumber)
             .then(PatentHtml => {
               state.PatentHtml = JSON.stringify(PatentHtml);
-              // now store the new data in the DB for future reference
-              queryDatabase(connectParams, 'u_FULLTEXT', '', [state.PatentHtml, state.PatentID], '', (err2, status) => {
-                if (err2) {
-                  console.error(err2);
-                } else {
-                  console.log('record updated with new fullText');
-                  return updateRenderWindow(state, detailWindow);
-                }
-              })
+              return updateRenderWindow(state, detailWindow);
             })
             .catch(err3 => console.error(err3))
         } else {
+          // we found it, so it is already available offline
+          detailWindow.webContents.send('available_offline', true);
           return updateRenderWindow(state, detailWindow);
         }
       }
@@ -465,7 +433,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
       height: 1000,
       x: x + 20,
       y,
-      show: false
+      show: false,
+      webPreferences: { nodeIntegration: true }
     });
     detailWindow.loadURL(`file://${__dirname}/patentdetail.html`);
     detailWindow.on('closed', () => {
@@ -489,6 +458,8 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
 })
 
 ipcMain.on('store_images', (event, imageMap) => {
+  // uses connectParams, imageWindow
+  // imports insertAndGetID
   console.log('writing current image data to DB')
   // destructure the map and turn it into a simple array of ID's and pageData's
   const imageRecords = imageMap.map(([pg, record]) => ({ ImageID: record.imageID, PageData: record.pageData }));
@@ -500,7 +471,24 @@ ipcMain.on('store_images', (event, imageMap) => {
     .catch(err => console.error(err))
 })
 
-ipcMain.on('show_images', (event, PatentID, patentNo) => {
+ipcMain.on('store_fulltext', (event, PatentHtml, PatentID) => {
+  // uses connectParams, detailWindow
+  // imports queryDatabase
+  console.log('writing fullText to DB');
+  // now store the new data in the DB for future reference
+  queryDatabase(connectParams, 'u_FULLTEXT', '', [PatentHtml, PatentID], '', (err, status) => {
+    if (err) {
+      console.error(err);
+    } else {
+      detailWindow.webContents.send('available_offline', true);
+      console.log('record updated with new fullText');
+    }
+  })
+})
+
+ipcMain.on('show_images', (event, PatentID, patentNo, title) => {
+  // uses connectParams, imageWindow
+  // imports queryDatabase, updateRenderWindow, getAllImages, insertAndGetID
 
   const getPatentImages = () => {
     const DEFAULT_ROTATION = 90;
@@ -557,16 +545,23 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
       height: 425,
       y,
       x: x + xSize + 10,
-      show: false
+      show: false,
+      title,
+      webPreferences: { nodeIntegration: true }
     });
     imageWindow.loadURL(`file://${__dirname}/patentfigures.html`);
     imageWindow.on('closed', () => {
       imageWindow = null;
     });
+    imageWindow.on('page-title-updated', (e, title, explicitSet) => {
+      e.preventDefault();
+    })
     imageWindow.on('ready-to-show', () => {
       console.log('window ready, calling getPatentHtml');
       imageWindow.webContents.send('resize', { width: 650, height: 425 });
       getPatentImages();
+      // Open the DevTools.
+      if (process.env.DEVTOOLS === 'show') imageWindow.webContents.openDevTools();
       imageWindow.show();
     })
     imageWindow.on('resize', () => {
@@ -589,18 +584,186 @@ ipcMain.on('show_images', (event, PatentID, patentNo) => {
   }
 })
 
-ipcMain.on('change_window_rotation', e => {
+/** listener to handle when a user clicks on a pdf link
+ * @param {Event} opEvent -> not used
+ * @param {String} linkVal -> Full path to the file
+ * @param {Number} PatentID -> Either a patentID or documentID depending
+ * @param {String} title -> The title for the opened window
+ * @param {String} sourceWindow -> 'markman' or 'patentDetail' depending on who initiated the call
+ * @param {Number} pageNo <Optional> -> The page number to jump to
+ * 
+ * */
+ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, pageNo = 0, isNewWindow) => {
+
+  /** openFile handles the opening of the file
+   * 
+   * @param {String} fileName full path and file name to be loaded
+   * @param {String} mode <optional> 'window' to open in local window, 'shell' to use the default PDF viewer
+   * @returns {Buffer | Boolean} in shell mode, returns true if opened or false if failed, in window mode returns a Buffer of the file contents
+   */
+  const openFile = (fileName, mode = 'window') => {
+    // in shell mode, let the command shell process the file using the default system PDF application
+    if (mode === 'shell') shell.openItem(fileName);
+    // otherwise return a buffer of the file contents for processing with our own file
+    return fse.readFile(fileName);
+  }
+
+  /** getFirstCol returns the page of the first text column in the document based on the page number of the last image
+   * 
+   * @param {Number} PatentID the patent ID for which we will retrieve the PDF data of the images 
+   * @returns {Promise} resolves to the page number of the first page of text
+   */
+  const getFirstCol = PatentID => new Promise((resolve, reject) => {
+    queryDatabase(connectParams, 'p_IMAGES', `WHERE PatentID=@0`, [PatentID], ' FOR JSON AUTO', (err, data) => {
+      if (err) return reject(err);
+      if (!data || data.length === 0) return resolve(1);
+      // if the query returns image data, check for the max image number,
+      const resultList = JSON.parse(data.join(''));
+      const { firstImage, lastImage } = resultList && resultList.reduce((extremes, current) => {
+        let { firstImage, lastImage } = extremes;
+        extremes.firstImage = current.PageNumber < firstImage ? current.PageNumber : firstImage;
+        extremes.lastImage = current.PageNumber > lastImage ? current.PageNumber : lastImage;
+        return extremes;
+      }, { firstImage: 999, lastImage: 0 });
+      return resolve(lastImage + 1);
+    })
+  });
+
+
+  /** openPDF will try to open a pdf file
+   * 
+   * @param {BrowserWindow} browserWin - the window which called for the PDF to be opened
+   * @param {String} fullPath - path to the PDF in the filesystem
+   * @returns {Promise -> {status:String, data:null|Buffer}} resolves to 'found' + data of the file, 'new'+ the data of the file + the pathe of the file, or 'cancelled' + null
+   */
+  const openPDF = (browserWin, fullPath) => new Promise(async (resolve, reject) => {
+    // when called from the main table, just use the shell to open any PDF in the system default application
+    if (sourceWindow === 'markman') return resolve({ status: 'opened', data: await openFile(`${dropboxPath}${fullPath}`, 'shell') });
+    // otherwise it is called from the detail window, so search and update the DB with the PatentPath
+    return fse.pathExists(`${dropboxPath}${fullPath}`).then(async exists => {
+      // return 'found' if found (and fullPath isn't blank), otherwise calling function will update the DB
+      if (exists && fullPath) {
+        return resolve({ status: 'found', data: await openFile(`${dropboxPath}${fullPath}`, PDF_MODE) });
+      }
+      const defaultPath = `${fullPath}`.match(/.+(\\.*?)$/i) ? `${dropboxPath}${fullPath}`.match(/.+(\\.*?)$/i)[0] : dropboxPath;
+      dialog.showOpenDialog(browserWin,
+        {
+          defaultPath,
+          properties: ['openFile']
+        }).then(async result => {
+          if (result.filePaths) {
+            // now create a RegEx to strip out the dropBox path for writing back to the DB
+            // just in case switch all backslashes to slashes before doing so
+            return resolve({ status: 'new', data: await openFile(`${[...result.filePaths]}`, PDF_MODE), path: `${[...result.filePaths]}`.replace(/\\/g, '/').split(dropboxPath)[1] })
+          } else {
+            // user cancelled out of the process, pretend it's fine and don't update
+            return resolve({ status: 'cancelled', data: null });
+          }
+        })
+    })
+      .catch(err => reject(err));
+  });
+
+  console.log(`received link click with path ${linkVal}`);
+  // pass the window that called it, either detailWindow or the main table (win)
+  openPDF(sourceWindow === 'patentDetail' ? detailWindow : win, linkVal)
+    .then(async fileResult => {
+      // fileResult.status is either 'found' if the DB is correct
+      // or a 'new' if a new filePath (not including dropbox) has been set
+      // or 'cancelled' if the user x'd out of it
+      if (fileResult.status === 'new') {
+        console.log(`file selected ${fileResult.path}`);
+        insertAndGetID(connectParams, 'Patent', { PatentPath: fileResult.path, PatentID }, 'PatentID', { skipCheck: ['PatentPath'], updateFields: ['PatentPath'] })
+          .then(status => console.log(status))
+          .catch(err => console.error(err));
+      }
+      // in either 'found' or 'new', open the document to the first column 
+      if (PDF_MODE === 'window' && (fileResult.status === 'found' || fileResult.status === 'new')) {
+        const startPage = pageNo || await getFirstCol(PatentID);
+        if (isNewWindow) {
+          // now create the document window and send the data to it
+          // alt - figure out to use the scrollable patent API to make this work !!
+          if (documentWindow === null) {
+            const [x, y] = detailWindow.getPosition();
+            const [xSize, ySize] = detailWindow.getSize();
+            documentWindow = new BrowserWindow({
+              width: 425,
+              height: 650,
+              y,
+              x: x + xSize + 10,
+              show: false,
+              title,
+              webPreferences: { nodeIntegration: true }
+            });
+            documentWindow.loadURL(`file://${__dirname}/patentfigures.html`);
+            // Open the DevTools.
+            documentWindow.on('page-title-updated', e => e.preventDefault());
+            documentWindow.on('closed', () => {
+              documentWindow = null;
+            });
+            documentWindow.on('ready-to-show', () => {
+              console.log('window ready, sending pdf data', fileResult.data.toString('base64').slice(0, 1000));
+              documentWindow.show();
+              if (process.env.DEVTOOLS === 'show') documentWindow.webContents.openDevTools();
+              documentWindow.webContents.send('resize', { width: 425, height: 650 })
+              //documentWindow.webContents.send('available_offline', true);
+              documentWindow.webContents.send('generic', fileResult.data.toString('base64'), startPage);
+            })
+            documentWindow.on('resize', () => {
+              if (manualResize) {
+                // only send update if manualResize = true
+                clearTimeout(timer);
+                timer = setTimeout(() => {
+                  console.log('document Window size changed, sending new size');
+                  const [width, height] = documentWindow.getContentSize();
+                  documentWindow.webContents.send('resize', { width, height })
+                }, 500);
+              } else {
+                // reset to listen for mouse events
+                manualResize = true;
+              }
+            });
+          } else {
+            // send new data to existing window
+            documentWindow.webContents.send('available_offline', true);
+            documentWindow.webContents.send('generic', fileResult.data.toString('base64'));
+          }
+        }
+        if (fileResult.status === 'opened') {
+          // it's been opened by shell
+          if (!fileResult.data) throw new Error('system failed to open PDF file');
+        }
+        //fileResult.status==='cancelled' -- no action needed
+        if (!isNewWindow) {
+          //Patent Detail is calling, and it needs a generic send
+          if (detailWindow) detailWindow.webContents.send('generic', fileResult.data.toString('base64'));
+        }
+      }
+    })
+    .catch(err => console.error(err));
+});
+
+ipcMain.on('change_window_rotation', (e, isImageWindow) => {
+  const targetWindow = isImageWindow ? imageWindow : documentWindow;
   // reset the window size to keep the image size constant
-  const [height, width] = imageWindow.getContentSize();
-  imageWindow.setContentSize(width, height);
-  imageWindow.webContents.send('resize', { width, height });
+  const [height, width] = targetWindow.getContentSize();
+  targetWindow.setContentSize(width, height);
+  // now report back to the window it's new dimensions
+  targetWindow.webContents.send('resize', { width, height });
 })
 
-ipcMain.on('request_resize', (e, width, height) => {
+ipcMain.on('request_resize', (e, width, height, windowName) => {
+  const windowLookup = {
+    patentDetail: detailWindow,
+    pdfWindow: documentWindow,
+    imageWindow: imageWindow
+  }
+  // target window has requested a new size, so set it up
+  const targetWindow = windowLookup[windowName];
   manualResize = false;
   const newWidth = Math.round(width) + 1;
   const newHeight = Math.round(height) + 1;
-  imageWindow.setContentSize(newWidth, newHeight);
+  targetWindow.setContentSize(newWidth, newHeight);
 })
 
 ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
@@ -612,26 +775,26 @@ ipcMain.on('rotate_image', (opEvent, newRot, imageID) => {
   // no need to re-query since the component updates its local copy also
 })
 
-// listener to handle when a user clicks on a patent link
-ipcMain.on('open_patent', (opEvent, linkVal, pageNo = 1) => {
-  console.log(`received link click with path ${linkVal}`);
-  openPDF(linkVal, pageNo);
-});
-
 // Listener for manual closing of the patent window via X button
 ipcMain.on('close_patent_window', event => {
   detailWindow.close();
 })
 
 // Listener for launching the Markman Linking applications
-ipcMain.on('add_claimconstructions', () => {
+ipcMain.on('add_claimconstructions', async () => {
   // open new window for applications
   markmanwin = new BrowserWindow({
     width: 1440,
     height: 800,
+    options: {
+      visible: false
+    },
+    webPreferences: { nodeIntegration: true }
   });
   // and load the index.html of the app.
   markmanwin.loadURL(`file://${__dirname}/markman.html`);
+  // Open the DevTools.
+  if (process.env.DEVTOOLS === 'show') markmanwin.webContents.openDevTools();
   // Emitted when the window is closed.
   markmanwin.on('closed', () => {
     // Dereference the window object, usually you would store windows
@@ -639,24 +802,88 @@ ipcMain.on('add_claimconstructions', () => {
     // when you should delete the corresponding element.
     markmanwin = null;
   });
-  // when the user enters a potential application
-  // Load a list of patents, claims, claimID into patentsArray
-  // Load list of claim terms & TermID into termsArray
-  // Load list of constructions and ConstructID into constructArray
-  // when user selects a claim terms
-  // load past constructions & Patents, Claims and display on screen
-  // ... user selects a patent / claim
-  // ... user selects a constructions
-  // enable 'update' button
-  // when user selects 'update'
-  // check to see if patent/claim is selected and construction is connected
-  // update mtc table with TermID, ClaimID, ConstructID
-  // clear values
-  // disable 'update' button
-  // when user selects 'close window'
-  // confirm if update not applied
-  // close window
 });
+
+ipcMain.on('markman_ready', async event => {
+  const { claimTerms, clients, sectors, patents } = await initializeMarkman(connectParams);
+  markmanwin.webContents.send('init_complete', [...claimTerms], [...clients], [...patents]);
+  markmanwin.show();
+})
+
+ipcMain.on('get_claims', async (e, patentID) => {
+  const claims = await getClaims(connectParams, patentID);
+  markmanwin.webContents.send('got_claims', [...claims]);
+})
+
+ipcMain.on('get_file', async (e, client, ClientID) => {
+  const { document, documentID } = await linkDocument(connectParams, dropboxPath, client, ClientID);
+  markmanwin.webContents.send('got_file', document, documentID);
+})
+
+ipcMain.on('get_constructions', async (e, query) => {
+  //query has the form {<ClientID>, <TermID>, <ClaimID>, <DocumentID>}
+  //First get MarkmanTermConstruction matching any given ID coming in
+  const mtcList = await getTermConstructions(connectParams, query);
+  //send those off because we have them
+  markmanwin.webContents.send('got_termconstructions', [...mtcList]);
+  //now just load all of the constructions we have in the DB
+  const constructionList = await getConstructions(connectParams, query.DocumentID ? query : {});
+  markmanwin.webContents.send('got_constructions', [...constructionList]);
+});
+
+ipcMain.on('markman_write', async (e, list, record) => {
+
+  // map a term to a term table query
+  const termRecord = { ClaimTerm: record.term }
+  // if no TermID is sent, it is a new term. So write and store the termID
+  const TermID = record.termID || (await addMarkman(connectParams, 'term', termRecord)).TermID;
+
+  // map a construction to a construction table query
+  const constructionRecord = {
+    DocumentID: record.documentID,
+    Construction: record.construction,
+    MarkmanPage: record.page,
+    Agreed: record.agreed,
+    Court: record.court
+  }
+  // if no ConstructID is sent, it is a new construction, so write & store the constructID
+  const ConstructID = record.constructionID || (await addMarkman(connectParams, 'construction', constructionRecord)).ConstructID;
+
+  // map the term, construction, and client to the claim
+  const linkRecord = list.map(([key, value]) => {
+    const returnRecord = {
+      TermID,
+      ConstructID,
+      ClaimID: value.ClaimID,
+      ClientID: value.ClientID
+    }
+    // if it contains a termConstructID it is an existing link record, so add it
+    if (Object.keys(value).includes('termConstructID')) {
+      returnRecord.TermConstructID = value.termConstructID;
+    }
+    return returnRecord;
+  })
+
+  // now write the new links and collect the constructionID's for resending
+  const TermConstructIDList = await Promise.all(linkRecord.map(entry => {
+    // if the record has a TermConstructID then just modify the record and return the TermConstructID
+    if (entry.TermConstructID) {
+      return modifyMarkman(connectParams, {
+        ...entry,
+        ...constructionRecord,
+        ...termRecord
+      })
+    }
+    // if not then add the record using 'link' mode
+    return addMarkman(connectParams, 'link', { ...entry })
+  }));
+
+  // finally, send the new termConstructionIDs back to the renderer in place
+  markmanwin.webContents.send('write_complete', TermConstructIDList.map((newID, index) => {
+    list[index][1].TermConstructID = parseInt(newID.TermConstructionID, 10);
+    return list[index];
+  }))
+})
 
 // Listener for changing to the other Databases
 ipcMain.on('change_db', event => {
@@ -667,8 +894,15 @@ ipcMain.on('change_db', event => {
 })
 
 // Listener for a call to update PotentialApplication or WatchItems
-ipcMain.on('json_update', async (event, oldItem, newItem) => {
-  // items have structure patentNumber, index, claimID, field, value
+ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
+  // items have structure patentNumber, index, claimID, field, value in claims mode
+  // or recordID, field, value in priorArt mode
+
+  const modeSettings = {
+    claims: { data: 'u_UPDATE', index: 'ClaimID', table: 'Claim', idField: 'ClaimID', options: { skipCheck: [newItem.field], updateFields: [newItem.field] } },
+    priorArt: { data: 'u_UPDATE_SUMMARY', index: 'PatentID', table: 'PatentSummary', idField: 'PatentSummaryID', options: { skipCheck: ['DateModified'], updateFields: ['PatentSummaryText', 'DateModified'] } }
+  }
+
   let changeLog = { changes: [] };
   try {
     changeLog = await fse.readJSON('./changeLog.json');
@@ -676,30 +910,59 @@ ipcMain.on('json_update', async (event, oldItem, newItem) => {
     console.error('changeLog not found, creating new file');
   }
   changeLog.changes.push({ datetime: Date.now(), from: oldItem.value, to: newItem.value });
+  // need to supply AuthorID = 2 (Bill), DateModified, PatentID
   fse.writeJSON('./changeLog.json', changeLog, 'utf8')
-    .then(() => queryDatabase(connectParams, 'u_UPDATE', ` ${newItem.field}=@0 WHERE ClaimID=@1`, [newItem.value, parseInt(newItem.claimID, 10)], '', (err2, result) => {
-      if (err2) {
-        console.error(dialog.showErrorBox('Query Error', `Error with update query ${err2}`));
-      } else {
-        console.log('%s %s', newItem.field, result);
+    .then(() => {
+      const record = {
+        [modeSettings[mode].index]: parseInt(newItem.recordID, 10),
+        [newItem.field]: newItem.value
+      };
+
+      if (mode === 'priorArt') {
+        record.AuthorID = 2; // Bill, for now
+        record.DateModified = new Date();
       }
-    }))
+
+      insertAndGetID(connectParams, modeSettings[mode].table, record, modeSettings[mode].idField, modeSettings[mode].options)
+        .then(newID => console.log(`${newID.type} ${newItem.field} with ID ${newID[modeSettings[mode].idField]}`))
+        .catch(inserterr => dialog.showErrorBox('Query Error', `Error inserting patent summary ${inserterr}`))
+    })
     .catch(err => console.error(err));
 })
 
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
 
-  const runQuery = newOffset => {
-    queryDatabase(connectParams, mode === 'claims' ? 'p_SELECTJSON' : 'm_MARKMANALL', `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
-      if (err) {
-        console.error(err);
-      } else {
-        // send the result after parsing properly 
-        win.webContents.send('json_result', parseOutput(mode, result, uriMode), totalCount, newOffset, appendMode);
-      }
-    })
+  let totalCount = 0;
 
+  const queryMode = {
+    simple: { data: 'p_SELECTJSON', count: 'p_COUNT' },
+    claims: { data: 'p_SELECTJSON', count: 'p_COUNT' },
+    markman: { data: 'm_MARKMANALL', count: 'm_COUNT' },
+    priorArt: { data: 'p_PATENTJSON', count: 'p_PATENT_COUNT' }
+  }
+
+  const runQuery = (newOffset, callback) => {
+    queryDatabase(connectParams, queryMode[mode].data, `WHERE ${parsedQuery.where}`, parsedQuery.param, `${parseOrder(orderBy, offset, ROWS_TO_RETURN)} FOR JSON AUTO`, (err, result) => {
+      if (err) {
+        //console.error(err);
+        return callback(err);
+      } else {
+        // send the result after parsing properly. Also return it for saving if desired
+        const currentResult = parseOutput(mode, result, uriMode);
+        win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode);
+        if (mode === 'claims' && Array.isArray(currentResult) && currentResult.length > 0) {
+          // write a temporary file for Excel export, but not for Markman table
+          // strip out xml tags for Excel-friendly output
+          const cleanResult = currentResult.map(entry => {
+            const ClaimHtml = entry.ClaimHtml.replace(/<.*?>/g, '').replace(/ +/g, ' ').replace(/ \n /g, '');
+            return { ...entry, ClaimHtml };
+          });
+          return callback(null, cleanResult);
+        }
+        return callback(null, currentResult);
+      }
+    });
   }
 
   //remove duplicates and create an array of ({field, value}) objects
@@ -709,20 +972,33 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
   if (uriMode && fieldList.ClaimHtml) {
     fieldList.ClaimHtml = encodeURIComponent(fieldList.ClaimHtml).replace(/\'/g, '%27').replace('%', '[%]');
   }
-  //in the case where a blank query is passed, default query is only show claim 1
-  const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: 'claims.ClaimNumber LIKE @0', param: ['%'] };
+  //in the case where a blank query is passed, default query is show everything
+  const genericField = mode === 'priorArt' ? 'patents.PatentNumber' : 'claims.ClaimNumber';
+  const parsedQuery = fieldList.length > 0 ? parseQuery(fieldList) : { where: `${genericField} LIKE @0`, param: ['%'] };
   if (!appendMode) {
-    queryDatabase(connectParams, mode === 'claims' ? 'p_COUNT' : 'm_COUNT', `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
+    queryDatabase(connectParams, queryMode[mode].count, `WHERE ${parsedQuery.where}`, parsedQuery.param, '', (err, count) => {
       if (err) {
         console.error(err)
       } else {
         totalCount = count[0][0];
         console.log(totalCount);
-        runQuery(ROWS_TO_RETURN);
+        runQuery(ROWS_TO_RETURN, (err, result) => {
+          if (err) {
+            console.error(err)
+          } else {
+            if (mode !== 'markman' && process.env.DEVTOOLS === 'show') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+          }
+        });
       }
     })
   } else {
     // append mode, figure out the next offset
-    runQuery(offset + ROWS_TO_RETURN <= totalCount ? offset + ROWS_TO_RETURN : offset);
+    runQuery(offset + ROWS_TO_RETURN <= totalCount ? offset + ROWS_TO_RETURN : offset, (err, result) => {
+      if (err) {
+        console.error(err)
+      } else {
+        if (mode !== 'markman' && process.env.DEVTOOLS === 'show') fse.writeJSON(`${__dirname}${localSave}`, result).then(() => console.log(`table written to ${__dirname}${localSave}`)).catch(err => console.error(err));
+      }
+    });
   }
 });

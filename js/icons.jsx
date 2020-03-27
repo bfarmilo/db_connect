@@ -39,7 +39,7 @@ const Icon = ({ name, width, height, style, handleClick }) => {
 
     ]);
     return (
-        <div onClick={handleClick} style={iconStyle}>
+        <div onClick={handleClick}>
             <svg 
             width={width} 
             height={height} 

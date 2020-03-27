@@ -13,14 +13,22 @@ const patentNumberCell = (patentNumber, style, clickHandler) => {
         }
     };
 
+    const formattedNumber = () => {
+        // Reissue
+        if (patentNumber.toString().includes('RE')) return patentNumber.replace(/(RE)(\d{2})(\d{3})/, '$1 $2,$3');
+        // 7 or 8 digit patent number
+        if (patentNumber < 19999999) return patentNumber.toString().replace(/(\d{1,2})(\d{3})(\d{3})/i, '$1,$2,$3');
+        // application 
+        if (patentNumber > 19999999) return patentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2');
+        // document reference number
+        return 'Open File';
+    }
     return (<div
         style={styles.patentNumber}
         onClick={clickHandler}
     >
         <div style={{ paddingRight: '7px' }}>
-            {patentNumber < 19999999 ?
-                patentNumber.toString().replace(/(\d{1,2})(\d{3})(\d{3})/i, '$1,$2,$3') :
-                patentNumber.toString().replace(/(\d{4})(\d{7})/i, '$1-$2')}
+            {formattedNumber()}
         </div>
         <Icon name='jumpFile' width='1em' height='1em' style={styles.Icon} />
     </div>)
@@ -41,6 +49,10 @@ const TableArea = props => {
     const styles = {
         ClaimDiv: {
             padding: '0 5px 0 5px'
+        },
+        Cancelled: {
+            textDecoration: 'line-through',
+            color: 'grey'
         },
         TableRow: {
             display: 'grid',
@@ -86,20 +98,20 @@ const TableArea = props => {
                     <div style={styles.HideTitle}>
                         <div
                             style={{ cursor: 'pointer' }}
-                            onMouseOver={e => props.showInventor(e, `${claimID}`)}
+                        //onMouseOver={e => props.showInventor(e, `${claimID}`)}
                         >{item.PMCRef}</div>
                         {patentNumberCell(item.PatentNumber, styles, e => props.getDetail(e, `${item.PatentNumber}`))}
                         <div>
                             <details open={props.expandAll}>
                                 <summary style={item.IsIndependentClaim ? styles.IndependentClaim : styles.DependentClaim}>Claim {item.ClaimNumber}</summary>
-                                <div style={styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />
+                                <div style={item.ClaimStatusID === 2 ? styles.Cancelled : styles.ClaimDiv} dangerouslySetInnerHTML={{ __html: `${item.ClaimHtml}` }} />
                             </details>
                         </div>
                     </div>
                 ) : (
                         <div
                             onClick={(e) => props.getDetail(e, `${item.PatentNumber}`)}
-                            onMouseLeave={e => props.showInventor(e, '')}
+                            //onMouseLeave={e => props.showInventor(e, '')}
                             style={styles.Summary}
                         >{!!props.modalContent.inventor ? `${props.modalContent.inventor}: ` : ''}{props.modalContent.title}
                         </div>
@@ -113,6 +125,7 @@ const TableArea = props => {
                         <EditCell
                             editMode={props.activeRows.has(`${claimID}-${field}`)}
                             value={record}
+                            compactView={false}
                             editContent={(e) => props.editContent(e, claimID, field)}
                             clickSaveCancel={(e, action) => props.clickSaveCancel(e, claimID, field, action)}
                             activateEditMode={(e) => props.editMode(e, claimID, field)}
@@ -124,7 +137,7 @@ const TableArea = props => {
                 )}
             </div>)
         )
-    } else {
+    } else if (props.displayMode === 'markman') {
         //markman
         // make use of Court and Agreed.
         tableLayout = [...props.resultList].map(([ID, item]) => (
@@ -133,7 +146,7 @@ const TableArea = props => {
                     if (column.field === 'FileName') {
                         return <div
                             style={styles.FileName}
-                            onClick={e => props.openFile(e, item.DocumentPath, item.MarkmanPage)}>
+                            onClick={e => props.openFile(e, item.DocumentPath, item.DocumentID, item.FileName, props.displayMode, item.MarkmanPage)}>
                             <Icon name='jumpFile' width='1em' height='2em' style={styles.Icon} />
                             <div style={{ paddingLeft: '7px' }}>{item[column.field]}</div>
                         </div>
@@ -147,15 +160,46 @@ const TableArea = props => {
             </div>
         )
         )
+    } else {
+        //prior art or target (not our) patent
+        //so don't need claims, and instead just insert inventor and title into that box
+        tableLayout = [...props.resultList].map(([patentID, item]) => {
+            //future -- just customize the query to return these two fields
+            return (
+                <div key={patentID} style={styles.TableRow}>
+                    <div>{item.PMCRef}</div>
+                    {patentNumberCell(item.PatentNumber, styles, e => props.getDetail(e, `${item.PatentNumber}`))}
+                    <div>{item.InventorLastName}</div>
+                    <div>{item.Title}</div>
+                    {["PatentSummaryText", "WatchItems"].map(field => {
+                        // lookup the record contents and row height from activeRows, or set defaults
+                        const { record, height } = props.activeRows.has(`${patentID}-${field}`)
+                            ? props.activeRows.get(`${patentID}-${field}`)
+                            : { record: item[field], height: 100 };
+                        return (
+                            <EditCell
+                                editMode={props.activeRows.has(`${patentID}-${field}`)}
+                                compactView={props.compactView}
+                                value={record}
+                                editContent={(e) => props.editContent(e, patentID, field)}
+                                clickSaveCancel={(e, action) => props.clickSaveCancel(e, patentID, field, action)}
+                                activateEditMode={(e) => props.editMode(e, patentID, field)}
+                                themeColor={props.config.themeColor}
+                                selectedColor={props.config.selectedColor}
+                                boxHeight={height}
+                            />)
+                    })}
+                </div>
+            )
+        });
     }
-
     return (
         <div class='TableArea'>
             <Throbber windowHeight={props.windowHeight} themeColor={props.config.themeColor} visible={props.working} />
             {tableLayout}
         </div>
     );
-};
+}
 
 module.exports = {
     TableArea

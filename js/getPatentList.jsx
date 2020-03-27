@@ -55,7 +55,10 @@ class GetPatentList extends Component {
             downloadPats: true,
             updateStatus: new Map(),
             startIdx: 1,
-            filterOptions: 'claim1'
+            filterOptions: 'claim1',
+            claimPlainText: [],
+            docTitle: '',
+            docAuthor: ''
         }
         this.resetStatus = {
             isRequested: false,
@@ -70,21 +73,23 @@ class GetPatentList extends Component {
             ['scraped', 'isScraped'],
             ['downloaded', 'isDownloaded'],
             ['patent inserted', 'isPatentInserted'],
-            ['claim inserted', 'isClaimInserted'],
+            ['claims inserted', 'isClaimInserted'],
             ['error', 'isError']
         ])
         this.handleInput = this.handleInput.bind(this);
         this.handlePatentButton = this.handlePatentButton.bind(this);
         this.handleFolderSelect = this.handleFolderSelect.bind(this);
         this.handleFilterOptions = this.handleFilterOptions.bind(this);
+        this.handleAddClaimsOnly = this.handleAddClaimsOnly.bind(this);
     }
 
     componentWillMount() {
         ipcRenderer.on('new_folder', (e, storagePath) => {
+            console.log('received new folder path %s from main', storagePath);
             this.setState({ storagePath });
         })
         ipcRenderer.on('new_patents_ready', (e, [patent, statusMessage]) => {
-            const patentNumber = parseInt(patent, 10);
+            const patentNumber = parseInt(patent, 10) || parseInt(patent.slice(2), 10); //some patents might be RExxxxx
             console.log('received update for patent %s, with value %s', `${patentNumber}`, statusMessage)
             const updateStatus = new Map(this.state.updateStatus);
             const newStatus = { ...updateStatus.get(patentNumber) };
@@ -104,9 +109,10 @@ class GetPatentList extends Component {
         console.log('received change to %s, setting new value %s', inputType, newValue);
         switch (inputType) {
             case 'patentList':
-                // strip out 'US', commas, slashes and spaces, filter out things <7 digits long, convert to an array of strings by splitting on \n
+                // strip out 'US', commas, slashes and spaces, filter out things <7 digits long unless they start with RE, convert to an array of strings by splitting on \n
+                // allowed patterns: 7+ digits long, RE followed by 5+ digits
                 // format as {patentNumber:Ref}
-                const patentList = newValue.replace(/(US|,|\/| )/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}/));
+                const patentList = newValue.replace(/(US|,|\/| )/g, '').split(/\n/g).sort().filter(item => item.match(/\d{7}|(R|r)(E|e)\d{5}/));
                 this.setState({ patentList });
                 break;
             case 'downloadPats':
@@ -116,7 +122,7 @@ class GetPatentList extends Component {
                 this.setState({ startIdx: parseInt(newValue, 10) });
                 break;
             default:
-                // 'reference', 'storagePath'
+                // 'reference', 'storagePath', 'docTitle', 'docAuthor'
                 this.setState({ [inputType]: newValue });
         }
     }
@@ -132,7 +138,25 @@ class GetPatentList extends Component {
         ipcRenderer.send('browse', this.state.storagePath);
     }
 
+    handleAddClaimsOnly(text, status) {
+        // claimText.text is the plain text of the claim
+        // claimText.status is an integer indicating the status of the claim
+        // concatenate this with the existing state to add to the array
+        this.setState({ claimText: this.state.claimText.concat({ text, status }) });
+    }
+
     handlePatentButton(event) {
+
+        // helper function to create a hash(unique number signature) based on an input string
+        const hashify = str => {
+            let hash = 5381;
+
+            for (let i = 0; i < str.length; i++) {
+                hash = (hash * 33) ^ str.charCodeAt(i);
+            }
+            return (hash >>> 0).toString(16).padStart(8, '0').toUpperCase();
+        }
+
         if (this.state.patentList.length > 0) {
             console.log('sending data to Main:', this.state.patentList, this.state.reference, this.state.storagePath, this.state.downloadPats, this.state.filterOptions, this.state.startIdx);
             ipcRenderer.send(
@@ -142,7 +166,8 @@ class GetPatentList extends Component {
                 this.state.storagePath,
                 this.state.downloadPats,
                 this.state.filterOptions,
-                this.state.startIdx
+                this.state.startIdx,
+                this.state.claimText
             );
             // add list of patents to status, setting 'isRequested' to true
             const updateStatus = new Map(this.state.patentList.map(patent => ([parseInt(patent, 10), { ...this.resetStatus, isRequested: true }])));
@@ -150,14 +175,42 @@ class GetPatentList extends Component {
 
             // update status and clear patentList box
             this.setState({ updateStatus, patentList: [] });
+        } else if (this.state.docTitle && this.state.docAuthor) {
+            const docNumber = hashify(`${this.state.docTitle}${this.state.docAuthor}`);
+            console.log('sending manual entered data to Main:', this.state.docTitle, this.state.docAuthor);
+            ipcRenderer.send('get_new_patents', [], '', '', false, 'claim1', '', [],
+                {
+                    PMCRef: `${this.state.reference} ${this.state.startIdx}`,
+                    PatentNumber: `D-${docNumber}`,
+                    PatentUri: `DOC.${docNumber}.A1`,
+                    Number: `${docNumber}`,
+                    Title: this.state.docTitle,
+                    InventorLastName: this.state.docAuthor,
+                    PatentHtml: '["Open PDF to view source document"]',
+                    PatentPath: '',
+                    Claims: [
+                        { ClaimNumber: 1, ClaimHTML: '', IsMethodClaim: false, IsDocumented: false, IsIndependentClaim: true, PatentID: 0 }
+                    ],
+                    ClaimsCount: 1,
+                    IndependentClaimsCount: 1,
+                    IsInIPR: false,
+                    TechnologySpaceID: 1,
+                    TechnologySubSpaceID: 1,
+                    CoreSubjectMatterID: 1,
+                    downloadLink: ''
+                }
+            );
         }
     }
+    // TODO: Add visible/invisible box for claim plain text entry. Claims should be separated by newlines only !
+    // TODO: Form for manually entering (not-patent) reference. Need the following fields: Title, Author, Ref, Index
 
     render({ }, { }) {
+        const disablePatentList = !!(this.state.docTitle || this.state.docAuthor);
         return (
             <div style={this.styles.getPatentList}>
                 <div style={this.styles.textArea}>
-                    <textarea style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'patentList')} rows='5' value={this.state.patentList.join('\n')} placeholder='Enter List of Patents' />
+                    <textarea disabled={disablePatentList} style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'patentList')} rows='5' value={this.state.patentList.join('\n')} placeholder={disablePatentList ? 'Clear Title and Author to Enable' : 'Enter List of Patents'} />
                 </div>
                 <div style={this.styles.otherControls}>
                     <div style={{ display: 'flex' }}>
@@ -173,7 +226,7 @@ class GetPatentList extends Component {
                         <input id='storagePath' type='text' style={this.styles.inputStyle} onClick={this.handleFolderSelect} value={this.state.storagePath} />
                     </div>
                     <div style={{ display: 'flex' }}>
-                        <input style={this.styles.checkBoxStyle} type='checkbox' checked={this.state.downloadPats} id='downloadPats' onClick={e => this.handleInput(e, 'downloadPats')} />
+                        <input style={this.styles.checkBoxStyle} type='checkbox' checked={disablePatentList ? false : this.state.downloadPats} id='downloadPats' onClick={e => this.handleInput(e, 'downloadPats')} />
                         <label style={this.styles.labelStyle} htmlFor='downloadPats'>Download Patents</label>
                     </div>
                     <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gridTemplateRows: '1fr 1fr 1fr', fontFamily: 'Arial', fontSize: 'smaller' }}>
@@ -184,7 +237,19 @@ class GetPatentList extends Component {
                             </div>
                         ))}
                     </div>
+                    <div style={{ display: 'flex' }}>
+                        <label style={this.styles.labelStyle} htmlFor='title'>Title: </ label>
+                        <input id='title' type='text' style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'docTitle')} value={this.state.docTitle} />
+                    </div>
+                    <div style={{ display: 'flex' }}>
+                        <label style={this.styles.labelStyle} htmlFor='author'>Author: </ label>
+                        <input id='author' type='text' style={this.styles.inputStyle} onChange={e => this.handleInput(e, 'docAuthor')} value={this.state.docAuthor} />
+                    </div>
                 </div>
+                {/*TODO: Add Switchable block here which gives the manual claim interface
+                Need to specify single patent, and for each claim a Claim Status
+                Ideally would get the dropdown list of available statuses from the database
+                Make sure the event handler gets passed (text {Sting}, status{Number}) */}
                 <div style={this.styles.goArea}>
                     <button style={this.styles.buttonStyle} onClick={this.handlePatentButton}>Get Patents</button>
                 </div>

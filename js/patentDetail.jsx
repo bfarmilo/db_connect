@@ -2,7 +2,13 @@ import { ipcRenderer } from 'electron';
 import { h, render, Component } from 'preact';
 import { EditCell } from './jsx/editCell';
 import { Icon } from './jsx/icons';
+import { Throbber } from './jsx/Throbber';
+import { PatentImage } from './jsx/PatentImageView';
+
 /** @jsx h */
+
+const DEFAULT_PAGE_NO = 0;
+const NEW_WINDOW = true;
 
 class PatentDetail extends Component {
 
@@ -29,8 +35,13 @@ class PatentDetail extends Component {
             patentImages: new Map(),
             currentScroll: 0,
             currentImage: 0,
-            windowSize: { width: 0, height: 0 }
+            enableOffline: false,
+            windowSize: { width: 800, height: 1000 },
+            working: true,
+            showPDF: false,
+            enableImageButton: true
         };
+        this.deferredHeight = 0;
         this.openClickHandler = this.openClickHandler.bind(this);
         this.goBackClickHandler = this.goBackClickHandler.bind(this);
         this.editContent = this.editContent.bind(this);
@@ -39,33 +50,66 @@ class PatentDetail extends Component {
         this.changeSearchTerm = this.changeSearchTerm.bind(this);
         this.addNewRef = this.addNewRef.bind(this);
         this.scrollToNext = this.scrollToNext.bind(this);
+        this.makeOffline = this.makeOffline.bind(this);
     }
 
     componentDidMount() {
         ipcRenderer.on('state', (event, data) => {
             console.log('received data', data);
             // console.log('summaries', JSON.stringify(data.summaries));
-            const { summaries, ...result } = { ...data.summaries, ...data };
-            const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
-            // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
-            this.setState({
-                result,
-                patentSummaries,
-                highlightList: new Map(),
-                searchTerm: '',
-                currentScroll: 0,
-                scrollNavigation: new Map(),
-            });
+            if (data.working) {
+                this.setState({ working: data.working })
+            } else {
+                const noFullText = data.PatentHtml && data.PatentHtml.length < 100;
+                const { summaries, ...result } = { ...data.summaries, ...data };
+                const patentSummaries = Object.keys(summaries[0]).length === 0 ? new Map() : new Map(summaries.map(summary => [summary.PatentSummaryID, summary]))
+                // console.log('summary in Map form:', patentSummaries, patentSummaries.size);
+                this.setState({
+                    result,
+                    patentSummaries,
+                    highlightList: new Map(),
+                    searchTerm: '',
+                    currentScroll: 0,
+                    scrollNavigation: new Map(),
+                    working: false,
+                    showPDF: noFullText
+                }, () => ipcRenderer.send('request_resize', this.state.windowSize.width, (this.state.windowSize.height + this.headerDiv.offsetHeight + 40) * 1.1, 'patentDetail'));
+                if (noFullText) {
+                    console.log('no full text found, requesting PDF data')
+                    ipcRenderer.send('open_patent', result.PatentPath, result.PatentID, `${result.PatentNumber} (${result.InventorLastName})`, 'patentDetail', DEFAULT_PAGE_NO, !NEW_WINDOW);
+                };
+            }
         });
         ipcRenderer.on('resize', (event, { width, height }) => {
             console.log(`got new window size width:${width} height:${height}`);
-            this.setState({ windowSize: { width, height } })
-        })
+            if (this.headerDiv && this.textDiv) {
+                // both divs have 10 margin and 10 padding, and 20 for the menu
+                const newHeight = height - this.headerDiv.offsetHeight - 40 - height / 10;
+                console.log(`window height: ${height}, header height ${this.headerDiv.offsetHeight}, setting textDiv to ${newHeight}`)
+                this.textDiv.style.height = `${newHeight}px`;
+                if (this.state.busy) {
+                    this.deferredHeight = newHeight;
+                } else {
+                    this.setState({ windowSize: { width, height: newHeight } })
+                }
+            }
+        });
+        ipcRenderer.on('available_offline', (event, isOffline) => {
+            console.log(`fullText is ${isOffline ? '' : 'not'} available offline`);
+            this.setState({ enableOffline: isOffline });
+        });
+        ipcRenderer.on('generic', (event, data, currentImage) => {
+            // handler for generic PDF data, where num pages not known
+            console.log(`received local PDF file data`);
+            const patentImages = data && new Map([[currentImage, { imageID: 1, pageData: data, rotation: 0 }]]);
+            this.setState({ enableImageButton: false, patentImages, currentImage, showPDF: true });
+        });
     }
+
 
     openClickHandler(event) {
         console.log('opening patent', this.state.result.PatentPath);
-        ipcRenderer.send('open_patent', this.state.result.PatentPath);
+        ipcRenderer.send('open_patent', this.state.result.PatentPath, this.state.result.PatentID, `${this.state.result.PatentNumber} (${this.state.result.InventorLastName})`, 'patentDetail', DEFAULT_PAGE_NO, NEW_WINDOW);
     }
 
     goBackClickHandler(event) {
@@ -110,40 +154,50 @@ class PatentDetail extends Component {
         }
         // finished updating, inserting, or cancelled, so clear out activeSummary
         activeSummary.delete(summaryID);
-        // note, could update patentSummaries here and refresh page
+        // note, TODO  update patentSummaries here and refresh page
         this.setState({ activeSummary }, () => ipcRenderer.send('view_patentdetail', this.state.result.PatentNumber));
     }
 
     //TODO: Highlight the word in the paragraph
     changeSearchTerm(event) {
-        const searchTerm = new RegExp(event.target.value, 'i');
-        // paraList stores an array of paragraph indexes where the regex is found
-        const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
-        // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
-        console.log(paraList);
-        const highlightList = new Map([...paraList.map(index => [index, {}])]);
-        console.log('searching for', searchTerm);
-        if (highlightList.size > 0) {
-            console.log('set initial highlightList', highlightList);
-            // hack so the first click of 'down' goes to the first instance
-            const currentScroll = paraList[paraList.length - 1];
-            const scrollNavigation = new Map([...paraList.map((val, idx) => {
-                const nav = {
-                    next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
-                    prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
-                };
-                return [val, nav]
-            })]);
-            console.log('set navigation', scrollNavigation)
-            console.log('set currentScroll', currentScroll)
-            this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+        if (event.target.value.length > 1) {
+            const searchTerm = new RegExp(event.target.value, 'i');
+            // paraList stores an array of paragraph indexes where the regex is found
+            const paraList = JSON.parse(this.state.result.PatentHtml).map((para, index) => searchTerm.test(para) ? index : 'none').filter(val => val !== 'none');
+            // convert this to a blank highlightList map. start by setting all values to {}, they will be set during render
+            // IDEA -- replace all instances of searchTerm with **$1**
+            console.log(paraList);
+            const highlightList = new Map([...paraList.map(index => [index, {}])]);
+            console.log('searching for', searchTerm);
+            if (highlightList.size > 0) {
+                console.log('set initial highlightList', highlightList);
+                // hack so the first click of 'down' goes to the first instance
+                const currentScroll = paraList[paraList.length - 1];
+                const scrollNavigation = new Map([...paraList.map((val, idx) => {
+                    const nav = {
+                        next: idx !== paraList.length - 1 ? paraList[idx + 1] : paraList[0],
+                        prev: idx !== 0 ? paraList[idx - 1] : paraList[paraList.length - 1]
+                    };
+                    return [val, nav]
+                })]);
+                console.log('set navigation', scrollNavigation)
+                console.log('set currentScroll', currentScroll)
+                this.setState({ searchTerm: event.currentTarget.value, highlightList, scrollNavigation, currentScroll });
+            } else {
+                // not found, so reset everything
+                this.setState({
+                    searchTerm: event.currentTarget.value,
+                    highlightList: new Map(),
+                    scrollNavigation: new Map(),
+                    currentScroll: 0
+                })
+            }
         } else {
-            // not found, so reset everything
+            // search field is blank or 1 character long, so clear all highlights
             this.setState({
-                searchTerm: event.currentTarget.value,
+                searchTerm: '',
                 highlightList: new Map(),
-                scrollNavigation: new Map(),
-                currentScroll: 0
+                scrollNavigation: new Map()
             })
         }
     }
@@ -176,36 +230,79 @@ class PatentDetail extends Component {
 
     showImages = e => {
         console.log('got request to show images for patent ID', this.state.result.PatentID);
-        ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber);
+        ipcRenderer.send('show_images', this.state.result.PatentID, this.state.result.PatentNumber, `${this.state.result.PatentNumber} - Images`);
     }
 
-    render({ }, { result }) {
+    makeOffline = e => {
+        console.log('got request to save fulltext to DB');
+        ipcRenderer.send('store_fulltext', this.state.result.PatentHtml, this.state.result.PatentID);
+    }
+
+    reportStatus = status => {
+        console.log('got status', status);
+        if (status === 'ready' && this.state.working) this.setState({ working: false });
+        if (status === 'ready' && this.state.busy) {
+            console.log('window ready, updating deferred size')
+            const windowSize = {};
+            windowSize.height = this.deferredHeight || this.state.windowSize.height;
+            windowSize.width = this.state.windowSize.width;
+            this.setState({busy:false, windowSize })
+        }
+        if (status === 'busy' && !this.state.busy) this.setState({ busy: true });
+    }
+
+
+    render({ }, { }) {
         console.log('calling render with state', this.state.result, this.state.patentSummaries)
         return (
             <div>
                 <div class="list">
-                    <Result
-                        result={this.state.result}
-                        summaries={this.state.patentSummaries}
-                        openClickHandler={this.openClickHandler}
-                        goBackClickHandler={this.goBackClickHandler}
-                        selectedColor={'rgba(51, 122, 183, 0.2)'}
-                        activeSummary={this.state.activeSummary}
-                        editContent={this.editContent}
-                        activateEditMode={this.activateEditMode}
-                        clickSaveCancel={this.clickSaveCancel}
-                        changeSearchTerm={this.changeSearchTerm}
-                        highlightList={this.state.highlightList}
-                        scrollToNext={this.scrollToNext}
-                        showImages={this.showImages}
-                    />
-                    <FullText
-                        patentHtml={JSON.parse(this.state.result.PatentHtml)}
-                        highlightList={this.state.highlightList}
-                        addNewRef={this.addNewRef}
-                    />
+                    <div ref={headerDiv => this.headerDiv = headerDiv}>
+                        <Result
+                            result={this.state.result}
+                            summaries={this.state.patentSummaries}
+                            openClickHandler={this.openClickHandler}
+                            goBackClickHandler={this.goBackClickHandler}
+                            selectedColor={'rgba(51, 122, 183, 0.2)'}
+                            activeSummary={this.state.activeSummary}
+                            enableOffline={this.state.enableOffline}
+                            makeOffline={this.makeOffline}
+                            editContent={this.editContent}
+                            activateEditMode={this.activateEditMode}
+                            clickSaveCancel={this.clickSaveCancel}
+                            changeSearchTerm={this.changeSearchTerm}
+                            highlightList={this.state.highlightList}
+                            scrollToNext={this.scrollToNext}
+                            showImages={this.showImages}
+                            enableImageButton={this.state.enableImageButton}
+                        />
+                    </div>
+                    <div class="FullText" ref={textDiv => this.textDiv = textDiv}>
+                        {this.state.working ? <Throbber
+                            visible={true}
+                            windowHeight={200}
+                            themeColor={'rgba(51, 122, 183, 0.2)'}
+                        /> : this.state.showPDF ?
+                                < PatentImage
+                                    imageData={this.state.patentImages}
+                                    showPage={this.state.currentImage}
+                                    windowSize={this.state.windowSize}
+                                    startPage={1}
+                                    controlAreaHeight={5}
+                                    rotation={0}
+                                    reportViewport={() => null}
+                                    updatePageCount={null}
+                                    isImage={true}
+                                    reportStatus={this.reportStatus}
+                                    numPagesToShow={10}
+                                /> : <FullText
+                                    patentHtml={JSON.parse(this.state.result.PatentHtml)}
+                                    highlightList={this.state.highlightList}
+                                    addNewRef={this.addNewRef}
+                                />}
+                    </div>
                 </div>
-            </div>
+            </div >
         );
     }
 }
@@ -270,8 +367,12 @@ const Result = (props) => {
                     <Icon name='triDown' width='1em' height='1em' style={styles.Icon} handleClick={e => props.scrollToNext(e, 'down')} />
                 </div>) : ''}
             </div>
-            <div class="OpenPDF"><button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
-                <button style={{ flexGrow: '1' }} onClick={props.showImages}>Show Images</button></div>
+            <div class="OpenPDF">
+                <button style={{ flexGrow: '1' }} onClick={props.openClickHandler}>Open PDF</button>
+                <button style={{ flexGrow: '1' }} disabled={!props.enableImageButton} onClick={props.showImages}>Show Images</button>
+                {!props.enableOffline ? <button style={{ flexGrow: '1' }} onClick={e => props.makeOffline(e)}>Make available offline</button> : ''}
+            </div>
+
         </div>
     )
 };
@@ -293,7 +394,7 @@ const FullText = (props) => {
                     <div key={index}>
                         {highlight ?
                             <div class='Highlight' ref={elem => props.addNewRef(index, elem)}>
-                                <button>Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}</button> {paragraph}
+                                <button>Match {[...props.highlightList.keys()].indexOf(index) + 1}/{props.highlightList.size}</button> {paragraph /*idea: split on **text** and span them*/}
                             </div>
                             : <div class={header ? 'PatentParagraph PatentHeader' : 'PatentParagraph'}>
                                 {header ? `${paragraph.charAt(0)}${paragraph.slice(1).toLowerCase()}` : paragraph}

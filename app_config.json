@@ -2,9 +2,15 @@
     "patentDB": {
         "connection": {
             "container": "sqlserver",
-            "userName": "sa",
-            "password": "8ill5Sql",
+            "authentication": {
+                "type": "default",
+                "options": {
+                    "userName": "sa",
+                    "password": "8ill5Sql"
+                }
+            },
             "options": {
+                "trustServerCertificate": true,
                 "database": "PMCDB",
                 "encrypt": true
             }
@@ -14,14 +20,17 @@
         "m_PATENTSCLAIMS": "SELECT patents.PMCRef, patents.PatentNumber, claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
         "m_TERMS": "SELECT mt.ClaimTerm, mt.TermID FROM MarkmanTerms AS mt ",
         "m_CONSTRUCT": "SELECT mc.Construction, mc.ConstructID FROM MarkmanConstructions as mc ",
-        "p_SELECTJSON": "SELECT patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID, claims.IsIndependentClaim, patents.InventorLastName, patents.Title FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
+        "p_SELECTJSON": "SELECT patents.PMCRef, patents.PatentPath, patents.PatentNumber, claims.ClaimNumber, claims.ClaimHtml, claims.PotentialApplication, claims.WatchItems, claims.ClaimID, claims.IsIndependentClaim, patents.InventorLastName, patents.Title, claims.ClaimStatusID, summaries.PatentSummaryText FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID LEFT OUTER JOIN PatentSummary summaries ON patents.PatentID = summaries.PatentID ",
+        "p_PATENTJSON": "SELECT patents.PMCRef, patents.PatentPath, patents.PatentNumber, patents.InventorLastName, patents.Title, summaries.PatentSummaryText, patents.PatentID FROM Patent patents LEFT OUTER JOIN PatentSummary summaries ON patents.PatentID = summaries.PatentID ",
         "p_PATENT": "SELECT * FROM Patent AS patents LEFT OUTER JOIN PatentSummary AS summaries ON patents.PatentID = summaries.PatentID ",
         "p_IMAGES": "SELECT images.ImageID, images.PatentID, images.PageNumber, images.Rotation, images.ImageURL, images.PageData FROM Images AS images ",
         "u_FULLTEXT": "UPDATE Patent SET PatentHtml=@0 WHERE PatentID=@1",
         "u_UPDATE": "UPDATE Claim SET ",
         "u_UPDATE_IMAGES": "UPDATE Images SET ",
-        "p_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent patents ON patents.PatentID = claims.PatentID ",
-        "m_COUNT": "SELECT COUNT (*) FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
+        "u_UPDATE_SUMMARY": "UPDATE PatentSummary SET ",
+        "p_PATENT_COUNT": "SELECT COUNT (*) FROM PatentSummary AS summaries RIGHT OUTER JOIN Patent AS patents ON patents.PatentID = summaries.PatentID ",
+        "p_COUNT": "SELECT COUNT (*) FROM Claim AS claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID ",
+        "m_COUNT": "SELECT COUNT (*) FROM Claim AS claims INNER JOIN Patent AS patents ON patents.PatentID = claims.PatentID INNER JOIN MarkmanTermConstruction AS mtc ON mtc.ClaimID = claims.ClaimID INNER JOIN MarkmanTerms AS mt ON mt.TermID = mtc.TermID INNER JOIN MarkmanConstructions AS mc ON mc.ConstructID = mtc.ConstructID INNER JOIN Document AS documents ON documents.DocumentID = mc.DocumentID INNER JOIN Client AS clients ON clients.ClientID = mtc.ClientID ",
         "fieldMap": [
             {
                 "name": "PMCRef",
@@ -87,6 +96,13 @@
                 "notSuffix": "!="
             },
             {
+                "name": "ClaimStatusID",
+                "table": "claims",
+                "prefix": "",
+                "suffix": "=",
+                "notSuffix": "!="
+            },
+            {
                 "name": "IsMethodClaim",
                 "table": "claims",
                 "prefix": "",
@@ -108,11 +124,11 @@
                 "notSuffix": " NOT LIKE "
             },
             {
-                "name": "Summary",
-                "table": "PatentSummary",
+                "name": "PatentSummaryText",
+                "table": "summaries",
                 "prefix": "",
-                "suffix": "=",
-                "notSuffix": "!="
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
             },
             {
                 "name": "InventorLastName",
@@ -173,6 +189,13 @@
             {
                 "name": "ClientName",
                 "table": "clients",
+                "prefix": "",
+                "suffix": " LIKE ",
+                "notSuffix": " NOT LIKE "
+            },
+            {
+                "name": "Title",
+                "table": "patents",
                 "prefix": "",
                 "suffix": " LIKE ",
                 "notSuffix": " NOT LIKE "
@@ -247,9 +270,11 @@
                 "l": 50
             }
         },
+        "claimStartMatch": "<i>Claims",
         "startMatch": "<i>Description",
         "endMatch": "\\* \\* \\* \\* \\*",
         "breakMatch": " ?<BR><BR> ?",
         "stripMatch": "( ?<CENTER> ?| ?<\\/CENTER> ?|<HR>|<b>|<\\/b>|<i>|<\\/i>)"
-    }
+    },
+    "localSave": "/test/currentTable.json"
 }

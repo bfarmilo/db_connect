@@ -5,13 +5,6 @@
     "tasks": [
         {
             "type": "npm",
-            "script": "getPatents",
-            "problemMatcher": [
-                "$eslint-compact"
-            ]
-        },
-        {
-            "type": "npm",
             "script": "transpile",
             "problemMatcher": [
                 "$eslint-compact"

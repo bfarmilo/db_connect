@@ -4,6 +4,9 @@ import { Icon } from './icons';
 // the main UI at the top of the table to run and filter queries
 
 const ControlArea = props => {
+
+    const config = props.config[props.displayMode];
+
     const styles = {
         ButtonArea: {
             display: 'flex',
@@ -27,7 +30,7 @@ const ControlArea = props => {
         },
         TableHeading: {
             display: 'grid',
-            gridTemplateColumns: props.config.gridTemplateColumns,
+            gridTemplateColumns: config.gridTemplateColumns,
             padding: '0.4em 0.5em 0.4em 0.5em',
             fontSize: 'large',
             color: 'white',
@@ -54,14 +57,39 @@ const ControlArea = props => {
         },
         Icon: {
             fill: 'white',
-            display:'flex'
+            display: 'flex'
         }
     }
+
+    let specialButton;
+
+    switch (props.displayMode) {
+        case 'claims': {
+            specialButton = (<button
+                style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
+                data-claimid='all'
+                onClick={props.toggleExpand}
+            >
+                {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
+            </button>);
+        }
+            break;
+        case 'markman': {
+            specialButton = (<button style={styles.FilterButton} onClick={props.newConstruction}>Enter New Construction</button>);
+        }
+            break;
+        case 'priorArt': {
+            specialButton = (<button style={!props.compactView ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton} onClick={props.toggleCompact}>{props.compactView ? 'Expand Summaries' : 'Collapse Summaries'}</button>);
+        }
+            break;
+        default: specialButton = <div />;
+    }
+
     return (
         <div class="ControlArea">
             <div style={styles.ButtonArea}>
-                <div style={styles.ResultCount}>{`${props.resultCount} Matching ${props.displayMode === 'claims' ? 'Claim' : 'Construction'}${props.resultCount == 1 ? '' : 's'} Found`}</div>
-                {props.config.enabledButtons.length ? props.config.enabledButtons.map(button => (
+                <div style={styles.ResultCount}>{`${props.resultCount} Matching ${config.display}${props.resultCount == 1 ? '' : 's'} Found`}</div>
+                {config.enabledButtons.length ? config.enabledButtons.map(button => (
                     <button
                         key={button.field}
                         data-value={button.field}
@@ -70,17 +98,11 @@ const ControlArea = props => {
                         style={props.queryValues[button.field] ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
                     >{button.display}</button>
                 )) : ''}
-                {props.displayMode === 'claims' ? <button
-                    style={props.expandAll ? { ...styles.FilterButton, backgroundColor: props.styles.selectedColor } : styles.FilterButton}
-                    data-claimid='all'
-                    onClick={props.toggleExpand}
-                >
-                    {props.expandAll ? 'Collapse All Claims' : 'Expand All Claims'}
-                </button> : <div />}
+                {specialButton}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
-                    <button style={styles.FilterButton} onClick={props.changeMode}>
-                    View {props.displayMode === 'claims' ? 'Constructions' : 'Claims'}</button>
+                <button style={styles.FilterButton} onClick={props.changeMode}>
+                    View {props.config[config.next].display}s</button>
                 <button
                     style={styles.FilterButton}
                     onClick={props.changeDB}
@@ -89,11 +111,11 @@ const ControlArea = props => {
                 </button>
             </div>
             <div style={styles.TableHeading}>
-                {props.config.columns.map(column => {
+                {config.columns.map(column => {
                     return (
                         <div key={column.field}>
-                            <div data-field={column.field} onClick={props.modifySortOrder} style={{display:'flex', justifyContent:'space-between', paddingRight:'1em'}}>
-                                <div style={{display:'flex'}}>{column.display} </div>{props.sortOrder.has(column.field) ? <Icon name={props.sortOrder.get(column.field).ascending ? 'sortAscending' : 'sortDescending'} width='1em' height='1em' style={styles.Icon} /> : ''}</div>
+                            <div data-field={column.field} onClick={props.modifySortOrder} style={{ display: 'flex', justifyContent: 'space-between', paddingRight: '1em' }}>
+                                <div style={{ display: 'flex' }}>{column.display} </div>{props.sortOrder.has(column.field) ? <Icon name={props.sortOrder.get(column.field).ascending ? 'sortAscending' : 'sortDescending'} width='1em' height='1em' style={styles.Icon} /> : ''}</div>
                             <div style={!!props.queryValues[column.field] ? { ...styles.ColumnControl, backgroundColor: props.styles.selectedColor } : styles.ColumnControl}>
                                 <input
                                     style={styles.ValuesField}

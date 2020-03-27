@@ -1,5 +1,6 @@
 import { h } from 'preact';
 import marked from 'marked';
+import DOMPurify from 'dompurify';
 import { Icon } from './icons.js';
 
 /** A generic editable cell, using markdown. 
@@ -25,6 +26,7 @@ const EditCell = props => {
         EditableBox: {
             display: 'grid',
             gridTemplateRows: 'auto 1fr',
+            minHeight: '1em'
         },
         ViewArea: {
             flexGrow: '1',
@@ -44,7 +46,6 @@ const EditCell = props => {
         }
     }
     const markdownOptions = {
-        sanitize: true,
         gfm: true,
         tables: true,
         breaks: true,
@@ -52,7 +53,8 @@ const EditCell = props => {
         smartypants: true,
         tasklist: true
     }
-    const markdownText = { __html: !props.value ? '' : marked(props.value, markdownOptions) };
+    const compactView = !!props.compactView; // if not specified, default to false
+    const markdownText = { __html: !props.value ? '' : DOMPurify.sanitize(marked(compactView && props.value.length > 100 ? `${props.value.slice(0,100)}...` : props.value, markdownOptions)) };
     return (props.editMode ? (
         <div style={styles.EditableBox}>
             <textarea
@@ -71,11 +73,18 @@ const EditCell = props => {
         </div>
     ) : (
             <div style={styles.EditBoxContainer}>
-                <span
-                    style={styles.ViewArea}
-                    dangerouslySetInnerHTML={markdownText}
-                    onClick={props.activateEditMode}
-                />
+                {props.value ?
+                    <span
+                        style={styles.ViewArea}
+                        dangerouslySetInnerHTML={markdownText}
+                        onClick={props.activateEditMode}
+                    /> :
+                    <span
+                        style={{ color: 'lightgrey', fontStyle: 'italic', fontSize: 'small' }}
+                        onClick={props.activateEditMode}
+                    >Click to Add Text
+                    </span>
+                }
             </div>
         )
     )

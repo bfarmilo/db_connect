@@ -1,4 +1,5 @@
 const { Connection, Request, TYPES } = require('tedious');
+const { parseOutput } = require('./app_sqlParse');
 
 const MAX_CHARS_TO_SHOW = 10;
 
@@ -7,6 +8,7 @@ const MAX_CHARS_TO_SHOW = 10;
  * @returns {*} a properly formatted value
 */
 const mapType = value => {
+  if (value instanceof Date) return TYPES.DateTime2;
   if (typeof value === 'boolean') return TYPES.Bit;
   if (typeof value === 'number') return TYPES.Numeric;
   return TYPES.NVarChar;
@@ -34,22 +36,25 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
   const connectParams = { ...connectInfo };
   return new Promise((resolve, reject) => {
     //console.log('connecting to ', connectParams.options.database);
-    if (connection) connection.close();
+    // not working if (typeof connection !== 'undefined') connection.close();
     if (!connectParams.server) reject('server not yet available');
     const connection = new Connection(connectParams);
     // listener for connect
     connection.on('connect', err => {
       if (err) {
+        console.log('connect error', err);
         connection.close();
         return reject(err)
       };
       // console.log('good connection, creating request %s', sqlString);
       const request = new Request(sqlString, (err2, rowCount) => {
         if (err2) {
+          console.log('request error for query %s', sqlString);
+          console.log('parameter dump', request.parametersByName);
           connection.close();
           return reject(err2)
         };
-        connection.close();
+        //connection.close();
         return resolve(returnResults);
       });
       // listener for rows returned
@@ -57,15 +62,22 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
         returnResults.push(data.map(item => item.value))
         return;
       });
+      request.on('error', err3 => {
+        console.log('request event error', err3)
+        return reject(err3)
+      });
       // add parameters one by one to the request
       const expandVals = values.length > 0 ? values.map(item => {
         request.addParameter(item.name, item.type, item.val);
         return { name: item.name, type: item.type.type, val: item.val };
       }) : false;
       // run it !
-      // console.log('with parameters: ', expandVals && expandVals.map(item => `${item.name}: ${item.val.length > MAX_CHARS_TO_SHOW ? `${item.val.slice(0, MAX_CHARS_TO_SHOW - 1)}...` : item.val}`));
+      //console.log('with parameters: ', expandVals && expandVals.map(item => `${item.name}: ${item.val.length > MAX_CHARS_TO_SHOW ? `${item.val.slice(0, MAX_CHARS_TO_SHOW - 1)}...` : item.val}`));
       connection.execSql(request);
     });
+    connection.on('error', err => {
+      return reject(err);
+    })
   });
 }
 
@@ -109,16 +121,18 @@ const insertNewPatents = (connectParams, patentRecord, reportStatus) => new Prom
 const insertClaims = (connectParams, claim) => new Promise(async (resolve, reject) => {
   try {
     const { keyList, paramList } = getParams(claim);
-    const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE ${keyList.map(key => `Claim.${key} LIKE @${key}`).join(' AND ')}`;
-    let result = await queryNoPromises(connectParams, testSQL, paramList);
+    // const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE ${keyList.map(key => `Claim.${key} LIKE @${key}`).join(' AND ')}`;
+    // really just check for duplicates of this patent & this claim number
+    const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE Claim.PatentID=${claim.PatentID} AND Claim.ClaimNumber=${claim.ClaimNumber}`;
+    let result = await queryNoPromises(connectParams, testSQL, paramList.filter(param => param.name === 'PatentID' || param.name === 'ClaimNumber'));
     const ClaimID = result && result[0] && result[0][0];
-    if (!ClaimID) {
-      // the ClaimID doesn't exist, so insert a new claim
-      const insertSQL = `INSERT INTO dbo.Claim (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
-      await queryNoPromises(connectParams, insertSQL, paramList);
-      result = await queryNoPromises(connectParams, testSQL, paramList);
-      if (!(result && result[0] && result[0][0])) return reject('can\'t find the record we just added!');
-    }
+    // if claim exists, update, otherwise, insert
+    const insertSQL = ClaimID ?
+      `UPDATE Claim SET (${keylist.map(key => `${key}=@${key}`).join(', ')}) WHERE Claim.ClaimID=${ClaimID}` :
+      `INSERT INTO dbo.Claim (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+    await queryNoPromises(connectParams, insertSQL, paramList);
+    result = await queryNoPromises(connectParams, testSQL, paramList);
+    if (!(result && result[0] && result[0][0])) return reject('can\'t find the record we just added!');
     return resolve({ PatentID: claim.PatentID, ClaimNumber: claim.ClaimNumber })
   } catch (err) {
     return reject(err)
@@ -175,26 +189,48 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
     let result = await queryNoPromises(connectParams, checkSQL, paramList);
     let recordID = result && result[0] && result[0][0];
     let type = 'existing';
-    console.log(recordID, JSON.stringify(controlOptions));
-    if (recordID && controlOptions.updateFields) {
-      // it is found, and we're in update mode
-      // this time the fields to include are listed, so only exclude non-matching fields and the idField
-      const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
-      ({ keyList, paramList } = getParams(record, skipFields));
-      const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
-      await queryNoPromises(connectParams, updateSQL, paramList);
-      type = 'updated';
-    } else if (!recordID && !controlOptions.readOnly) {
-      //There's no existing record, and we're not in readOnly mode
-      ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
-      //So insert and return the newest
-      const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
-      await queryNoPromises(connectParams, insertSQL, paramList);
-      result = await queryNoPromises(connectParams, checkSQL, paramList);
-      recordID = result && result[0] && result[0][0];
-      type = 'new'
-      // in write mode, not finding the record after writing it should throw an error
-      if (!recordID) return reject('no matching record found');
+    // for testing, stub out the part about writing new or updating records
+    if (process.env.DBMODE === 'readonly') {
+      if (recordID && controlOptions.updateFields.length) {
+        console.log('Caught UPDATE call with DB in Readonly  (DEV) Mode');
+        // it is found, and we're in update mode
+        // this time the fields to include are listed, so only exclude non-matching fields and the idField
+        const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
+        ({ keyList, paramList } = getParams(record, skipFields));
+        const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
+        type = 'updated';
+        console.log(updateSQL)
+      } else if (!recordID && !controlOptions.readOnly) {
+        console.log('Caught INSERT call with DB in Readonly Mode');
+        //There's no existing record, and we're not in readOnly mode
+        ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
+        //So insert and return the newest
+        const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+        recordID = 999999999;
+        type = 'new';
+        console.log(insertSQL);
+      }
+    } else {
+      if (recordID && controlOptions.updateFields.length) {
+        // it is found, and we're in update mode
+        // this time the fields to include are listed, so only exclude non-matching fields and the idField
+        const skipFields = Object.keys(record).filter(param => !controlOptions.updateFields.includes(param));
+        ({ keyList, paramList } = getParams(record, skipFields));
+        const updateSQL = `UPDATE dbo.${table} SET ${keyList.map(key => `${key}=@${key}`).join(', ')} WHERE ${idField}=${recordID}`;
+        await queryNoPromises(connectParams, updateSQL, paramList);
+        type = 'updated';
+      } else if (!recordID && !controlOptions.readOnly) {
+        //There's no existing record, and we're not in readOnly mode
+        ({ keyList, paramList } = getParams(record, controlOptions.skipWrite));
+        //So insert and return the newest
+        const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
+        await queryNoPromises(connectParams, insertSQL, paramList);
+        result = await queryNoPromises(connectParams, checkSQL, paramList);
+        recordID = result && result[0] && result[0][0];
+        type = 'new'
+        // in write mode, not finding the record after writing it should throw an error
+        if (!recordID) return reject('no matching record found');
+      }
     }
     // in readOnly mode, not finding the record should resolve with a not found
     return resolve(!recordID ? 'not found' : { [idField]: recordID, type });
@@ -209,15 +245,26 @@ const getMarkmanDropdowns = connectParams => new Promise((resolve, reject) => {
   // clients -- A map of client: clientID
   // sectors -- A map of sectors: sectorID
   return Promise.all(
-    ['MarkmanTerms', 'Client', 'Sector'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}`))
+    ['MarkmanTerms', 'Client', 'Sector', 'Patent'].map(table => queryNoPromises(connectParams, `SELECT * FROM ${table}${table === 'Client' ? ' ORDER BY ClientName ASC' : ''}`))
   )
-    .then(([claimTerms, clients, sectors]) => resolve({
+    .then(([claimTerms, clients, sectors, patents]) => resolve({
       claimTerms: new Map(claimTerms.map(([ID, term]) => [term, ID])),
       clients: new Map(clients.map(([ID, client, ...rest]) => [client, ID])),
-      sectors: new Map(sectors.map(([ID, sect]) => [sect, ID]))
+      sectors: new Map(sectors.map(([ID, sect]) => [sect, ID])),
+      patents: new Map(patents.map(([ID, uri, ref, title, html, count, patent]) => [patent, ID]))
     }))
     .catch(err => reject(err))
 });
+
+const getPatentFromDigits = (connectParams, digits) => new Promise((resolve, reject) => {
+  return queryNoPromises(
+    connectParams,
+    `SELECT Patent.PatentNumber, Patent.PatentID FROM Patent WHERE CAST(Patent.PatentNumber AS char(7)) LIKE @digits`,
+    [{ name: 'digits', type: TYPES.NVarChar, val: `%${digits}%` }]
+  )
+    .then(patentList => resolve(new Map(patentList)))
+    .catch(err => reject(err))
+})
 
 const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reject) => {
   const { paramList } = getParams({ PatentID });
@@ -225,10 +272,46 @@ const getClaimDropdown = (connectParams, PatentID) => new Promise((resolve, reje
     connectParams,
     `SELECT claims.ClaimNumber, claims.ClaimID FROM Claim claims INNER JOIN Patent AS patents ON patents.PatentID=claims.PatentID WHERE claims.PatentID=@PatentID`,
     paramList)
-    .then(result => resolve({ claims: new Map(result) }))
+    .then(result => resolve(new Map(result)))
     .catch(err => reject(err));
 });
 
+const getTermConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
+  const { keyList, paramList } = getParams(queryRecord, queryRecord.DocumentID ? ['DocumentID'] : []);
+  return queryNoPromises(connectParams,
+    `SELECT * FROM dbo.MarkmanTermConstruction AS mtc WHERE ${keyList.map(key => `mtc.${key}=@${key}`).join(' AND ')} FOR JSON AUTO`,
+    paramList)
+    .then(result => {
+      if (!result.length) return resolve(new Map());
+      const output = [parseOutput('simple', result).map(entry => {
+        const { TermConstructionID, ...rest } = entry;
+        return [rest, TermConstructionID]
+      })];
+      return resolve(new Map(output[0]));
+    })
+    .catch(err => reject(err))
+})
+
+const getConstructions = (connectParams, queryRecord) => new Promise((resolve, reject) => {
+  // return a table of constructions given either 
+  // 1) no query
+  // 2) a documentID
+  const { keyList, paramList } = getParams(queryRecord, ['TermID', 'ClientID']);
+  const hasQuery = queryRecord.DocumentID ? `WHERE ${keyList.map(key => `mc.${key}=@${key}`).join(' AND ')}` : '';
+  return queryNoPromises(connectParams,
+    `SELECT mc.* FROM dbo.MarkmanConstructions AS mc ${hasQuery} FOR JSON AUTO`,
+    hasQuery !== '' ? paramList : [])
+    .then(result => {
+      if (!result.length) return resolve(new Map());
+      const output = [parseOutput('simple', result).map(entry => {
+        const { ConstructID, ...rest } = entry;
+        // Send with the key as a flat string, not an Object !
+        return [Object.keys(rest).map(key => rest[key]).join(':'), ConstructID];
+      })];
+      return resolve(new Map(output[0]))
+    })
+    .catch(err => reject(err))
+})
 
 
 
@@ -238,5 +321,8 @@ module.exports = {
   updatePatents,
   getMarkmanDropdowns,
   insertAndGetID,
-  getClaimDropdown
+  getClaimDropdown,
+  getPatentFromDigits,
+  getTermConstructions,
+  getConstructions
 };
