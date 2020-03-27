@@ -26,7 +26,8 @@ class PatentImages extends Component {
             rotation: 0,
             enableOffline: false,
             windowSize: { width: 0, height: 0 },
-            genericMode: false
+            genericMode: false,
+            busy:false
         };
     }
     // should display an image
@@ -69,7 +70,7 @@ class PatentImages extends Component {
         })
         ipcRenderer.on('resize', (event, { width, height }) => {
             console.log(`got new window size from main - width:${width} height:${height}`);
-            this.setState({ windowSize: { width, height } });
+            if (!this.state.busy) this.setState({ windowSize: { width, height } });
         });
         ipcRenderer.on('available_offline', (event, isOffline) => {
             console.log(`images are ${isOffline ? '' : 'not'} available offline`);
@@ -137,7 +138,8 @@ class PatentImages extends Component {
     }
 
     reportStatus = (e, status) => {
-        if (status === 'ready') console.log('rendering complete')
+        if (status === 'ready') console.log('rendering complete');
+        if (status === 'busy' && !this.state.busy) this.setState({busy: true})
     }
 
     render({ }, { }) {
@@ -154,6 +156,7 @@ class PatentImages extends Component {
             updatePageCount={this.setLastPage}
             reportStatus={this.reportStatus}
             isImage={true}
+            numPagesToShow={999}
         />;
         /* this.state.genericMode ? <MyPdfViewer
                fileOffset={0} //since the exhibit may be an array, this indicates the index of the file in the array
