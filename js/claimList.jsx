@@ -77,6 +77,7 @@ class ClaimTable extends Component {
                     // if (resultList.has(key)) console.log('collision:', resultList.get(key), item);
                     resultList.set(key, item);
                 });
+                console.log(resultList);
                 this.setState({
                     resultList,
                     resultCount,
