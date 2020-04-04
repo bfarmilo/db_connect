@@ -49,9 +49,11 @@ class MarkmanEntry extends Component {
             const terms = new Map(termList);
             const clients = new Map(clientList);
             const patents = new Map([...patentList].sort());
+            console.log('got init data');
             this.setState({ terms, clients, patents })
         })
         ipcRenderer.on('got_claims', (e, claimList) => {
+            console.log('claims received');
             // load the claims, sorted into ascending order
             const claims = new Map([...claimList].sort((a, b) => a[0] - b[0]));
             // to deal with the bug where selecting only claim 1 causes it to freeze,
@@ -59,10 +61,12 @@ class MarkmanEntry extends Component {
             this.setState({ claims, selectedClaims: new Map([[1, claims.get(1)]]) });
         })
         ipcRenderer.on('got_constructions', (e, constructionList) => {
+            console.log('constructions received');
             const constructions = new Map(constructionList);
             this.setState({ constructions });
         })
         ipcRenderer.on('got_file', (e, document, documentID) => {
+            console.log(`new file received with docID ${documentID}`);
             console.log(document, documentID)
             this.setState({ document, documentID })
         })
@@ -110,10 +114,11 @@ class MarkmanEntry extends Component {
             this.setState({ selectedClaims });
         }
         if (entryType === 'patent') {
-            const patent = parseInt(event.target.value, 10)
+            const patent = event.target.value;
             if (this.state.patents.has(patent)) {
-                this.setState({ patent, selectedClaims: new Map() });
-                ipcRenderer.send('get_claims', this.state.patents.get(patent));
+                this.setState({ patent, selectedClaims: new Map() }, () => {
+                    ipcRenderer.send('get_claims', this.state.patents.get(patent));
+                });
             } else {
                 this.setState({ patent: '' });
             }
@@ -122,17 +127,20 @@ class MarkmanEntry extends Component {
         if (entryType === 'term') {
             const term = event.target.value;
             console.log('selected term', term)
-            this.setState({ term });
-            if (this.state.terms.has(term)) {
-                // this is an existing term, so see if there are any constructions
-                ipcRenderer.send('get_constructions', getQueryRecord())
-            }
+            this.setState({ term }, () => {
+                if (this.state.terms.has(term)) {
+                    // this is an existing term, so see if there are any constructions
+                    ipcRenderer.send('get_constructions', getQueryRecord())
+                }
+            });
+
         }
         // client is set - get constructions associated with that
         if (entryType === 'client') {
             const client = event.target.value;
-            this.setState({ client });
-            ipcRenderer.send('get_constructions', getQueryRecord())
+            this.setState({ client }, () => {
+                ipcRenderer.send('get_constructions', getQueryRecord())
+            });
         }
         // toggle value
         if (entryType === 'agreed') this.setState({ agreed: !this.state.agreed });

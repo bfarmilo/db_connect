@@ -787,7 +787,7 @@ ipcMain.on('add_claimconstructions', async () => {
     width: 1440,
     height: 800,
     options: {
-      visible: false
+      show:false
     },
     webPreferences: { nodeIntegration: true }
   });

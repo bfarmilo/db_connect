@@ -230,15 +230,13 @@ const linkDocument = (connectParams, DropboxPath, client, ClientID) => new Promi
         return resolve({ documentID: docResult[tableSchema.documents.index], document });
     };
 
-    try {
-        dialog.showOpenDialog({
-            title: 'Select a Ruling',
-            defaultPath: `${DropboxPath}PMC Public\\PMC ASSETS\\PMC Patents\\Claim Construction`,
-            properties: ['openFile']
-        }, fileOpened)
-    } catch (err) {
-        return reject(err)
-    }
+    return dialog.showOpenDialog({
+        title: 'Select a Ruling',
+        defaultPath: `${DropboxPath}PMC Public\\PMC ASSETS\\PMC Patents\\Claim Construction`,
+        properties: ['openFile']
+    })
+        .then(result => result.cancelled ? resolve('') : fileOpened(result.filePaths))
+        .catch(err => reject(err))
 });
 
 
