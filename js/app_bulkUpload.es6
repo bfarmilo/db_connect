@@ -2,6 +2,7 @@ const { Connection, Request, TYPES } = require('tedious');
 const { parseOutput } = require('./app_sqlParse');
 
 const MAX_CHARS_TO_SHOW = 10;
+const CHECK=true;
 
 /** @private mapType conditions a value for insertion into a SQL query 
  * @param {*} value -> the value to coerce
@@ -21,7 +22,12 @@ const mapType = value => {
  */
 const getParams = (record, skipKeys = []) => {
   const keyList = Object.keys(record).filter(item => !skipKeys.includes(item));
-  return { keyList, paramList: keyList.map(key => ({ name: key, type: mapType(record[key]), val: record[key] })) }
+  // remember to escape [  by using [[]
+  return { keyList, paramList: keyList.map(name => {
+    const type = mapType(record[name]);
+    const val = record[name];
+    return { name, type, val }
+  }) }
 };
 
 
@@ -31,7 +37,7 @@ const getParams = (record, skipKeys = []) => {
  * @param {Array<{name:string, type:TYPE, val:*}} -> an array of parameters corresponding to sql @variables
  * @returns {Promise->Array[results]}
  */
-const queryNoPromises = (connectInfo, sqlString, values = []) => {
+const queryNoPromises = (connectInfo, sqlString, values = [], isCheck=false) => {
   let returnResults = [];
   const connectParams = { ...connectInfo };
   return new Promise((resolve, reject) => {
@@ -68,8 +74,9 @@ const queryNoPromises = (connectInfo, sqlString, values = []) => {
       });
       // add parameters one by one to the request
       const expandVals = values.length > 0 ? values.map(item => {
-        request.addParameter(item.name, item.type, item.val);
-        return { name: item.name, type: item.type.type, val: item.val };
+        const cleanValue = (isCheck && item.type.name.includes('Char')) ? item.val.replace(/\[/g, '[[]') : item.val;
+        request.addParameter(item.name, item.type, cleanValue);
+        return { name: item.name, type: item.type.type, val: cleanValue };
       }) : false;
       // run it !
       //console.log('with parameters: ', expandVals && expandVals.map(item => `${item.name}: ${item.val.length > MAX_CHARS_TO_SHOW ? `${item.val.slice(0, MAX_CHARS_TO_SHOW - 1)}...` : item.val}`));
@@ -102,7 +109,7 @@ const insertNewPatents = (connectParams, patentRecord, reportStatus) => new Prom
       // if we're still here, the patent needs to be inserted
       const insertSQL = `INSERT INTO Patent (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
       await queryNoPromises(connectParams, insertSQL, paramList);
-      patent = await queryNoPromises(connectParams, testSQL);
+      patent = await queryNoPromises(connectParams, testSQL, [], CHECK);
       // returns exactly one match
       PatentID = patent && patent[0] && patent[0][0];
     }
@@ -124,14 +131,14 @@ const insertClaims = (connectParams, claim) => new Promise(async (resolve, rejec
     // const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE ${keyList.map(key => `Claim.${key} LIKE @${key}`).join(' AND ')}`;
     // really just check for duplicates of this patent & this claim number
     const testSQL = `SELECT ClaimID FROM dbo.Claim WHERE Claim.PatentID=${claim.PatentID} AND Claim.ClaimNumber=${claim.ClaimNumber}`;
-    let result = await queryNoPromises(connectParams, testSQL, paramList.filter(param => param.name === 'PatentID' || param.name === 'ClaimNumber'));
+    let result = await queryNoPromises(connectParams, testSQL, paramList.filter(param => param.name === 'PatentID' || param.name === 'ClaimNumber'), CHECK);
     const ClaimID = result && result[0] && result[0][0];
     // if claim exists, update, otherwise, insert
     const insertSQL = ClaimID ?
       `UPDATE Claim SET (${keylist.map(key => `${key}=@${key}`).join(', ')}) WHERE Claim.ClaimID=${ClaimID}` :
       `INSERT INTO dbo.Claim (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
     await queryNoPromises(connectParams, insertSQL, paramList);
-    result = await queryNoPromises(connectParams, testSQL, paramList);
+    result = await queryNoPromises(connectParams, testSQL, paramList, CHECK);
     if (!(result && result[0] && result[0][0])) return reject('can\'t find the record we just added!');
     return resolve({ PatentID: claim.PatentID, ClaimNumber: claim.ClaimNumber })
   } catch (err) {
@@ -153,7 +160,8 @@ const updatePatents = (connectParams, field, value, PatentUri) => new Promise(as
     const result = await queryNoPromises(
       connectParams,
       `SELECT PatentID FROM Patent WHERE Patent.PatentUri LIKE @PatentUri`,
-      paramList[1]
+      paramList[1],
+      CHECK
     )
     const PatentID = result[0].PatentID;
     return resolve({ PatentUri, PatentID })
@@ -186,7 +194,7 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
     // first query to see if the record exists
     let { keyList, paramList } = getParams(record, controlOptions.skipCheck);
     const checkSQL = `SELECT ${idField} FROM dbo.${table} WHERE ${keyList.map(key => `${table}.${key} LIKE @${key}`).join(' AND ')}`;
-    let result = await queryNoPromises(connectParams, checkSQL, paramList);
+    let result = await queryNoPromises(connectParams, checkSQL, paramList, CHECK);
     let recordID = result && result[0] && result[0][0];
     let type = 'existing';
     // for testing, stub out the part about writing new or updating records
@@ -225,7 +233,7 @@ const insertAndGetID = (connectParams, table, record, idField, options = {}) => 
         //So insert and return the newest
         const insertSQL = `INSERT INTO dbo.${table} (${keyList.join(', ')}) VALUES (${keyList.map(key => `@${key}`).join(', ')})`;
         await queryNoPromises(connectParams, insertSQL, paramList);
-        result = await queryNoPromises(connectParams, checkSQL, paramList);
+        result = await queryNoPromises(connectParams, checkSQL, paramList, CHECK);
         recordID = result && result[0] && result[0][0];
         type = 'new'
         // in write mode, not finding the record after writing it should throw an error
