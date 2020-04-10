@@ -122,6 +122,10 @@ class newPatentImage extends Component {
         console.log('height', this.props.windowSize.height, viewport.height);
         // report the current viewport height up to the parent component
         this.props.reportViewport(viewport.width, viewport.height);
+        // experimental - text extraction
+        /* page.getTextContent().then(text => {
+            console.log('extracted text from page', text);
+        }); */
         const { canvas } = this;
         const canvasContext = canvas.getContext('2d');
         canvas.height = viewport.height;
@@ -250,6 +254,11 @@ class PatentImage extends Component {
             // report viewport data to potentially get new window sizes
             // also add the canvas here since we've got the count right
             const canvas = this.canvas.get(pdfPage);
+            // experimental - text extraction
+            // see https://github.com/mozilla/pdf.js/blob/master/examples/text-only/pdf2svg.js for example of how to turn this into displayable text via SVG
+            pageProps.page.getTextContent().then(text => {
+                console.log('extracted text from page', text);
+            });
             pdfPages.set(pdfPage, { ...pageProps, viewport, canvas });
         })
         const { width, height } = pdfPages.get(this.state.currentPdfPage).viewport;
@@ -267,7 +276,7 @@ class PatentImage extends Component {
             console.log('rendering pages ', start + 1, Math.min(start + 3, pdfPages.size));
             console.log(this.canvas, [...pdfPages]);
             return Promise.all([...pdfPages].slice(start, start + 3).map(([pdfPage, pageProps]) => {
-                const {canvas, viewport}  = pageProps;
+                const { canvas, viewport } = pageProps;
                 console.log('rendering page', pdfPage, 'to canvas', canvas);
                 const canvasContext = canvas.getContext('2d');
                 canvas.height = viewport.height;
@@ -299,7 +308,7 @@ class PatentImage extends Component {
         if (this.props.showPage && this.state.status === 'ready' && !this.pdf) this.loadDocument();
         const pdfPages = new Map([...this.state.pdfPages]);
         console.log(pdfPages);
-        return (<div>{[...pdfPages].map(([pdfPage, pageEntry], index) => <canvas key={pdfPage} ref={(canvas) => { this.canvas.set(index+1, canvas) }} />)}</div>)
+        return (<div>{[...pdfPages].map(([pdfPage, pageEntry], index) => <canvas key={pdfPage} ref={(canvas) => { this.canvas.set(index + 1, canvas) }} />)}</div>)
     }
 }
 /** Experimental -- not working GenericPDF stateless component
