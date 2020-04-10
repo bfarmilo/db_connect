@@ -21,11 +21,12 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Upload a generic document (into GeneralResearch DB Only) with Title and Author
 * ~~PDF native view (mostly) working~~
 * Experimental feature that writes a Importable JSON version of claim table for Excel import
-* *NEW* Compact view in Patent mode
-* *NEW* Patent mode updates and inserts patent summaries
-* *NEW* Updated to latest version of electron / tedious
-* *NEW* Multi-page PDF in native viewer
-* *NEW* PDF preview for non-patent documents
+* Compact view in Patent mode
+* Patent mode updates and inserts patent summaries
+* Updated to latest version of electron / tedious
+* Multi-page PDF in native viewer
+* PDF preview for non-patent documents
+* Multiple PDF's open concurrently
 
 
 Currently very much a work-in-progress.
