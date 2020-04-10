@@ -18,6 +18,7 @@ class PatentImages extends Component {
         super(props);
         this.state = {
             patentImages: new Map(),
+            patentID: 0,
             currentImage: 0,
             firstImage: 0,
             prevEnabled: false,
@@ -57,7 +58,7 @@ class PatentImages extends Component {
                 genericMode: false
             });
         });
-        ipcRenderer.on('generic', (event, data, currentImage) => {
+        ipcRenderer.on('generic', (event, data, currentImage, patentID) => {
             // handler for generic PDF data, where num pages not known
             console.log(`received local PDF file data`);
             const patentImages = data && new Map([[currentImage, { imageID: 1, pageData: data, rotation: 0 }]]);
@@ -65,6 +66,7 @@ class PatentImages extends Component {
                 patentImages,
                 firstImage: 1,
                 currentImage,
+                patentID,
                 genericMode: true
             });
         })
@@ -129,7 +131,7 @@ class PatentImages extends Component {
     reportViewport = (width, height) => {
         console.log(`viewport wants new width:${width} and height:${height}`);
         console.log(`requesting new size ${width} x ${height + CONTROL_HEIGHT + 5}`);
-        ipcRenderer.send('request_resize', width, height + CONTROL_HEIGHT + 5, this.state.genericMode ? 'pdfWindow' : 'imageWindow');
+        ipcRenderer.send('request_resize', width, height + CONTROL_HEIGHT + 5, this.state.genericMode ? 'pdfWindow' : 'imageWindow', this.state.patentID);
     }
 
     makeOffline = e => {

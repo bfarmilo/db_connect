@@ -22,8 +22,8 @@ const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
 let markmanwin;
 let detailWindow = null;
-let imageWindow = null;
-let documentWindow = null;
+let imageWindow = null; 
+const documentWindows = new Map(); // convert to a map so we can have multiple open pdfs
 let newPatentWindow;
 let timer;
 let manualResize = true;
@@ -123,7 +123,7 @@ const createWindow = () => {
     if (detailWindow) detailWindow.close();
     if (markmanwin) markmanwin.close();
     if (newPatentWindow) newPatentWindow.close();
-    if (documentWindow) documentWindow.close();
+    if (documentWindows.size) [...documentWindows].map(([ID, documentWindow]) => documentWindow.close()); // since this is a Map
     win = null;
   });
 }
@@ -682,11 +682,11 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
         const startPage = pageNo || await getFirstCol(PatentID);
         if (isNewWindow) {
           // now create the document window and send the data to it
-          // alt - figure out to use the scrollable patent API to make this work !!
-          if (documentWindow === null) {
+          // TODO: Make this able to open multiple PDF's at the same time
+          if (!documentWindows.has(PatentID)) {
             const [x, y] = detailWindow.getPosition();
             const [xSize, ySize] = detailWindow.getSize();
-            documentWindow = new BrowserWindow({
+            const documentWindow = new BrowserWindow({
               width: 425,
               height: 650,
               y,
@@ -699,15 +699,15 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
             // Open the DevTools.
             documentWindow.on('page-title-updated', e => e.preventDefault());
             documentWindow.on('closed', () => {
-              documentWindow = null;
+              documentWindows.delete(PatentID);
             });
             documentWindow.on('ready-to-show', () => {
               console.log('window ready, sending pdf data', fileResult.data.toString('base64').slice(0, 1000));
-              documentWindow.show();
-              if (process.env.DEVTOOLS === 'show') documentWindow.webContents.openDevTools();
-              documentWindow.webContents.send('resize', { width: 425, height: 650 })
+              documentWindows.get(PatentID).show();
+              if (process.env.DEVTOOLS === 'show') documentWindows.get(PatentID).webContents.openDevTools();
+              documentWindows.get(PatentID).webContents.send('resize', { width: 425, height: 650 })
               //documentWindow.webContents.send('available_offline', true);
-              documentWindow.webContents.send('generic', fileResult.data.toString('base64'), startPage);
+              documentWindows.get(PatentID).webContents.send('generic', fileResult.data.toString('base64'), startPage, PatentID);
             })
             documentWindow.on('resize', () => {
               if (manualResize) {
@@ -715,22 +715,23 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
                 clearTimeout(timer);
                 timer = setTimeout(() => {
                   console.log('document Window size changed, sending new size');
-                  const [width, height] = documentWindow.getContentSize();
-                  documentWindow.webContents.send('resize', { width, height })
+                  const [width, height] = documentWindows.get(PatentID).getContentSize();
+                  documentWindows.get(PatentID).webContents.send('resize', { width, height })
                 }, 500);
               } else {
                 // reset to listen for mouse events
                 manualResize = true;
               }
             });
+            documentWindows.set(PatentID, documentWindow);
           } else {
             // send new data to existing window
-            documentWindow.webContents.send('available_offline', true);
-            documentWindow.webContents.send('generic', fileResult.data.toString('base64'));
+            documentWindows.get(PatentID).webContents.send('available_offline', true);
+            documentWindows.get(PatentID).webContents.send('generic', fileResult.data.toString('base64'));
           }
         }
         if (fileResult.status === 'opened') {
-          // it's been opened by shell
+          // it's been opened by shell. If not, throw
           if (!fileResult.data) throw new Error('system failed to open PDF file');
         }
         //fileResult.status==='cancelled' -- no action needed
@@ -743,8 +744,8 @@ ipcMain.on('open_patent', (opEvent, linkVal, PatentID, title, sourceWindow, page
     .catch(err => console.error(err));
 });
 
-ipcMain.on('change_window_rotation', (e, isImageWindow) => {
-  const targetWindow = isImageWindow ? imageWindow : documentWindow;
+ipcMain.on('change_window_rotation', (e, isImageWindow, PatentID = 0) => {
+  const targetWindow = isImageWindow ? imageWindow : documentWindows.get(PatentID); //how to handle documentWindow map !
   // reset the window size to keep the image size constant
   const [height, width] = targetWindow.getContentSize();
   targetWindow.setContentSize(width, height);
@@ -752,10 +753,11 @@ ipcMain.on('change_window_rotation', (e, isImageWindow) => {
   targetWindow.webContents.send('resize', { width, height });
 })
 
-ipcMain.on('request_resize', (e, width, height, windowName) => {
+ipcMain.on('request_resize', (e, width, height, windowName, PatentID = 0) => {
+  // how to handle documentWindow lookup
   const windowLookup = {
     patentDetail: detailWindow,
-    pdfWindow: documentWindow,
+    pdfWindow: documentWindows.get(PatentID),
     imageWindow: imageWindow
   }
   // target window has requested a new size, so set it up
