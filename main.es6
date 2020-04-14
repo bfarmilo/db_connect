@@ -35,11 +35,6 @@ let dropboxPath = ''; // keeps the path to the local dropbox
 const ROWS_TO_RETURN = 200;
 const SLICE_SIZE = 3;
 const PDF_MODE = 'window';
-const databases = {
-  PMCDB: { uriMode: false, next: "NextIdea" },
-  NextIdea: { uriMode: true, next: "GeneralResearch" },
-  GeneralResearch: { uriMode: true, next: "PMCDB" }
-};
 
 // database parameters
 let connectParams;
@@ -68,7 +63,7 @@ process.on('uncaughtException', e => {
 const connectToDB = async () => {
   try {
     connectParams = await connectDocker(patentDB.connection);
-    uriMode = databases[connectParams.options.database].uriMode;
+    uriMode = patentDB.databases[connectParams.options.database].uriMode;
     console.log(`new connection parameters set: ${JSON.stringify(connectParams)}`);
     return connectParams.server;
   } catch (err) {
@@ -888,11 +883,10 @@ ipcMain.on('markman_write', async (e, list, record) => {
 })
 
 // Listener for changing to the other Databases
-ipcMain.on('change_db', event => {
-  const newDB = databases[connectParams.options.database].next;
+ipcMain.on('change_db', (event, newDB) => {
   console.log('changing database to', newDB);
   connectParams.options.database = newDB;
-  uriMode = databases[newDB].uriMode;
+  uriMode = patentDB.databases[newDB].uriMode;
 })
 
 // Listener for a call to update PotentialApplication or WatchItems
@@ -952,7 +946,7 @@ ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
       } else {
         // send the result after parsing properly. Also return it for saving if desired
         const currentResult = parseOutput(mode, result, uriMode);
-        win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode);
+        win.webContents.send('json_result', currentResult, totalCount, newOffset, appendMode, connectParams.options.database, patentDB.databases);
         if (mode === 'claims' && Array.isArray(currentResult) && currentResult.length > 0) {
           // write a temporary file for Excel export, but not for Markman table
           // strip out xml tags for Excel-friendly output

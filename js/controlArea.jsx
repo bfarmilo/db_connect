@@ -1,11 +1,19 @@
 import { h } from 'preact';
 import { simpleHash } from './claimListMethods';
 import { Icon } from './icons';
+import { Dropdown } from './DropDown';
 // the main UI at the top of the table to run and filter queries
 
 const ControlArea = props => {
 
     const config = props.config[props.displayMode];
+    
+    // for the dropdown, create a map of [DBdisplayname -> dbname]
+    const databaseList = new Map([...props.dbList].map(([dbName, dbProperties]) => {
+        return [dbProperties.display, dbName]
+    }));
+    // for the dropdown, create a map of [ViewdisplayName -> viewName]
+    const displayList = new Map(Object.keys(props.config).map(key => ([props.config[key].display, key])))
 
     const styles = {
         ButtonArea: {
@@ -103,12 +111,24 @@ const ControlArea = props => {
                     Download New Patents</button>
                 <button style={styles.FilterButton} onClick={props.changeMode}>
                     View {props.config[config.next].display}s</button>
-                <button
-                    style={styles.FilterButton}
-                    onClick={props.changeDB}
-                >
-                    Change Database
-                </button>
+                <Dropdown
+                    editable={false}
+                    data={displayList}
+                    contents='displayMode'
+                    onChange={props.changeMode}
+                    selected={props.config[props.displayMode].display}
+                    themeColor={props.config[props.displayMode].themeColor}
+                    multiSelect={false}
+                />
+                <Dropdown
+                    editable={false}
+                    data={databaseList}
+                    contents='database'
+                    onChange={props.changeDB}
+                    selected={props.activeDB}
+                    themeColor={props.config[props.displayMode].themeColor}
+                    multiSelect={false}
+                />
             </div>
             <div style={styles.TableHeading}>
                 {config.columns.map(column => {

@@ -15,11 +15,6 @@ const APPEND = true;
 
 
 
-const sortOrder = new Map([
-    ['PatentNumber', { field: 'PatentNumber', ascending: true }],
-    ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
-]);
-
 /** */
 class ClaimTable extends Component {
     constructor(props) {
@@ -32,12 +27,14 @@ class ClaimTable extends Component {
             resultCount: 0,
             working: true,
             activeRows: new Map(),
-            sortOrder,
+            sortOrder: new Map(config.claims.sortOrder),
             offset: 0,
             scrollTop: 0,
             modalContent: { inventor: '', title: '', claimID: '' },
             displayMode: 'claims',
-            compactView: true
+            compactView: true,
+            activeDB: '',
+            dbList: new Map()
             // scrollBar: {}
         };
         this.toggleExpand = this.toggleExpand.bind(this);
@@ -61,11 +58,12 @@ class ClaimTable extends Component {
     componentDidMount() {
 
         // new query results from Main
-        ipcRenderer.on('json_result', (event, data, resultCount, newOffset, appendMode) => {
+        ipcRenderer.on('json_result', (event, data, resultCount, newOffset, appendMode, activeDB, dbList) => {
             if (data) {
                 console.log('got new table data, count, offset, appendmode', resultCount, newOffset, appendMode);
                 const resultList = new Map(this.state.resultList);
                 console.log(data);
+                // for new queries, clear the results otherwise append to the existing result list
                 if (!appendMode) {
                     resultList.clear();
                 }
@@ -78,9 +76,12 @@ class ClaimTable extends Component {
                     resultList.set(key, item);
                 });
                 console.log(resultList);
+                // now need to convert dbList {db1: {}, db2: {}, db3:{}} to an iterable
                 this.setState({
                     resultList,
                     resultCount,
+                    activeDB,
+                    dbList: new Map(Object.keys(dbList).map(key => [key, dbList[key]])),
                     working: false,
                     offset: newOffset,
                     scrollTop: appendMode ? this.state.scrollTop : 0
@@ -184,13 +185,15 @@ class ClaimTable extends Component {
     /** send a 'change_db' message to main, to switch DB's in the server
      * 
      */
-    changeDB() {
+    changeDB(event) {
         console.log('changing database');
-        ipcRenderer.send('change_db');
+        // event.target.value is the display name of the database
+        // need to do a quick lookup to get the dbname to pass back to main
+        const activeDB = ([...this.state.dbList].filter(([dbName, dbProperties]) => dbProperties.display === event.target.value))[0][0];
+        ipcRenderer.send('change_db', activeDB);
         const queryValues = this.clearQuery();
         const resultList = new Map();
-        this.setState({ resultList, queryValues });
-        this.runQuery(null, NEW);
+        this.setState({ resultList, queryValues }, () => this.runQuery(null, NEW));
     }
 
     /** respond to the clicking on a heading title to cycle through sort order options
@@ -325,28 +328,11 @@ class ClaimTable extends Component {
      * Change from Claims to Constructions to PriorArt and back
      */
     changeMode = e => {
-        const modeCycle = {
-            claims: 'markman',
-            markman: 'priorArt',
-            priorArt: 'claims'
-        }
-        const sortOrder = {
-            claims: new Map([
-                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
-                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
-            ]),
-            markman: new Map([
-                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
-                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
-            ]),
-            priorArt: new Map([
-                ['PatentNumber', { field: 'PatentNumber', ascending: true }]
-            ])
-        }
+        const displayMode = Object.keys(config).filter(key => config[key].display && config[key].display === e.target.value)[0];
+        const { sortOrder } = config[displayMode];
         const queryValues = this.clearQuery();
         const resultList = new Map();
-        const displayMode = modeCycle[this.state.displayMode];
-        this.setState({ displayMode, sortOrder: sortOrder[displayMode], resultList, queryValues }, () => this.runQuery(null, NEW));
+        this.setState({ displayMode, sortOrder: new Map([...sortOrder]), resultList, queryValues }, () => this.runQuery(null, NEW));
     }
 
     /** Handle call to open a PDF */
@@ -385,6 +371,8 @@ class ClaimTable extends Component {
                     sortOrder={this.state.sortOrder}
                     expandAll={this.state.expandAll}
                     compactView={this.state.compactView}
+                    activeDB={this.state.dbList.size ? this.state.dbList.get(this.state.activeDB).display : ''}
+                    dbList={this.state.dbList}
                     runQuery={this.runQuery}
                     editQuery={this.editQuery}
                     toggleExpand={this.toggleExpand}

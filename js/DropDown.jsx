@@ -15,8 +15,16 @@ const Dropdown = props => {
 
 
     const styles = {
+        parent: {
+            display: 'flex',
+            flexGrow: '1',
+            margin: (!props.editable && !props.multiSelect) ? '0px' : '3px',
+            borderRadius: '3px'
+        },
         select: {
-            backgroundColor: props.themeColor
+            backgroundColor: props.themeColor,
+            color: 'lightgrey',
+            fontWeight: 'bold'
         },
         option: {
             background: props.themeColor
@@ -30,7 +38,7 @@ const Dropdown = props => {
     const listID = props.contents; // change this into a hash?
 
     return (
-        <div class={'customdropdown'} style={{ display: 'flex', flexGrow:'1', margin: '3px' }}>
+        <div class={'customdropdown'} style={styles.parent}>
             {props.editable ?
                 <input style={styles.input} value={props.selected} list={listID} onChange={e => props.onChange(e, props.contents)}>
                     <datalist id={listID} style={styles.select}>
