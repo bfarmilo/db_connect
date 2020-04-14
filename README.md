@@ -27,6 +27,7 @@ Node-based connector to db and publish query results. Latest version is for elec
 * Multi-page PDF in native viewer
 * PDF preview for non-patent documents
 * Multiple PDF's open concurrently
+* NEW Change 'ChangeDB' and mode toggles to drop-selects
 
 
 Currently very much a work-in-progress.
@@ -56,12 +57,11 @@ Currently very much a work-in-progress.
 19. generally make table editable -- repurpose Markman input for main tables ??
 20. ~~Close docker container at app.close~~ 
 21. ~~Search by author~~
-22. **PRIORITY** Lazy loading and overall better handling of PDF documents - see reportViewer?
+22. Lazy loading and overall better handling of PDF documents - see reportViewer?
 23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
   - use % of scroll to estimate position in PDF based on text start & end?
   - use page load architecture from reportviewer rather than zoom based imageview
 24. ~~For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected~~
-25. Change 'ChangeDB' and mode toggles to drop-selects
 
 
 ### Build Notes:
