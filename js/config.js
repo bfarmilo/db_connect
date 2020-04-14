@@ -21,6 +21,10 @@ module.exports = {
                 { display: 'Claim Full Text', field: 'ClaimHtml', hasDetail: true },
                 { display: 'Notes', field: 'PotentialApplication' },
                 { display: 'Watch', field: 'WatchItems' }
+            ],
+            sortOrder: [
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
             ]
         },
         markman: {
@@ -41,6 +45,10 @@ module.exports = {
                 { display: 'Ruling', field: 'FileName' },
                 { display: 'Court', field: 'Court' },
                 { display: 'Case', field: 'ClientName' }
+            ],
+            sortOrder: [
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }],
+                ['ClaimNumber', { field: 'ClaimNumber', ascending: true }]
             ]
         },
         priorArt: {
@@ -58,20 +66,10 @@ module.exports = {
                 { display: 'Title', field: 'Title' },
                 { display: 'Summary', field: 'PatentSummaryText' },
                 { display: 'Watch', field: 'WatchItems' }
+            ],
+            sortOrder: [
+                ['PatentNumber', { field: 'PatentNumber', ascending: true }]
             ]
-        },
-        databaseOptions: {
-            PMCDB: {
-                hideColumns: [
-                    { field: 'InventorLastName' },
-                    { field: 'Title' }
-                ],
-                enableConstructions: true
-            },
-            GeneralResearch: {
-                hideColumns: [],
-                enableConstructions: false
-            }
         }
     }
 }
