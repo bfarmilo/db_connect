@@ -19,7 +19,8 @@ const Dropdown = props => {
             display: 'flex',
             flexGrow: '1',
             margin: (!props.editable && !props.multiSelect) ? '0px' : '3px',
-            borderRadius: '3px'
+            borderRadius: '3px',
+            backgroundColor: props.themeColor
         },
         select: {
             backgroundColor: props.themeColor,

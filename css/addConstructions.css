@@ -81,6 +81,7 @@ input {
   position: relative;
   display: inline-block;
   vertical-align: middle;
+  border: none;
 }
 
 .customdropdown select {
