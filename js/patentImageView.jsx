@@ -121,7 +121,7 @@ class newPatentImage extends Component {
         console.log('width', this.props.windowSize.width, viewport.width);
         console.log('height', this.props.windowSize.height, viewport.height);
         // report the current viewport height up to the parent component
-        this.props.reportViewport(viewport.width, viewport.height);
+        this.props.reportViewport(viewport.width, viewport.height, );
         // experimental - text extraction
         /* page.getTextContent().then(text => {
             console.log('extracted text from page', text);
@@ -209,7 +209,7 @@ class PatentImage extends Component {
         // update status, reset pages & log
         this.setState({ pdfPages: new Map(), status: 'loading' });
         console.log('loadDocument', this.state.status, !!this.pdf, this.canvas);
-        // TODO deal with multi-page PDF's
+        // data is either a single image from the DB or a multi-page file from the file system
         const data = atob(this.props.imageData.get(this.props.showPage).pageData);
         const loadingTask = pdfJsLib.getDocument({ data });
         // update status to processing and store pdf data
@@ -251,7 +251,6 @@ class PatentImage extends Component {
             const viewport = pageProps.page.getViewport({ scale, rotation: this.props.rotation })
             console.log('width', this.props.windowSize.width, viewport.width);
             console.log('height', this.props.windowSize.height, viewport.height);
-            // report viewport data to potentially get new window sizes
             // also add the canvas here since we've got the count right
             const canvas = this.canvas.get(pdfPage);
             // experimental - text extraction
@@ -261,6 +260,7 @@ class PatentImage extends Component {
             });
             pdfPages.set(pdfPage, { ...pageProps, viewport, canvas });
         })
+        // TODO: report all heights so the gotopage control will work
         const { width, height } = pdfPages.get(this.state.currentPdfPage).viewport;
         this.props.reportViewport(width, height);
         // update state and viewport, pass off to rendering
@@ -308,7 +308,7 @@ class PatentImage extends Component {
         if (this.props.showPage && this.state.status === 'ready' && !this.pdf) this.loadDocument();
         const pdfPages = new Map([...this.state.pdfPages]);
         console.log(pdfPages);
-        return (<div>{[...pdfPages].map(([pdfPage, pageEntry], index) => <canvas key={pdfPage} ref={(canvas) => { this.canvas.set(index + 1, canvas) }} />)}</div>)
+        return (<div>{[...pdfPages].map(([pdfPage, pageEntry], index) => <canvas id={pdfPage} key={pdfPage} ref={(canvas) => { this.canvas.set(index + 1, canvas) }} />)}</div>)
     }
 }
 /** Experimental -- not working GenericPDF stateless component
@@ -368,6 +368,5 @@ const GenericPdf = async props => {
 
 module.exports = {
     PatentImage,
-    newPatentImage,
     GenericPdf
 }
