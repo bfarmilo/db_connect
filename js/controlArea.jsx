@@ -109,8 +109,6 @@ const ControlArea = props => {
                 {specialButton}
                 <button style={styles.FilterButton} onClick={props.getNewPatents}>
                     Download New Patents</button>
-                <button style={styles.FilterButton} onClick={props.changeMode}>
-                    View {props.config[config.next].display}s</button>
                 <Dropdown
                     editable={false}
                     data={displayList}

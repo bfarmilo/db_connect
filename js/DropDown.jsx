@@ -25,7 +25,11 @@ const Dropdown = props => {
         select: {
             backgroundColor: props.themeColor,
             color: 'lightgrey',
-            fontWeight: 'bold'
+            fontWeight: 'bold',
+            display: 'flex',
+            flexGrow: '1',
+            border: 'none',
+            textAlignLast: 'center'
         },
         option: {
             background: props.themeColor
