@@ -37,6 +37,7 @@ class PatentDetail extends Component {
             currentImage: 0,
             enableOffline: false,
             windowSize: { width: 800, height: 1000 },
+            priorSize: { width: 800, height: 1000 },
             working: true,
             showPDF: false,
             enableImageButton: true
@@ -81,8 +82,10 @@ class PatentDetail extends Component {
             }
         });
         ipcRenderer.on('resize', (event, { width, height }) => {
+            const SIZE_TOLERANCE = 6;
             console.log(`got new window size width:${width} height:${height}`);
-            if (this.headerDiv && this.textDiv) {
+            const movedOnly = Math.abs(width - this.state.priorSize.width) < SIZE_TOLERANCE && Math.abs(height - this.state.priorSize.height) < SIZE_TOLERANCE;
+            if (this.headerDiv && this.textDiv && !movedOnly) {
                 // both divs have 10 margin and 10 padding, and 20 for the menu
                 const newHeight = height - this.headerDiv.offsetHeight - 40 - height / 10;
                 console.log(`window height: ${height}, header height ${this.headerDiv.offsetHeight}, setting textDiv to ${newHeight}`)
@@ -90,8 +93,9 @@ class PatentDetail extends Component {
                 if (this.state.busy) {
                     this.deferredHeight = newHeight;
                 } else {
-                    this.setState({ windowSize: { width, height: newHeight } })
+                    this.setState({ windowSize: { width, height: newHeight }, priorSize: { width, height } })
                 }
+
             }
         });
         ipcRenderer.on('available_offline', (event, isOffline) => {
@@ -246,7 +250,7 @@ class PatentDetail extends Component {
             const windowSize = {};
             windowSize.height = this.deferredHeight || this.state.windowSize.height;
             windowSize.width = this.state.windowSize.width;
-            this.setState({busy:false, windowSize })
+            this.setState({ busy: false, windowSize })
         }
         if (status === 'busy' && !this.state.busy) this.setState({ busy: true });
     }

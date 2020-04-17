@@ -27,8 +27,9 @@ class PatentImages extends Component {
             rotation: 0,
             enableOffline: false,
             windowSize: { width: 0, height: 0 },
+            priorSize: { width: 0, height: 0 },
             genericMode: false,
-            busy:false
+            busy: false
         };
     }
     // should display an image
@@ -71,8 +72,11 @@ class PatentImages extends Component {
             });
         })
         ipcRenderer.on('resize', (event, { width, height }) => {
+            const SIZE_TOLERANCE = 6;
             console.log(`got new window size from main - width:${width} height:${height}`);
-            if (!this.state.busy) this.setState({ windowSize: { width, height } });
+            // only update the width and height if they have changed more than SIZE_TOLERANCE. Otherwise it will re-render the whole PDF !
+            const movedOnly = Math.abs(width - this.state.priorSize.width) < SIZE_TOLERANCE && Math.abs(height - this.state.priorSize.height) < SIZE_TOLERANCE;
+            if (!this.state.busy && !movedOnly) this.setState({ windowSize: { width, height }, priorSize: { width, height } });
         });
         ipcRenderer.on('available_offline', (event, isOffline) => {
             console.log(`images are ${isOffline ? '' : 'not'} available offline`);
@@ -141,7 +145,7 @@ class PatentImages extends Component {
 
     reportStatus = (e, status) => {
         if (status === 'ready') console.log('rendering complete');
-        if (status === 'busy' && !this.state.busy) this.setState({busy: true})
+        if (status === 'busy' && !this.state.busy) this.setState({ busy: true })
     }
 
     render({ }, { }) {

@@ -260,7 +260,7 @@ class PatentImage extends Component {
             });
             pdfPages.set(pdfPage, { ...pageProps, viewport, canvas });
         })
-        // TODO: report all heights so the gotopage control will work
+        // TODO: report all heights so the gotoPage control will work
         const { width, height } = pdfPages.get(this.state.currentPdfPage).viewport;
         this.props.reportViewport(width, height);
         // update state and viewport, pass off to rendering
