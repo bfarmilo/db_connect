@@ -34,34 +34,21 @@ Currently very much a work-in-progress.
 
 ### Known TODOs:
 
-1. ~~Update all refernces to ./jsx/~~
-2. ~~Make patent Full Text writing offline by choice~~
-3. ~~Handle 10M-range patent numbers (Patent Detail, Patent Table)~~
-4. ~~Check for duplicate (claims, patents) before inserting~~ -- basic URI match now checked
-5. Update components to include react hooks: NOT SUPPORTED
-6. ~~Get Patent Detail window size right~~
-7. Migrate to React-Native
-8. DB Backend to SQLite for portablility
+1. Update components to include react hooks: NOT SUPPORTED
+1. Migrate to React-Native
+1. DB Backend to SQLite for portablility
   1. get rid of tedious-promises 
-9. ~~Interface to allow addition and linking of markman terms to patents and constructions~~
-10. Better reporting for shortlisting, claim export - Improve experimental save-as feature
-11. ~~Write back-end for Patent Summary updating~~
-26. ~~OR For Patent View, use Patent Summary for notes entry, and remove it from full-text view~~
-12. Enable Expiry date estimation writing
-13. DB migration to cloud
-14. DB authentication and user tracking
-15. ~~Support for US Applications~~
-16. ~~Option to enable general PDF linking~~
-17. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
-18. ~~Sort by author~~
-19. generally make table editable -- repurpose Markman input for main tables ??
-20. ~~Close docker container at app.close~~ 
-21. ~~Search by author~~
-22. Lazy loading and overall better handling of PDF documents - see reportViewer?
-23. Put full PDF in Patent window (toggle with fulltext, remember offsets when switching)
-  - use % of scroll to estimate position in PDF based on text start & end?
-  - use page load architecture from reportviewer rather than zoom based imageview
-24. ~~For Patent view have 'compact view' where only 5-10 lines of notes or watch are visible when selected~~
+1. Better reporting for shortlisting, claim export - Improve experimental save-as feature
+1. Enable Expiry date estimation writing
+1. DB migration to cloud
+1. DB authentication and user tracking
+1. Idea to store full text (or documents or images) in a new table by SHA. That way if a document already exists don't need to add it again
+1. generally make table editable -- repurpose Markman input for main tables ??
+1. Lazy loading and overall better handling of PDF documents - see reportViewer?
+1. PDF index of open windows for easier navigation
+1. Text based searching in PDF view
+1. Go To Page function for PDF view
+1. Text analysis to map column and row data to the fulltext character offsets
 
 
 ### Build Notes:
