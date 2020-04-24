@@ -90,7 +90,7 @@ class ClaimTable extends Component {
                 );
             } else {
                 console.log('no results received');
-                this.setState({ resultList: new Map(), resultCount: 0, working: false })
+                this.setState({ resultList: new Map(), resultCount: 0, activeDB, working: false })
             }
         });
         // window size changed, needed to recalculate scrollbars
