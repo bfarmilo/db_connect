@@ -34,6 +34,28 @@
         {
             "type": "node",
             "request": "launch",
+            "name": "Fiddler Readonly -- Electron Main",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
+            "cwd": "${workspaceRoot}",
+            "windows": {
+                "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
+            },
+            "program": "${workspaceRoot}/main.es6",
+            "outFiles": [
+                "${workspaceRoot}/main.js"
+            ],
+            "protocol": "inspector",
+            "preLaunchTask": "npm: transpile-main",
+            "outputCapture": "std",
+            "env": {
+                "DEVTOOLS": "show",
+                "DBMODE": "readonly",
+                "FIDDLER": "1"
+            }
+        },
+        {
+            "type": "node",
+            "request": "launch",
             "name": "ReadWrite -- Electron Main",
             "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
             "cwd": "${workspaceRoot}",
