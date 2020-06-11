@@ -76,9 +76,9 @@
             {
                 "name": "PatentNumber",
                 "table": "patents",
-                "prefix": "RIGHT(CAST(",
-                "suffix": " AS char(7)),3)=",
-                "notSuffix": " AS char(7)),3)!="
+                "prefix": "RIGHT(",
+                "suffix": ",3)=",
+                "notSuffix": ",3)!="
             },
             {
                 "name": "PatentURI",
