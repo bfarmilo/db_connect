@@ -1,6 +1,6 @@
 {
   "name": "dbviewer",
-  "version": "1.6.7",
+  "version": "1.6.8",
   "description": "Viewer application that connects to patent DB",
   "main": "main.js",
   "scripts": {
@@ -23,9 +23,9 @@
   "dependencies": {
     "@babel/runtime": "^7.9.2",
     "dompurify": "^2.0.8",
+    "electron-fetch": "^1.4.0",
     "fs-extra": "^9.0.0",
     "marked": "^0.8.2",
-    "node-fetch": "^2.6.0",
     "pdfjs-dist": "^2.3.200",
     "preact": "^10.3.4",
     "preact-custom-scrollbars": "^4.0.4",

@@ -1,4 +1,4 @@
-const fetch = require('node-fetch');
+const fetch = require('electron-fetch').default;
 const uspto = require('../app_config.json').uspto;
 
 
@@ -14,7 +14,7 @@ const cleanHTML = (text) => {
 
     //TODO: Pull out claims here into an array and pass them to formatClaim !!!
     // const claimStart = new RegExp(uspto.startClaimMatch, 'i');
-    
+
     return fullText.slice((fullText.match(start).index + uspto.startMatch.length), fullText.match(end).index).replace(strip, '').split(lineBreak);
 }
 
@@ -27,14 +27,15 @@ const getFullText = async (patentNumber) => {
     try {
         const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
         let usptoURL;
+        const headers = { "User-Agent": 'Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0' };
         const { url, queryParams, redirectPattern } = uspto[docType];
         // form the url GET string. The patentNumber shows up as TERM1
         usptoURL = `${url}?TERM1=${patentNumber}&${Object.keys(queryParams).map(key => `${key}=${encodeURIComponent(queryParams[key])}`).join('&')}`;
         // the landing page redirects with new query parameters
-        const redirectURL = await (await fetch(usptoURL)).text();
+        const redirectURL = await (await fetch(usptoURL, { headers })).text();
         const redirPattern = new RegExp(redirectPattern, 'i');
         // extract the query parameters from the landing page and fetch the redirected page, and return the cleaned result
-        return cleanHTML(await (await fetch(`${usptoURL}${redirectURL.match(redirPattern)[1]}`)).text());
+        return cleanHTML(await (await fetch(`${usptoURL}${redirectURL.match(redirPattern)[1]}`, { headers })).text());
     } catch (err) {
         return Promise.reject(err)
     }

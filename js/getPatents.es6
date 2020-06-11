@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import fetch from 'electron-fetch';
 import fse from 'fs-extra';
 import { insertNewPatents, insertClaims, updatePatents } from './app_bulkUpload';
 import { flatten } from './app_sqlParse';
@@ -16,7 +16,8 @@ const downloadPatents = async (recordList, dropBoxPath, update) => {
 
   return Promise.all(patentList.map(async patent => {
     try {
-      return await (await fetch(patent.downloadLink)).body
+      const headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0" };
+      return await (await fetch(patent.downloadLink, { headers })).body
         .pipe(fse.createWriteStream(`${dropBoxPath}${patent.PatentPath}`))
         .on('close', () => {
           update(patent.patentNumber, 'downloaded');
@@ -36,9 +37,9 @@ const downloadPatents = async (recordList, dropBoxPath, update) => {
  * @param {Object} claimFilter Used to filter out certain claims, eg claim 1 only or independent only
  */
 const createPatentQuery = (params, patentList, update, claimFilter = false) => new Promise(async (resolve, reject) => {
-  
+
   const filterTest = claim => !claimFilter || !!claim[claimFilter.field].toString().match(claimFilter.value);
-  
+
   try {
     const result = await Promise.all(patentList.map(patent => insertNewPatents(params, patent, () => update(patent.PatentNumber, 'patent inserted')))).catch(err => {
       console.error('error writing patent record', err);

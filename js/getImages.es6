@@ -1,4 +1,4 @@
-import fetch from 'node-fetch';
+import fetch from 'electron-fetch';
 import { uspto } from '../app_config.json';
 
 // sample url from USPTO
@@ -29,6 +29,8 @@ TODO: Write a front-end (new window for Image display)
  */
 const getAllImages = async patentNumber => {
 
+    const headers = { "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64; rv:77.0) Gecko/20100101 Firefox/77.0" };
+
     const docType = /\d{11}/g.test(`${patentNumber}`) ? 'application' : 'patent';
     const docNumber = (docType === 'application') ? `${patentNumber}` : (patentNumber < 10000000) ? `0${patentNumber}` : `${patentNumber}`;
 
@@ -38,7 +40,7 @@ const getAllImages = async patentNumber => {
      * @returns {number} -> the page number of the end of the prior section, or 0 if not present
      */
     const findEndPage = async section => {
-        const sectionPage = await (await fetch(`${uspto[docType].images.baseUrl}${uspto[docType].images.url}${docNumber}&SectionNum=${section}`)).text();
+        const sectionPage = await (await fetch(`${uspto[docType].images.baseUrl}${uspto[docType].images.url}${docNumber}&SectionNum=${section}`, { headers })).text();
         return parseInt(sectionPage.match(/PageNum=(\d+)/i)[1], 10) || 0;
     }
 
@@ -50,8 +52,8 @@ const getAllImages = async patentNumber => {
     const getImage = async PageNumber => {
         const matchPattern = new RegExp(uspto[docType].images.matchPattern, 'g');
         const ImageURL = `${uspto[docType].images.baseUrl}${docNumber.replace(matchPattern, uspto[docType].images.replacePattern)}${PageNumber}.pdf`;
-        const PageData = (await (await fetch(ImageURL)).buffer()).toString('base64');
-        return { PageNumber, ImageURL, PageData};
+        const PageData = (await (await fetch(ImageURL, { headers })).buffer()).toString('base64');
+        return { PageNumber, ImageURL, PageData };
     }
 
     try {
