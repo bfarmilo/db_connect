@@ -22,7 +22,7 @@ const { app, BrowserWindow, shell, ipcMain, dialog } = electron;
 let win;
 let markmanwin;
 let detailWindow = null;
-let imageWindow = null; 
+let imageWindow = null;
 const documentWindows = new Map(); // convert to a map so we can have multiple open pdfs
 let newPatentWindow;
 let timer;
@@ -410,7 +410,11 @@ ipcMain.on('view_patentdetail', (event, patentNumber) => {
               state.PatentHtml = JSON.stringify(PatentHtml);
               return updateRenderWindow(state, detailWindow);
             })
-            .catch(err3 => console.error(err3))
+            .catch(err3 => {
+              console.error(err3)
+              state.PatentHtml = JSON.stringify([err3.message]);
+              return updateRenderWindow(state, detailWindow);
+            })
         } else {
           // we found it, so it is already available offline
           detailWindow.webContents.send('available_offline', true);
@@ -784,7 +788,7 @@ ipcMain.on('add_claimconstructions', async () => {
     width: 1440,
     height: 800,
     options: {
-      show:false
+      show: false
     },
     webPreferences: { nodeIntegration: true }
   });
