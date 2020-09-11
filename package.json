@@ -25,7 +25,7 @@
     "dompurify": "^2.0.8",
     "fs-extra": "^9.0.0",
     "marked": "^0.8.2",
-    "node-fetch": "^2.6.0",
+    "node-fetch": "^2.6.1",
     "pdfjs-dist": "^2.3.200",
     "preact": "^10.3.4",
     "preact-custom-scrollbars": "^4.0.4",
