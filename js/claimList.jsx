@@ -12,6 +12,7 @@ const TITLE_ROW_HEIGHT = 175;
 const RESIZE_THRESHOLD = 50;
 const NEW = false;
 const APPEND = true;
+const ROWS_TO_RETURN = 500; // keep in sync with main
 
 
 
@@ -240,8 +241,8 @@ class ClaimTable extends Component {
 
     handleScroll(event) {
         //TODO: clean way to leave the scroll position where it was
-        //console.log('distance to trigger %d -> %d', -event.target.scrollTop + event.target.scrollHeight, this.state.windowHeight);
-        if (this.state.resultCount > 200 && event.target.scrollHeight - event.target.scrollTop <= this.state.windowHeight) {
+        console.log('distance to trigger %d -> %d', -event.target.scrollTop + event.target.scrollHeight, this.state.windowHeight, this.state.resultCount);
+        if (this.state.resultCount > ROWS_TO_RETURN && event.target.scrollHeight - event.target.scrollTop <= this.state.windowHeight) {
             this.setState({
                 scrollTop: event.target.scrollTop,
                 //scrollBar: this.scrollBar 

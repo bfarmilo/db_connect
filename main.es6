@@ -32,7 +32,7 @@ let manualResize = true;
 let dropboxPath = ''; // keeps the path to the local dropbox
 
 // global constants
-const ROWS_TO_RETURN = 200;
+const ROWS_TO_RETURN = 500;
 const SLICE_SIZE = 3;
 const PDF_MODE = 'window';
 
@@ -930,11 +930,11 @@ ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
     .catch(err => console.error(err));
 })
 
+// global to keep track of total count of results for the current query
+let totalCount = 0;
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
-
-  let totalCount = 0;
-
+ 
   const queryMode = {
     simple: { data: 'p_SELECTJSON', count: 'p_COUNT' },
     claims: { data: 'p_SELECTJSON', count: 'p_COUNT' },
