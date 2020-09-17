@@ -1,3 +1,5 @@
+// TODO reparse for sqlite
+
 const { connectDocker } = require('./connectDocker.es6');
 const { insertAndGetID } = require('./app_bulkUpload.es6');
 const fse = require('fs-extra');

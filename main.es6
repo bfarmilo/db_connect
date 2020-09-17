@@ -2,15 +2,19 @@ const electron = require('electron');
 const fse = require('fs-extra');
 // local modules
 const { getDropBoxPath } = require('./jsx/getDropBoxPath');
-const { queryDatabase } = require('./jsx/app_DBconnect');
-const { connectDocker, closeDocker } = require('./jsx/connectDocker');
 const { getFullText } = require('./jsx/getFullText');
-const { parseQuery, parseOrder, parseOutput } = require('./jsx/app_sqlParse');
-const { createPatentQuery, downloadPatents } = require('./jsx/getPatents.js');
-const { insertAndGetID, getTermConstructions, getConstructions } = require('./jsx/app_bulkUpload');
+const { downloadPatents } = require('./jsx/getPatents.js');
 const { getAllImages } = require('./jsx/getImages');
-const { initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman } = require('./jsx/app_markmanInterface');
 const { formatClaim } = require('./jsx/formatClaim');
+// database operations
+const {
+  createPatentQuery, 
+  initializeMarkman, getClaims, linkDocument, addMarkman, modifyMarkman,
+  insertAndGetID, getTermConstructions, getConstructions,
+  queryDatabase,
+  parseQuery, parseOrder, parseOutput,
+  connectToDB, closeDB
+} = require('./jsx/app_dbInterface');
 // configuration
 const { patentDB, patentParser, localSave } = require('./app_config.json');
 // developer
@@ -60,22 +64,8 @@ process.on('uncaughtException', e => {
 });
 
 
-// connect to the sql server
-const connectToDB = async () => {
-  try {
-    connectParams = await connectDocker(patentDB.connection);
-    uriMode = patentDB.databases[connectParams.options.database].uriMode;
-    console.log(`new connection parameters set: ${JSON.stringify(connectParams)}`);
-    return connectParams.server;
-  } catch (err) {
-    return err;
-  }
-};
 
-// close sql server connection
-const closeDB = () => {
-  return closeDocker(connectParams);
-}
+
 
 /** createWindow launches the main window
  *  @returns {void}
@@ -327,7 +317,9 @@ const getNewPatentUI = () => {
 // initialization and is ready to create browser windows.
 app.on('ready', async () => {
   try {
-    await connectToDB();
+    const connection = await connectToDB(patentDB);
+    connectParams = connection.connectParams;
+    uriMode = connection.uriMode;
     createWindow();
   } catch (err) {
     console.error(err)
@@ -338,7 +330,7 @@ app.on('window-all-closed', async () => {
   // On macOS it is common for applications and their menu bar
   // to stay active until the user quits explicitly with Cmd + Q
   if (process.platform !== 'darwin') {
-    await closeDB();
+    await closeDB(connectParams);
     app.quit();
   }
 });
@@ -934,7 +926,7 @@ ipcMain.on('json_update', async (event, oldItem, newItem, mode = 'claims') => {
 
 // Listener for a call to update the main window
 ipcMain.on('json_query', (event, mode, query, orderBy, offset, appendMode) => {
- 
+
   const queryMode = {
     simple: { data: 'p_SELECTJSON', count: 'p_COUNT' },
     claims: { data: 'p_SELECTJSON', count: 'p_COUNT' },
