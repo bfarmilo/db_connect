@@ -20,7 +20,8 @@
                 "uriMode": false,
                 "index": 1,
                 "name": "PMCDB",
-                "display": "PMC Patents"
+                "display": "PMC Patents",
+                "file": "PMCDB.db"
             },
             "NextIdea": {
                 "uriMode": true,

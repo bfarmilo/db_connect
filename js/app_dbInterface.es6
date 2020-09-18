@@ -19,10 +19,43 @@ let database = null;
 const options = {};
 let uriMode;
 
-function getDBInfo(db, options = {}) {
+/** Placeholder function for logging. Currently logs to console
+ * 
+ * @param {String} message - message to log 
+ */
+function logMessage(message) {
+    // placeholder for more effective log
+    console.log(`${(new Date()).toISOString()}: \[x1b33m${message}\[x1b0m`)
+}
 
+/** Placeholder for error handling
+ * 
+ * @param {String} message 
+ * @param {Error} err 
+ */
+function handleError(message, err) {
+    console.error(`\[x1b31m${(new Date()).toISOString()}: ${message}${err.message}\[x1b0m`);
+    throw err;
+}
+
+/** getDBInfo takes a configuration file and optional user options to return paths to the local and master databases
+ * 
+ * @param {Object} db database config parameters
+ * @param {String} db.connection.options.database name of default database connection
+ * @param {Object} db.databases hash of databases available to connect to
+ * @param {String} db.databases[databaseName].file filename of the database associated with databaseName
+ * Optional arguments
+ * @param {Object} options configuration options
+ * @param {Boolean} options.testMode if true, open in test mode
+ * @param {String[]} options.testLocal override default local test DB connection  with array of directories pointing to the local test database location
+ * @param {String[]} options.testMaster override default master test DB connection  with array of directories pointing to the master test database location
+ * @param {String[]} options.local override default local DB connection  with array of directories pointing to the local database location
+ * @param {String[]} options.master override default master DB connection  with array of directories pointing to the master database location
+ * 
+ * @returns {Object} {masterPath, localPath, dbOptions}
+ */
+function getDBInfo(db, options) {
     const fileName = db.databases[db.connection.options.database].file;
-
     const defaultOptions = {
         testMode: false,
         initialData: false,
@@ -46,7 +79,6 @@ function getDBInfo(db, options = {}) {
             `test_${fileName}`
         ],
     }
-
     // load options, overwriting defaults with user supplied options
     const dbOptions = { ...defaultOptions, ...options };
     const { testMode } = dbOptions;
@@ -56,12 +88,33 @@ function getDBInfo(db, options = {}) {
     return { masterPath, localPath, dbOptions }
 }
 
-function connectToDB(db, userOptions=null) {
-
-    const { localPath, dbOptions } = getDBInfo(db);
-    database = new Database(localPath, userOptions?.options ? userOptions.options : {});
-    const uriMode = db.databases[connectParams.options.database].uriMode;
-    options = { ...dbOptions };
+/** connects to a database file and stores a global database object, uriMode, and options for later use.
+ * 
+ * @param {Object} db database config parameters
+ * @param {String} db.connection.options.database name of default database connection
+ * @param {Object} db.databases hash of databases available to connect to
+ * @param {String} db.databases[databaseName].file filename of the database associated with databaseName
+ * @param {Boolean} db.databases[databaseName].uriMode specifies whether claim data is stored URI encoded for the database associated with databaseName
+ * Optional arguments
+ * @param {Object} userOptions configuration options
+ * @param {Boolean} userOptions.testMode if true, open in test mode
+ * @param {String[]} userOptions.testLocal override default local test DB connection  with array of directories pointing to the local test database location
+ * @param {String[]} userOptions.testMaster override default master test DB connection  with array of directories pointing to the master test database location
+ * @param {String[]} userOptions.local override default local DB connection  with array of directories pointing to the local database location
+ * @param {String[]} userOptions.master override default master DB connection  with array of directories pointing to the master database location
+ * 
+ */
+function connectToDB(db, userOptions = {}) {
+    try {
+        const { localPath, dbOptions } = getDBInfo(db, userOptions);
+        database = new Database(localPath, userOptions && userOptions.options ? userOptions.options : {});
+        uriMode = db.databases[connectParams.options.database].uriMode;
+        options = { ...dbOptions };
+        logMessage(`connected to database at ${localPath} with uriMode ${uriMode ? 'enabled' : 'disabled'}`);
+        return 0;
+    } catch (error) {
+        handleError('error connecting to DB', error)
+    }
 }
 
 /** Database operations */
@@ -84,28 +137,12 @@ function getLocalPath() {
  * 
  */
 function closeDB() {
-    database.close();
-}
-
-
-// ***DOCKER CONTAINER***
-// TODO - port this out
-const connectToDB = async db => {
     try {
-        const connectParams = await connectDocker(db.connection);
-        const uriMode = db.databases[connectParams.options.database].uriMode;
-        console.log(`new connection parameters set: ${JSON.stringify(connectParams)}`);
-        return { connectParams, uriMode };
-    } catch (err) {
-        throw err;
+        database.close();
+        return 0;
+    } catch (error) {
+        handleError('error closing database', error)
     }
-};
-
-
-// TODO -port this out
-// close sql server connection
-const closeDB = connect => {
-    return closeDocker(connect);
 }
 
 // *** MARKMAN INTERFACE ***
@@ -187,9 +224,12 @@ module.exports = {
     initializeMarkman, lookupIDs, getClaims, addMarkman, modifyMarkman, linkDocument,
     queryDatabase,
     parseQuery, parseOrder, parseOutput,
-    connectToDB,
-    closeDB,
     tableSchema,
     passesSchema,
-    createPatentQuery
+    createPatentQuery,
+
+    connectToDB,
+    closeDB,
+    getMasterPath,
+    getLocalPath
 }
