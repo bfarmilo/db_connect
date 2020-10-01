@@ -14,7 +14,7 @@
             "type": "node",
             "request": "launch",
             "name": "Readonly -- Electron Main",
-            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd",
+            "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron",
             "cwd": "${workspaceRoot}",
             "windows": {
                 "runtimeExecutable": "${workspaceRoot}/node_modules/.bin/electron.cmd"
