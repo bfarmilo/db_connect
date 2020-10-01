@@ -16,6 +16,7 @@ const { initializeMarkman, lookupIDs, getClaims, addMarkman, modifyMarkman, link
 
 // global variables
 let database = null;
+const dbFiles = {};
 const options = {};
 let uriMode;
 
@@ -83,9 +84,10 @@ function getDBInfo(db, options) {
     const dbOptions = { ...defaultOptions, ...options };
     const { testMode } = dbOptions;
     // resolve the path to the db, based on user or default options. normalize removes any .. and . and converts all to backslashes. 
-    const masterPath = path.normalize(`${[appPath].concat(testMode ? dbOptions.testMaster : dbOptions.master).join('/')}`).replace(/\\/g, '/');
-    const localPath = path.normalize(`${(testMode ? dbOptions.testLocal : dbOptions.local).join('/')}`).replace(/\\/g, '/');
-    return { masterPath, localPath, dbOptions }
+    dbFiles.masterPath = path.normalize(`${[appPath].concat(testMode ? dbOptions.testMaster : dbOptions.master).join('/')}`).replace(/\\/g, '/');
+    dbFiles.localPath = path.normalize(`${(testMode ? dbOptions.testLocal : dbOptions.local).join('/')}`).replace(/\\/g, '/');
+    dbFiles.dbOptions = dbOptions;
+    return dbFiles;
 }
 
 /** connects to a database file and stores a global database object, uriMode, and options for later use.
@@ -123,14 +125,14 @@ function connectToDB(db, userOptions = {}) {
  * @returns {String} path to master DB
  */
 function getMasterPath() {
-    return getDBInfo(db).masterPath;
+    return dbFiles.masterPath;
 }
 
 /** get the path to the local DB
  * @returns {String} path to local DB
  */
 function getLocalPath() {
-    return getDBInfo(db).localDBPath;
+    return dbFiles.localDBPath;
 }
 
 /** close the database instance
@@ -158,7 +160,7 @@ const tableSchema = {
 }
 
 /**
- * @private
+ * @private function that checks to see if the query has the keys required to access the selected database
  * @param {String} mode 'term', 'construction', 'link', or 'modify' 
  * @param {Object} payload -> {column:value}
  * @returns {Boolean} true unless fails schema 
